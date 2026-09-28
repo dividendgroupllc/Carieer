@@ -1,0 +1,142 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-09-28 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "firmalar_section",
+  "firmalar",
+  "firmalararo_narx_varaqasi",
+  "sms_section",
+  "sms_yoqilgan",
+  "sms_provayder",
+  "sms_shablon",
+  "sms_cb",
+  "eskiz_email",
+  "eskiz_password",
+  "eskiz_from",
+  "gps_section",
+  "gps_token"
+ ],
+ "fields": [
+  {
+   "fieldname": "firmalar_section",
+   "fieldtype": "Section Break",
+   "label": "Firmalar"
+  },
+  {
+   "fieldname": "firmalar",
+   "fieldtype": "Table",
+   "label": "Firmalar bo'yicha sozlamalar",
+   "options": "Karer Firma Sozlamasi"
+  },
+  {
+   "description": "Buying va Selling ikkalasi belgilangan bo'lishi shart. Bo'sh qolsa avtomatik yaratiladi.",
+   "fieldname": "firmalararo_narx_varaqasi",
+   "fieldtype": "Link",
+   "label": "Firmalararo narx varaqasi",
+   "options": "Price List"
+  },
+  {
+   "fieldname": "sms_section",
+   "fieldtype": "Section Break",
+   "label": "SMS"
+  },
+  {
+   "fieldname": "sms_yoqilgan",
+   "fieldtype": "Check",
+   "label": "Sotuvdan keyin mijozga SMS yuborish"
+  },
+  {
+   "default": "Frappe SMS Settings",
+   "depends_on": "sms_yoqilgan",
+   "fieldname": "sms_provayder",
+   "fieldtype": "Select",
+   "label": "SMS provayder",
+   "options": "Frappe SMS Settings\nEskiz.uz"
+  },
+  {
+   "default": "Hurmatli {customer}! {date}: {item} {qty} {uom}. Summa: {amount} {currency}. To'landi: {paid}. Qarz: {outstanding}. Rahmat!",
+   "depends_on": "sms_yoqilgan",
+   "description": "O'zgaruvchilar: {customer} {date} {item} {qty} {uom} {amount} {currency} {paid} {outstanding} {vehicle} {name}",
+   "fieldname": "sms_shablon",
+   "fieldtype": "Small Text",
+   "label": "SMS shablon"
+  },
+  {
+   "fieldname": "sms_cb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.sms_provayder=='Eskiz.uz'",
+   "fieldname": "eskiz_email",
+   "fieldtype": "Data",
+   "label": "Eskiz email"
+  },
+  {
+   "depends_on": "eval:doc.sms_provayder=='Eskiz.uz'",
+   "fieldname": "eskiz_password",
+   "fieldtype": "Password",
+   "label": "Eskiz parol (secret key)"
+  },
+  {
+   "default": "4546",
+   "depends_on": "eval:doc.sms_provayder=='Eskiz.uz'",
+   "fieldname": "eskiz_from",
+   "fieldtype": "Data",
+   "label": "Eskiz jo'natuvchi nomi (from)"
+  },
+  {
+   "fieldname": "gps_section",
+   "fieldtype": "Section Break",
+   "label": "GPS"
+  },
+  {
+   "description": "GPS provayder shu token bilan /api/method/carieer.api.gps_push ga ma'lumot yuboradi (X-Karer-Token header).",
+   "fieldname": "gps_token",
+   "fieldtype": "Password",
+   "label": "GPS API token"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-09-28 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Karer Sozlamalari",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Karer Menejer",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Karer Operator"
+  },
+  {
+   "read": 1,
+   "role": "Karer Kassir"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

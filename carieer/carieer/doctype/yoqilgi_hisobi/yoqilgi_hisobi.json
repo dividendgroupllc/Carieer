@@ -1,0 +1,289 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-09-28 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "asosiy_section",
+  "naming_series",
+  "company",
+  "posting_date",
+  "cb_1",
+  "vehicle",
+  "texnika_turi",
+  "haydovchi",
+  "cb_2",
+  "turi",
+  "miqdor_section",
+  "manba",
+  "item_code",
+  "warehouse",
+  "supplier",
+  "cb_3",
+  "qty",
+  "rate",
+  "amount",
+  "probeg_section",
+  "odometr",
+  "oldingi_odometr",
+  "yurgan_km",
+  "cb_4",
+  "moto_soat",
+  "sarf_100km",
+  "stock_entry",
+  "izoh",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "asosiy_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "YH-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Seriya",
+   "no_copy": 1,
+   "options": "YH-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Firma",
+   "options": "Company",
+   "remember_last_selected_value": 1,
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Sana",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Texnika / mashina",
+   "options": "Vehicle",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "vehicle.texnika_turi",
+   "fieldname": "texnika_turi",
+   "fieldtype": "Data",
+   "label": "Texnika turi",
+   "read_only": 1
+  },
+  {
+   "fieldname": "haydovchi",
+   "fieldtype": "Link",
+   "label": "Haydovchi (xodim)",
+   "options": "Employee"
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "turi",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Turi",
+   "options": "Dizel\nBenzin\nGaz (metan/propan)\nMotor moyi\nGidravlik moy\nBoshqa",
+   "reqd": 1
+  },
+  {
+   "fieldname": "miqdor_section",
+   "fieldtype": "Section Break",
+   "label": "Miqdor va narx"
+  },
+  {
+   "default": "Ombordan",
+   "fieldname": "manba",
+   "fieldtype": "Select",
+   "label": "Qayerdan",
+   "options": "Ombordan\nZapravkadan",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.manba=='Ombordan'",
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Tovar (yoqilg'i/moy)",
+   "options": "Item"
+  },
+  {
+   "depends_on": "eval:doc.manba=='Ombordan'",
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Ombor",
+   "options": "Warehouse"
+  },
+  {
+   "depends_on": "eval:doc.manba=='Zapravkadan'",
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Zapravka / yetkazib beruvchi",
+   "options": "Supplier"
+  },
+  {
+   "fieldname": "cb_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Miqdor (litr)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "label": "1 litr narxi",
+   "options": "Company:company:default_currency"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Summa",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "probeg_section",
+   "fieldtype": "Section Break",
+   "label": "Probeg / motor soat"
+  },
+  {
+   "fieldname": "odometr",
+   "fieldtype": "Float",
+   "label": "Spidometr (km)"
+  },
+  {
+   "fieldname": "oldingi_odometr",
+   "fieldtype": "Float",
+   "label": "Oldingi spidometr",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "yurgan_km",
+   "fieldtype": "Float",
+   "label": "Yurgan masofa (km)",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "moto_soat",
+   "fieldtype": "Float",
+   "label": "Motor soat (ekskavator uchun)"
+  },
+  {
+   "fieldname": "sarf_100km",
+   "fieldtype": "Float",
+   "label": "Sarf (litr / 100 km)",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "stock_entry",
+   "fieldtype": "Link",
+   "label": "Stock Entry",
+   "no_copy": 1,
+   "options": "Stock Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "izoh",
+   "fieldtype": "Small Text",
+   "label": "Izoh"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Yoqilgi Hisobi",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-09-28 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Yoqilgi Hisobi",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Menejer",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Operator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

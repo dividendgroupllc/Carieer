@@ -1,0 +1,78 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-09-28 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "sotuv_ombori",
+  "qazish_ombori",
+  "beton_xomashyo_ombori",
+  "beton_ombori",
+  "yoqilgi_ombori",
+  "mode_of_payment"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Firma",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sotuv_ombori",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Sotuv (karer) ombori",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "qazish_ombori",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Qazib olingan tovar ombori",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "beton_xomashyo_ombori",
+   "fieldtype": "Link",
+   "label": "Beton xomashyo ombori",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "beton_ombori",
+   "fieldtype": "Link",
+   "label": "Tayyor beton ombori",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "yoqilgi_ombori",
+   "fieldtype": "Link",
+   "label": "Yoqilg'i / moy ombori",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "mode_of_payment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Asosiy to'lov turi (kassa)",
+   "options": "Mode of Payment"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-28 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Karer Firma Sozlamasi",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
