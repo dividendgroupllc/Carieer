@@ -15,6 +15,11 @@ frappe.pages["karer-xarita"].on_page_show = function (wrapper) {
 };
 
 const KX_DEFAULT_CENTER = [41.3111, 69.2797]; // Toshkent
+// Ikki nuqta orasida shundan ko'p vaqt va masofa bo'lsa - uzilish (telefon yubormagan)
+const KX_GAP_SECONDS = 120;
+const KX_GAP_METERS = 300;
+const KX_SNAP_MAX_METERS = 50000; // bundan uzoq uzilishga taxminiy yo'l qidirilmaydi
+const KX_OSRM_URL = "https://router.project-osrm.org/route/v1/driving/";
 const KX_STATUS = {
 	moving: { color: "#16a34a", label: __("Harakatda") },
 	stopped: { color: "#f59e0b", label: __("To'xtagan") },
@@ -40,6 +45,8 @@ class KarerXarita {
 		});
 		// "necha daqiqa oldin" va holat rangi vaqt o'tishi bilan o'zgaradi
 		setInterval(() => this.render_all(), 30 * 1000);
+		// Realtime (socket) uzilib qolsa ham xarita eskirib qolmasin
+		setInterval(() => this.map && this.refresh_live(), 60 * 1000);
 	}
 
 	on_show() {
@@ -134,7 +141,33 @@ class KarerXarita {
 			(r.message || []).forEach((p) => (this.points[p.gps_imei] = p));
 			this.update_device_options();
 			this.render_all();
-			if (fit) this.fit_all();
+			if (!fit) return;
+			// Bitta texnika faol bo'lsa - uning bugungi yo'li darhol ko'rsatiladi
+			const active = Object.values(this.points).filter((p) => p.vaqt && this.status(p) !== KX_STATUS.offline);
+			if (active.length === 1 && !this.track) this.focus(active[0].gps_imei);
+			else this.fit_all();
+		});
+	}
+
+	refresh_live() {
+		// Realtime o'tkazib yuborgan nuqtalarni ham olib keladi (on_point eski/takroriy nuqtani o'tkazib yuboradi)
+		frappe.call({ method: "carieer.api.get_live_positions", type: "GET" }).then((r) => {
+			(r.message || []).forEach((p) => {
+				const old = this.points[p.gps_imei];
+				if (!old || p.vaqt !== old.vaqt) this.on_point(p);
+			});
+			// Kuzatilayotgan yo'lga ham oraliqdagi nuqtalar qo'shilsin
+			const t = this.track;
+			if (t && t.date === frappe.datetime.get_today()) this.sync_track(t);
+		});
+	}
+
+	sync_track(t) {
+		frappe.call({ method: "carieer.api.get_track", args: { gps_imei: t.imei, date: t.date }, type: "GET" }).then((r) => {
+			const last = t.pts[t.pts.length - 1];
+			(r.message || [])
+				.filter((p) => p.lat != null && (!last || p.vaqt > last.vaqt))
+				.forEach((p) => this.extend_track({ ...p, gps_imei: t.imei, vaqt: String(p.vaqt) }));
 		});
 	}
 
@@ -261,6 +294,8 @@ class KarerXarita {
 		}
 		this.map.setView([p.lat, p.lon], Math.max(this.map.getZoom(), 15));
 		this.markers[imei].openPopup();
+		// Bosilgan texnikaning tanlangan kundagi (odatda bugungi) yo'li ham darhol chiziladi
+		this.show_track({ silent: true });
 	}
 
 	fit_all() {
@@ -272,60 +307,131 @@ class KarerXarita {
 	}
 
 	// ------------------------------------------------------------------ yurgan yo'l
-	show_track() {
+	show_track(opts = {}) {
 		const imei = this.device_field.get_value();
 		const date = this.date_field.get_value();
 		if (!imei || !date) {
 			frappe.msgprint(__("Texnika va sanani tanlang"));
 			return;
 		}
-		frappe.call({ method: "carieer.api.get_track", args: { gps_imei: imei, date }, freeze: true }).then((r) => {
+		frappe.call({ method: "carieer.api.get_track", args: { gps_imei: imei, date }, freeze: !opts.silent }).then((r) => {
 			this.clear_track();
 			const pts = (r.message || []).filter((p) => p.lat != null && p.lon != null);
 			if (!pts.length) {
-				frappe.show_alert({ message: __("Bu kunda ma'lumot yo'q"), indicator: "orange" });
+				if (!opts.silent) frappe.show_alert({ message: __("Bu kunda ma'lumot yo'q"), indicator: "orange" });
 				return;
 			}
-			const latlngs = pts.map((p) => [p.lat, p.lon]);
-			const line = L.polyline(latlngs, { color: "#2563eb", weight: 4, opacity: 0.8 });
-			const start = L.circleMarker(latlngs[0], { radius: 6, color: "#fff", weight: 2, fillColor: "#2563eb", fillOpacity: 1 })
-				.bindTooltip(__("Boshlanish") + ": " + frappe.datetime.str_to_user(pts[0].vaqt));
-			const end = L.circleMarker(latlngs[latlngs.length - 1], { radius: 6, color: "#fff", weight: 2, fillColor: "#dc2626", fillOpacity: 1 })
-				.bindTooltip(__("Oxirgi") + ": " + frappe.datetime.str_to_user(pts[pts.length - 1].vaqt));
-			const layer = L.layerGroup([line, start, end]).addTo(this.map);
-			this.track = { imei, date, layer, line, end, pts };
-			this.map.fitBounds(line.getBounds(), { padding: [40, 40], maxZoom: 16 });
+			const t = (this.track = { imei, date, pts: [], gaps: [], km: 0, line: null, layer: L.featureGroup().addTo(this.map) });
+			pts.forEach((p) => this.add_track_point(p));
+			const dot = (color) => ({ radius: 6, color: "#fff", weight: 2, fillColor: color, fillOpacity: 1 });
+			L.circleMarker([pts[0].lat, pts[0].lon], dot("#2563eb"))
+				.bindTooltip(__("Boshlanish") + ": " + frappe.datetime.str_to_user(pts[0].vaqt))
+				.addTo(t.layer);
+			const last = pts[pts.length - 1];
+			t.end = L.circleMarker([last.lat, last.lon], dot("#dc2626"))
+				.bindTooltip(__("Oxirgi") + ": " + frappe.datetime.str_to_user(last.vaqt))
+				.addTo(t.layer);
+			this.map.fitBounds(t.layer.getBounds(), { padding: [40, 40], maxZoom: 16 });
 			this.render_summary();
 		});
+	}
+
+	// Telefon ba'zan uzoq vaqt nuqta yubormaydi (ilova to'xtatilgan, GPS signal yo'q). Bunday uzilishni
+	// to'g'ri chiziq bilan tutashtirish yolg'on yo'l ko'rsatadi -> uzilish alohida (punktir) chiziladi,
+	// OSRM orqali ko'chalar bo'yicha taxminiy yo'l qo'yiladi, masofaga esa faqat haqiqiy GPS qo'shiladi.
+	add_track_point(p) {
+		const t = this.track;
+		const prev = t.pts[t.pts.length - 1];
+		t.pts.push(p);
+		if (prev && !this.is_gap(prev, p)) {
+			t.km += L.latLng(prev.lat, prev.lon).distanceTo([p.lat, p.lon]) / 1000;
+			t.line.addLatLng([p.lat, p.lon]);
+			return;
+		}
+		if (prev) this.add_gap(prev, p);
+		t.line = L.polyline([[p.lat, p.lon]], { color: "#2563eb", weight: 4, opacity: 0.85 }).addTo(t.layer);
+	}
+
+	is_gap(a, b) {
+		const secs = this.to_moment(b.vaqt).diff(this.to_moment(a.vaqt), "seconds");
+		const meters = L.latLng(a.lat, a.lon).distanceTo([b.lat, b.lon]);
+		return secs > KX_GAP_SECONDS && meters > KX_GAP_METERS;
+	}
+
+	add_gap(a, b) {
+		const t = this.track;
+		const mins = Math.round(this.to_moment(b.vaqt).diff(this.to_moment(a.vaqt), "minutes", true));
+		const tip = __("Ma'lumot yo'q: {0} daqiqa ({1} – {2})", [
+			mins,
+			this.to_moment(a.vaqt).format("HH:mm"),
+			this.to_moment(b.vaqt).format("HH:mm"),
+		]);
+		const gap = {
+			mins,
+			line: L.polyline([[a.lat, a.lon], [b.lat, b.lon]], { color: "#9ca3af", weight: 3, dashArray: "6 8" })
+				.bindTooltip(tip)
+				.addTo(t.layer),
+		};
+		t.gaps.push(gap);
+		if (L.latLng(a.lat, a.lon).distanceTo([b.lat, b.lon]) < KX_SNAP_MAX_METERS) this.snap_gap(t, gap, a, b, tip);
+	}
+
+	snap_gap(t, gap, a, b, tip) {
+		// OSRM bepul demo serveri -> so'rovlar ketma-ket yuboriladi (serverni zo'riqtirmaslik uchun)
+		const url = `${KX_OSRM_URL}${a.lon},${a.lat};${b.lon},${b.lat}?overview=full&geometries=geojson`;
+		this.osrm_queue = (this.osrm_queue || Promise.resolve())
+			.then(() => (this.track === t ? fetch(url).then((r) => r.json()) : null))
+			.then((res) => {
+				const route = res && res.routes && res.routes[0];
+				if (!route || this.track !== t) return;
+				t.layer.removeLayer(gap.line);
+				gap.line = L.polyline(
+					route.geometry.coordinates.map(([lon, lat]) => [lat, lon]),
+					{ color: "#f97316", weight: 4, opacity: 0.8, dashArray: "8 8" }
+				)
+					.bindTooltip(tip + "<br>" + __("Ko'chalar bo'yicha taxminiy yo'l"))
+					.addTo(t.layer);
+			})
+			.catch(() => null); // internet yoki OSRM ishlamasa to'g'ri punktir qoladi
 	}
 
 	extend_track(p) {
 		const t = this.track;
 		if (!t || t.imei !== p.gps_imei || p.vaqt.slice(0, 10) !== t.date || p.lat == null) return;
-		t.pts.push(p);
-		t.line.addLatLng([p.lat, p.lon]);
+		const last = t.pts[t.pts.length - 1];
+		if (last && p.vaqt <= last.vaqt) return;
+		this.add_track_point(p);
 		t.end.setLatLng([p.lat, p.lon]);
+		// Kuzatilayotgan mashina ekrandan chiqib ketsa xarita unga ergashadi
+		if (!this.map.getBounds().contains([p.lat, p.lon])) this.map.panTo([p.lat, p.lon]);
 		this.render_summary();
 	}
 
 	render_summary() {
 		const t = this.track;
 		if (!t) return this.$summary.empty();
-		let km = 0;
-		let max_speed = 0;
-		for (let i = 1; i < t.pts.length; i++) {
-			km += L.latLng(t.pts[i - 1].lat, t.pts[i - 1].lon).distanceTo([t.pts[i].lat, t.pts[i].lon]) / 1000;
-		}
-		t.pts.forEach((p) => (max_speed = Math.max(max_speed, flt(p.tezlik))));
+		const max_speed = t.pts.reduce((m, p) => Math.max(m, flt(p.tezlik)), 0);
 		const first = t.pts[0].vaqt;
 		const last = t.pts[t.pts.length - 1].vaqt;
+		const gap_mins = t.gaps.reduce((s, g) => s + g.mins, 0);
 		const p = this.points[t.imei] || { gps_imei: t.imei };
+		const legend = (style, text) =>
+			`<span style="display:inline-block;width:18px;border-top:${style};vertical-align:middle;margin-right:4px"></span>${text}`;
+		const gaps_html = t.gaps.length
+			? `<div style="margin-top:6px;color:var(--orange-600)">${__("Uzilishlar: {0} ta, jami {1} daqiqa ma'lumot yo'q", [t.gaps.length, gap_mins])}</div>`
+			: "";
 		this.$summary.html(`
 			<div style="font-weight:600;margin-bottom:4px">${frappe.utils.escape_html(this.label(p))} · ${frappe.datetime.str_to_user(t.date)}</div>
-			<div>${__("Yurgan masofa")}: <b>${flt(km, 1)} km</b></div>
+			<div>${__("Yurgan masofa (GPS)")}: <b>${flt(t.km, 1)} km</b></div>
 			<div>${__("Maks. tezlik")}: <b>${flt(max_speed, 0)} ${__("km/soat")}</b></div>
 			<div>${__("Vaqt")}: ${this.to_moment(first).format("HH:mm")} – ${this.to_moment(last).format("HH:mm")}</div>
 			<div class="text-muted">${__("Nuqtalar")}: ${t.pts.length}</div>
+			${gaps_html}
+			<div class="text-muted" style="margin-top:6px;font-size:11px;line-height:1.7">
+				${legend("4px solid #2563eb", __("GPS bo'yicha"))}<br>
+				${legend("4px dashed #f97316", __("Uzilish: ko'chalar bo'yicha taxminiy"))}<br>
+				${legend("3px dashed #9ca3af", __("Uzilish: yo'l topilmadi"))}
+			</div>
 		`);
 	}
 

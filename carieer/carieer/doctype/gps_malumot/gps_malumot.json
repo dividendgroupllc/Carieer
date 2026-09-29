@@ -19,7 +19,8 @@
   "yoqilgi_darajasi",
   "motor_soat",
   "dvigatel_yoqilgan",
-  "batareya"
+  "batareya",
+  "nuqta_kalit"
  ],
  "fields": [
   {
@@ -101,11 +102,21 @@
    "fieldname": "batareya",
    "fieldtype": "Percent",
    "label": "Telefon batareyasi"
+  },
+  {
+   "fieldname": "nuqta_kalit",
+   "fieldtype": "Data",
+   "label": "Nuqta kaliti",
+   "description": "imei + vaqt + koordinata (takroriy nuqtalar saqlanmasligi uchun)",
+   "unique": 1,
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1
   }
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-09-29 16:00:00.000000",
+ "modified": "2026-09-29 23:10:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "GPS Malumot",

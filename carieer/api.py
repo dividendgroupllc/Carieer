@@ -1,5 +1,6 @@
 """Tashqi tizimlar uchun API (GPS provayder, Traccar Client) va texnikalar xaritasi."""
 
+import hashlib
 import hmac
 import json
 from datetime import datetime
@@ -30,13 +31,19 @@ def save_point(imei: str, **values) -> dict | None:
 	aniqlay olmasa, "heartbeat"da oxirgi eski nuqtani qayta-qayta yuboradi."""
 	vehicle = frappe.db.get_value("Vehicle", {"gps_imei": imei}, "name")
 	doc = frappe.get_doc({"doctype": "GPS Malumot", "vehicle": vehicle, "gps_imei": imei, **values})
-	if not doc.vaqt:
-		doc.vaqt = now_datetime()
-	if frappe.db.exists(
-		"GPS Malumot", {"gps_imei": imei, "vaqt": doc.vaqt, "lat": flt(doc.lat), "lon": flt(doc.lon)}
-	):
+	doc.vaqt = get_datetime(doc.vaqt or now_datetime()).replace(microsecond=0)
+	# Traccar bir nuqtani bir vaqtda parallel bir necha marta yuboradi, shunda "exists" tekshiruvi hammasiga
+	# "yo'q" deydi. Takrorni bazadagi unique `nuqta_kalit` ishonchli to'xtatadi. (Nomni kalit qilish
+	# ishlamaydi: autoname=hash da Frappe PK to'qnashuvida yangi tasodifiy nom bilan qayta yozadi.)
+	key = f"{imei}|{doc.vaqt}|{flt(doc.lat, 7)}|{flt(doc.lon, 7)}"
+	doc.nuqta_kalit = hashlib.sha1(key.encode()).hexdigest()
+	if frappe.db.exists("GPS Malumot", {"nuqta_kalit": doc.nuqta_kalit}):
 		return None
-	doc.insert(ignore_permissions=True)
+	try:
+		doc.insert(ignore_permissions=True)
+	except frappe.UniqueValidationError:
+		frappe.clear_messages()
+		return None
 	point = point_dict(doc)
 	frappe.publish_realtime(GPS_EVENT, point, after_commit=True)
 	return point
