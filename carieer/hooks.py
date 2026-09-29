@@ -31,3 +31,8 @@ doc_events = {
 }
 
 # Vehicle ga qo'shilgan custom fieldlar install.py da yaratiladi (fixtures shart emas)
+
+# GPS Malumot jadvali cheksiz o'smasin: 90 kundan eski nuqtalar har kuni o'chiriladi
+scheduler_events = {
+	"daily": ["carieer.api.cleanup_gps"],
+}

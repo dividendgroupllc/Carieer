@@ -33,9 +33,16 @@ class YoqilgiHisobi(Document):
 			order by posting_date desc, creation desc limit 1""",
 			(self.vehicle, self.name or "", self.posting_date, self.posting_date, self.creation or frappe.utils.now()),
 		)
-		prev = flt(prev[0][0]) if prev else flt(frappe.db.get_value("Vehicle", self.vehicle, "last_odometer"))
-		if prev and flt(self.odometr) < prev:
-			frappe.throw(_("Spidometr ({0}) oldingisidan ({1}) kichik").format(self.odometr, prev))
+		if prev:
+			prev = flt(prev[0][0])
+			if flt(self.odometr) < prev:
+				frappe.throw(_("Spidometr ({0}) oldingisidan ({1}) kichik").format(self.odometr, prev))
+		else:
+			# Vehicle.last_odometer GPS orqali doim yangilanadi (hozirgi qiymat) -> faqat undan kichik bo'lmasa
+			# boshlang'ich nuqta sifatida olinadi, aks holda tekshiruv/xato yo'q
+			prev = flt(frappe.db.get_value("Vehicle", self.vehicle, "last_odometer"))
+			if prev > flt(self.odometr):
+				prev = 0
 		self.oldingi_odometr = prev
 		self.yurgan_km = flt(self.odometr) - prev if prev else 0
 		if self.yurgan_km and self.turi in ("Dizel", "Benzin", "Gaz (metan/propan)"):

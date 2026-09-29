@@ -13,11 +13,13 @@
   "lat",
   "lon",
   "tezlik",
+  "yonalish",
   "cb_2",
   "odometr",
   "yoqilgi_darajasi",
   "motor_soat",
-  "dvigatel_yoqilgan"
+  "dvigatel_yoqilgan",
+  "batareya"
  ],
  "fields": [
   {
@@ -33,7 +35,8 @@
    "fieldname": "gps_imei",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "GPS IMEI"
+   "label": "GPS IMEI",
+   "search_index": 1
   },
   {
    "fieldname": "vaqt",
@@ -64,6 +67,11 @@
    "label": "Tezlik (km/soat)"
   },
   {
+   "fieldname": "yonalish",
+   "fieldtype": "Float",
+   "label": "Yo'nalish (gradus)"
+  },
+  {
    "fieldname": "cb_2",
    "fieldtype": "Column Break"
   },
@@ -88,11 +96,16 @@
    "fieldname": "dvigatel_yoqilgan",
    "fieldtype": "Check",
    "label": "Dvigatel yoqilgan"
+  },
+  {
+   "fieldname": "batareya",
+   "fieldtype": "Percent",
+   "label": "Telefon batareyasi"
   }
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-09-28 10:00:00.000000",
+ "modified": "2026-09-29 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "GPS Malumot",

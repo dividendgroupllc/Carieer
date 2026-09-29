@@ -104,6 +104,18 @@
   {
    "child": 1,
    "collapsible": 1,
+   "icon": "map",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Texnikalar xaritasi",
+   "link_type": "Page",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "karer-xarita"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
    "icon": "map-pin",
    "indent": 0,
    "keep_closed": 0,
@@ -256,7 +268,7 @@
    "link_to": "Mode of Payment"
   }
  ],
- "modified": "2026-09-28 10:00:00.000000",
+ "modified": "2026-09-29 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Karer",
