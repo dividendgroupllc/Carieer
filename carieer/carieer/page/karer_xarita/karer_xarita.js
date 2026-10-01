@@ -233,6 +233,7 @@ class KarerXarita {
 		if (p.texnika_turi || p.model) rows.push([__("Turi"), esc([p.texnika_turi, p.model].filter(Boolean).join(", "))]);
 		if (p.batareya != null) rows.push([__("Batareya"), `${cint(p.batareya)}%`]);
 		if (p.yoqilgi_darajasi) rows.push([__("Yoqilg'i"), `${flt(p.yoqilgi_darajasi, 1)} l`]);
+		if (p.qurilma) rows.push([__("Signal"), esc(p.qurilma)]);
 		rows.push([__("Qurilma ID"), esc(p.gps_imei)]);
 
 		const title = p.vehicle

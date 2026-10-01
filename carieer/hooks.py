@@ -28,6 +28,9 @@ doc_events = {
 		"on_submit": "carieer.carieer.doctype.karer_sotuv.karer_sotuv.on_payment_entry_change",
 		"on_cancel": "carieer.carieer.doctype.karer_sotuv.karer_sotuv.on_payment_entry_change",
 	},
+	"Vehicle": {
+		"on_update": "carieer.api.sync_vehicle_gps",
+	},
 }
 
 # Vehicle ga qo'shilgan custom fieldlar install.py da yaratiladi (fixtures shart emas)

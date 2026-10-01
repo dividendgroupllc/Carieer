@@ -15,6 +15,9 @@ class QazibOlish(Document):
 		for row in self.items:
 			if flt(row.qty) <= 0:
 				frappe.throw(_("{0}-qator: miqdor 0 dan katta bo'lishi kerak").format(row.idx))
+			# Float ustuni decimal(21,9): 10^12 dan kattasi bazaga sig'maydi (MySQL "Out of range" xatosi)
+			if flt(row.qty) >= 1e11:
+				frappe.throw(_("{0}-qator: miqdor juda katta ({1}). Raqamni tekshiring").format(row.idx, row.qty))
 			if not frappe.get_cached_value("Item", row.item_code, "is_stock_item"):
 				frappe.throw(_("{0}-qator: {1} ombor tovari emas (Maintain Stock)").format(row.idx, row.item_code))
 		self.total_qty = sum(flt(r.qty) for r in self.items)

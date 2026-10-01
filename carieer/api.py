@@ -60,6 +60,7 @@ def point_dict(d) -> dict:
 		"yonalish": flt(d.get("yonalish")),
 		"batareya": d.get("batareya"),
 		"yoqilgi_darajasi": d.get("yoqilgi_darajasi"),
+		"qurilma": d.get("qurilma"),
 	}
 
 
@@ -92,6 +93,7 @@ def gps_push():
 			yoqilgi_darajasi=d.get("fuel"),
 			motor_soat=d.get("engine_hours"),
 			dvigatel_yoqilgan=1 if d.get("ignition") else 0,
+			qurilma="GPS trekker",
 		)
 		if not point:
 			continue
@@ -128,11 +130,12 @@ def traccar(**kwargs):
 	body = frappe.request.get_json(silent=True) if frappe.request.data else None
 	points = parse_traccar_json(body) if isinstance(body, dict) and body.get("location") else parse_traccar_query(form)
 
+	qurilma = traccar_source()
 	saved = skipped = 0
 	for imei, values in points:
 		if not imei or values.get("lat") is None or values.get("lon") is None:
 			continue
-		if save_point(imei, **values):
+		if save_point(imei, qurilma=qurilma, **values):
 			saved += 1
 		else:
 			skipped += 1
@@ -140,6 +143,16 @@ def traccar(**kwargs):
 		frappe.log_error(title="Traccar: nuqta topilmadi", message=frappe.as_json({"form": form, "body": body}))
 	frappe.db.commit()
 	return {"saved": saved}
+
+
+def traccar_source() -> str:
+	"""User-Agent bo'yicha qaysi ilova/telefon yuborganini aniqlaydi (masalan "Traccar Client (Android)")."""
+	ua = (frappe.get_request_header("User-Agent") or "").lower()
+	if "android" in ua or "okhttp" in ua or "dalvik" in ua:
+		return "Traccar Client (Android)"
+	if "iphone" in ua or "ios" in ua or "cfnetwork" in ua or "darwin" in ua:
+		return "Traccar Client (iOS)"
+	return "Traccar Client"
 
 
 def parse_traccar_json(body: dict) -> list[tuple[str, dict]]:
@@ -210,7 +223,8 @@ def get_live_positions(days: int = 7) -> list[dict]:
 	frappe.only_for(XARITA_ROLLARI)
 	since = add_days(now_datetime(), -int(days))
 	rows = frappe.db.sql(
-		"""select g.gps_imei, g.vehicle, g.vaqt, g.lat, g.lon, g.tezlik, g.yonalish, g.batareya, g.yoqilgi_darajasi
+		"""select g.gps_imei, g.vehicle, g.vaqt, g.lat, g.lon, g.tezlik, g.yonalish, g.batareya, g.yoqilgi_darajasi,
+			g.qurilma
 		from `tabGPS Malumot` g
 		join (select gps_imei, max(vaqt) vaqt from `tabGPS Malumot` where vaqt >= %s group by gps_imei) m
 			on m.gps_imei = g.gps_imei and m.vaqt = g.vaqt""",
@@ -224,14 +238,14 @@ def get_live_positions(days: int = 7) -> list[dict]:
 	vehicles = {
 		v.gps_imei: v
 		for v in frappe.get_all(
-			"Vehicle", filters={"gps_imei": ["is", "set"]}, fields=["name", "gps_imei", "texnika_turi", "model"]
+			"Vehicle", filters={"gps_imei": ["is", "set"]}, fields=["name", "gps_imei", "texnika_turi", "make", "model"]
 		)
 	}
 	for imei, v in vehicles.items():
 		p = out.setdefault(imei, {"gps_imei": imei, "vehicle": v.name, "vaqt": None})
 		p["vehicle"] = v.name  # IMEI keyinroq Vehicle ga yozilgan bo'lsa ham to'g'ri nom chiqsin
 		p["texnika_turi"] = v.texnika_turi
-		p["model"] = v.model
+		p["model"] = " ".join(filter(None, (v.make, v.model)))
 	return sorted(out.values(), key=lambda p: (p.get("vehicle") or p["gps_imei"]))
 
 
@@ -247,6 +261,32 @@ def get_track(gps_imei: str, date: str) -> list[dict]:
 		(gps_imei, day, add_days(day, 1)),
 		as_dict=True,
 	)
+
+
+def sync_vehicle_gps(doc, method=None):
+	"""hooks.py -> Vehicle on_update: IMEI yozilgan/o'zgargan texnikaning barcha GPS nuqtalariga
+	mashina raqami, turi, markasi va modeli qo'yiladi (IMEI Vehicle ga keyinroq yozilgan bo'lsa ham)."""
+	if not doc.get("gps_imei"):
+		return
+	frappe.db.sql(
+		"""update `tabGPS Malumot` set vehicle=%s, texnika_turi=%s, marka=%s, model=%s where gps_imei=%s""",
+		(doc.name, doc.get("texnika_turi"), doc.get("make"), doc.get("model"), doc.gps_imei),
+	)
+
+
+@frappe.whitelist(methods=["POST"])
+def delete_gps_points(gps_imei: str | None = None, to_date: str | None = None) -> int:
+	"""GPS Malumot ro'yxatidagi "Tozalash" tugmasi: nuqtalarni bitta SQL bilan tez o'chiradi
+	(standart bulk delete minglab nuqtani bittalab, fonda o'chiradi va juda sekin)."""
+	frappe.only_for(("System Manager", "Karer Menejer"))
+	filters = {}
+	if gps_imei:
+		filters["gps_imei"] = gps_imei
+	if to_date:
+		filters["vaqt"] = ("<", add_days(getdate(to_date), 1))
+	count = frappe.db.count("GPS Malumot", filters)
+	frappe.db.delete("GPS Malumot", filters)
+	return count
 
 
 def cleanup_gps():

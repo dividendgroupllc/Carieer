@@ -53,6 +53,14 @@ frappe.ui.form.on("Karer Sotuv", {
 			const it = r.message || {};
 			frm.set_value("uom", it.sales_uom || it.stock_uom);
 		});
+		// Tovar qaysi omborda bor bo'lsa o'sha ombor qo'yiladi (Beton -> Beton ombori, Shag'al -> Karer ombori)
+		if (!frm.doc.company) return;
+		frappe.call("carieer.utils.get_item_warehouse", { item_code: frm.doc.item_code, company: frm.doc.company }).then((r) => {
+			if (r.message && r.message !== frm.doc.warehouse) {
+				frm.set_value("warehouse", r.message);
+				frappe.show_alert({ message: __("Ombor: {0}", [r.message]), indicator: "blue" });
+			}
+		});
 	},
 
 	currency(frm) {

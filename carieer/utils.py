@@ -106,6 +106,32 @@ def get_firma_defaults(company: str) -> dict:
 
 
 @frappe.whitelist()
+def get_item_warehouse(item_code: str, company: str) -> str | None:
+	"""Karer Sotuv uchun: tovar qaysi omborda bor bo'lsa o'sha ombor (Beton -> Beton ombori, Shag'al -> Karer ombori).
+	Avval Karer Sozlamalari'dagi firma omborlari, keyin qoldig'i eng ko'p ombor, bo'lmasa Item'ning standart ombori."""
+	row = get_firma_sozlama(company)
+	# BOM bilan ishlab chiqariladigan tovar (beton) avval Beton omboridan, qolganlari Karer omboridan
+	is_produced = frappe.db.exists("BOM", {"item": item_code, "company": company, "is_active": 1, "docstatus": 1})
+	order = ("beton_ombori", "sotuv_ombori") if is_produced else ("sotuv_ombori", "qazish_ombori", "beton_ombori")
+	preferred = [row.get(f) for f in order if row.get(f)]
+	bins = [
+		b.warehouse
+		for b in frappe.get_all(
+			"Bin",
+			filters={"item_code": item_code, "actual_qty": [">", 0]},
+			fields=["warehouse"],
+			order_by="actual_qty desc",
+		)
+		if frappe.get_cached_value("Warehouse", b.warehouse, "company") == company
+	]
+	return (
+		next((wh for wh in preferred if wh in bins), None)
+		or (bins[0] if bins else None)
+		or frappe.db.get_value("Item Default", {"parent": item_code, "company": company}, "default_warehouse")
+	)
+
+
+@frappe.whitelist()
 def get_exchange_rate_for(from_currency: str, to_currency: str, date: str | None = None) -> float:
 	return get_rate(from_currency, to_currency, date)
 

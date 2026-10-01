@@ -8,6 +8,10 @@
  "field_order": [
   "vehicle",
   "gps_imei",
+  "texnika_turi",
+  "marka",
+  "model",
+  "qurilma",
   "vaqt",
   "cb_1",
   "lat",
@@ -28,16 +32,48 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Texnika",
+   "label": "Mashina raqami",
    "options": "Vehicle",
-   "search_index": 1
+   "search_index": 1,
+   "bold": 1
   },
   {
    "fieldname": "gps_imei",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "GPS IMEI",
-   "search_index": 1
+   "search_index": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "texnika_turi",
+   "fieldtype": "Data",
+   "label": "Texnika turi",
+   "fetch_from": "vehicle.texnika_turi",
+   "read_only": 1
+  },
+  {
+   "fieldname": "marka",
+   "fieldtype": "Data",
+   "label": "Marka",
+   "fetch_from": "vehicle.make",
+   "read_only": 1
+  },
+  {
+   "fieldname": "model",
+   "fieldtype": "Data",
+   "label": "Model",
+   "fetch_from": "vehicle.model",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "qurilma",
+   "fieldtype": "Data",
+   "label": "Signal manbasi",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Qaysi qurilma/ilova yuborgan: Traccar Client (Android/iOS) yoki GPS trekker",
+   "read_only": 1
   },
   {
    "fieldname": "vaqt",
@@ -65,7 +101,8 @@
   {
    "fieldname": "tezlik",
    "fieldtype": "Float",
-   "label": "Tezlik (km/soat)"
+   "label": "Tezlik (km/soat)",
+   "in_list_view": 1
   },
   {
    "fieldname": "yonalish",
@@ -79,13 +116,11 @@
   {
    "fieldname": "odometr",
    "fieldtype": "Float",
-   "in_list_view": 1,
    "label": "Spidometr (km)"
   },
   {
    "fieldname": "yoqilgi_darajasi",
    "fieldtype": "Float",
-   "in_list_view": 1,
    "label": "Bakdagi yoqilg'i (litr)"
   },
   {
@@ -116,7 +151,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-09-29 23:10:00.000000",
+ "modified": "2026-09-30 17:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "GPS Malumot",
@@ -150,5 +185,7 @@
  "sort_field": "vaqt",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 0
+ "track_changes": 0,
+ "title_field": "vehicle",
+ "show_title_field_in_link": 0
 }
