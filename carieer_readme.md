@@ -382,6 +382,12 @@ Aks holda ekran o'chganda GPS to'xtaydi.
 - Texnikani bosing → xaritada o'sha joy + **bugungi yurgan yo'li**
 - Sana tanlab **boshqa kun yo'lini** ko'rish mumkin
 - Signal uzilgan joylar (2 daqiqa yoki 300 m dan ko'p) **punktir** bilan, yo'l bo'ylab (OSRM) to'ldiriladi
+- 🔵 **S**: kun boshlanish nuqtasi (vaqti doim yozilgan), 🔴 **F**: hozirgi joy yoki kun oxiri
+- 🟠 **1, 2, 3…**: **to'xtashlar**, ya'ni mashina 60 m ichida **5 daqiqadan ko'p** turgan joylar.
+  Chap panelda ro'yxati bor: qachondan qachongacha, qancha turdi, koordinatasi. Bosilsa, xaritada ochiladi
+- Har bir joyda **latitude, longitude** ko'rsatiladi. Bosilsa, Google Maps'da ochiladi
+- Panelda **turgan vaqti** va **harakatdagi vaqti** ko'rsatiladi
+- Sozlash (`karer_xarita.js` boshida): `KX_STOP_MINUTES = 5`, `KX_STOP_METERS = 60`
 - Yangi nuqta kelganda xarita **o'zi yangilanadi** (refresh shart emas)
 
 ### 7.5 Haqiqiy GPS trekker (ixtiyoriy)

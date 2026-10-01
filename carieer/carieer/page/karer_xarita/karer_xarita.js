@@ -20,6 +20,9 @@ const KX_GAP_SECONDS = 120;
 const KX_GAP_METERS = 300;
 const KX_SNAP_MAX_METERS = 50000; // bundan uzoq uzilishga taxminiy yo'l qidirilmaydi
 const KX_OSRM_URL = "https://router.project-osrm.org/route/v1/driving/";
+// Mashina shu radius ichida shuncha daqiqadan ko'p tursa - to'xtash (telefon GPS'i joyida ham 20-50 m "sakraydi")
+const KX_STOP_MINUTES = 5;
+const KX_STOP_METERS = 60;
 const KX_STATUS = {
 	moving: { color: "#16a34a", label: __("Harakatda") },
 	stopped: { color: "#f59e0b", label: __("To'xtagan") },
@@ -90,6 +93,10 @@ class KarerXarita {
 		this.$map = this.$body.find(".kx-map");
 
 		this.$list.on("click", ".kx-item", (e) => this.focus($(e.currentTarget).attr("data-imei")));
+		this.$summary.on("click", ".kx-stop-row", (e) => {
+			const $r = $(e.currentTarget);
+			this.focus_place($r.attr("data-kind"), cint($r.attr("data-idx")));
+		});
 		this.$map.on("click", ".kx-track-btn", (e) => {
 			this.device_field.set_value($(e.currentTarget).attr("data-imei"));
 			this.show_track();
@@ -112,7 +119,18 @@ class KarerXarita {
 			.kx-side { width: 290px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
 			.kx-summary:empty { display: none; }
 			.kx-summary { padding: 10px 12px; border: 1px solid var(--border-color); border-radius: var(--border-radius-md);
-				background: var(--card-bg); font-size: var(--text-sm); }
+				background: var(--card-bg); font-size: var(--text-sm); max-height: 55%; overflow: auto; flex-shrink: 0; }
+			.kx-stops { margin-top: 6px; border-top: 1px solid var(--border-color); padding-top: 6px; }
+			.kx-stop-row { display: flex; gap: 8px; padding: 4px 2px; cursor: pointer; border-radius: 4px; font-size: var(--text-xs); }
+			.kx-stop-row:hover { background: var(--fg-hover-color); }
+			.kx-badge { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; color: #fff; font-weight: 700;
+				font-size: 11px; display: flex; align-items: center; justify-content: center; border: 2px solid #fff;
+				box-shadow: 0 0 0 1px rgba(0,0,0,.25); }
+			.kx-badge.stop { background: #f59e0b; }
+			.kx-badge.start { background: #2563eb; }
+			.kx-badge.end { background: #dc2626; }
+			.kx-icon { background: none; border: none; }
+			.kx-icon .kx-badge { width: 24px; height: 24px; font-size: 12px; }
 			.kx-list { flex: 1; overflow: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius-md);
 				background: var(--card-bg); }
 			.kx-map { flex: 1; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); overflow: hidden; z-index: 0; }
@@ -201,6 +219,26 @@ class KarerXarita {
 		return p.vehicle || p.gps_imei;
 	}
 
+	coord_text(lat, lon) {
+		return `${flt(lat, 6).toFixed(6)}, ${flt(lon, 6).toFixed(6)}`;
+	}
+
+	// Koordinata + Google Maps havolasi (telefonda bosilsa navigatsiya ochiladi)
+	coord_html(lat, lon) {
+		const q = `${flt(lat, 6)},${flt(lon, 6)}`;
+		return `<a href="https://www.google.com/maps?q=${q}" target="_blank" rel="noopener">${this.coord_text(lat, lon)}</a>`;
+	}
+
+	hhmm(vaqt) {
+		return this.to_moment(vaqt).format("HH:mm");
+	}
+
+	duration_text(mins) {
+		mins = Math.round(mins);
+		const h = Math.floor(mins / 60);
+		return h ? __("{0} soat {1} daq", [h, mins % 60]) : __("{0} daq", [mins]);
+	}
+
 	render_all() {
 		Object.values(this.points).forEach((p) => this.render_point(p));
 		this.render_list();
@@ -229,6 +267,7 @@ class KarerXarita {
 			[__("Holat"), `<span class="kx-dot" style="background:${st.color}"></span>${st.label}`],
 			[__("Tezlik"), `${flt(p.tezlik, 1)} ${__("km/soat")}`],
 			[__("Vaqt"), `${frappe.datetime.str_to_user(p.vaqt)} (${this.to_moment(p.vaqt).fromNow()})`],
+			[__("Koordinata"), this.coord_html(p.lat, p.lon)],
 		];
 		if (p.texnika_turi || p.model) rows.push([__("Turi"), esc([p.texnika_turi, p.model].filter(Boolean).join(", "))]);
 		if (p.batareya != null) rows.push([__("Batareya"), `${cint(p.batareya)}%`]);
@@ -268,6 +307,7 @@ class KarerXarita {
 					return `<div class="kx-item ${p.gps_imei === active ? "active" : ""}" data-imei="${esc(p.gps_imei)}">
 						<div class="kx-title"><span class="kx-dot" style="background:${st.color}"></span>${esc(this.label(p))}</div>
 						<div class="kx-meta">${st.label}${speed}${when ? " · " + when : ""}</div>
+						${p.lat != null ? `<div class="kx-meta">${this.coord_text(p.lat, p.lon)}</div>` : ""}
 						${p.vehicle ? "" : `<div class="kx-meta">${__("Vehicle ga bog'lanmagan")}</div>`}
 					</div>`;
 				})
@@ -322,16 +362,19 @@ class KarerXarita {
 				if (!opts.silent) frappe.show_alert({ message: __("Bu kunda ma'lumot yo'q"), indicator: "orange" });
 				return;
 			}
-			const t = (this.track = { imei, date, pts: [], gaps: [], km: 0, line: null, layer: L.featureGroup().addTo(this.map) });
+			const t = (this.track = { imei, date, pts: [], gaps: [], stops: [], km: 0, line: null, layer: L.featureGroup().addTo(this.map) });
 			pts.forEach((p) => this.add_track_point(p));
-			const dot = (color) => ({ radius: 6, color: "#fff", weight: 2, fillColor: color, fillOpacity: 1 });
-			L.circleMarker([pts[0].lat, pts[0].lon], dot("#2563eb"))
-				.bindTooltip(__("Boshlanish") + ": " + frappe.datetime.str_to_user(pts[0].vaqt))
+			t.stops_layer = L.featureGroup().addTo(t.layer);
+			// Kunning boshlanish nuqtasi doim ko'rinib turadi (yozuvi bilan)
+			const first = pts[0];
+			t.start = L.marker([first.lat, first.lon], { icon: this.badge_icon("S", "start"), zIndexOffset: 1000 })
+				.bindTooltip(__("Boshlanish") + " " + this.hhmm(first.vaqt), { permanent: true, direction: "right", offset: [12, 0], className: "kx-tip" })
+				.bindPopup(this.place_popup(__("Kun boshlanishi"), first.lat, first.lon, [[__("Vaqt"), frappe.datetime.str_to_user(first.vaqt)]]))
 				.addTo(t.layer);
 			const last = pts[pts.length - 1];
-			t.end = L.circleMarker([last.lat, last.lon], dot("#dc2626"))
-				.bindTooltip(__("Oxirgi") + ": " + frappe.datetime.str_to_user(last.vaqt))
-				.addTo(t.layer);
+			t.end = L.marker([last.lat, last.lon], { icon: this.badge_icon("F", "end"), zIndexOffset: 1000 }).addTo(t.layer);
+			this.update_end(last);
+			this.render_stops();
 			this.map.fitBounds(t.layer.getBounds(), { padding: [40, 40], maxZoom: 16 });
 			this.render_summary();
 		});
@@ -402,10 +445,112 @@ class KarerXarita {
 		const last = t.pts[t.pts.length - 1];
 		if (last && p.vaqt <= last.vaqt) return;
 		this.add_track_point(p);
-		t.end.setLatLng([p.lat, p.lon]);
+		this.update_end(p);
+		this.render_stops();
 		// Kuzatilayotgan mashina ekrandan chiqib ketsa xarita unga ergashadi
 		if (!this.map.getBounds().contains([p.lat, p.lon])) this.map.panTo([p.lat, p.lon]);
 		this.render_summary();
+	}
+
+	// ------------------------------------------------------------------ to'xtashlar
+	badge_icon(text, cls) {
+		return L.divIcon({
+			className: "kx-icon",
+			html: `<div class="kx-badge ${cls}">${frappe.utils.escape_html(String(text))}</div>`,
+			iconSize: [24, 24],
+			iconAnchor: [12, 12],
+		});
+	}
+
+	place_popup(title, lat, lon, rows = []) {
+		rows = rows.concat([[__("Koordinata"), this.coord_html(lat, lon)]]);
+		return `<div class="kx-popup">
+			<div style="font-weight:600;font-size:14px;margin-bottom:4px">${title}</div>
+			<table>${rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("")}</table>
+		</div>`;
+	}
+
+	update_end(p) {
+		const t = this.track;
+		const today = t.date === frappe.datetime.get_today();
+		t.end.setLatLng([p.lat, p.lon]);
+		t.end.bindTooltip((today ? __("Hozir") : __("Kun oxiri")) + " " + this.hhmm(p.vaqt), { direction: "right", offset: [12, 0] });
+		t.end.bindPopup(this.place_popup(today ? __("Oxirgi joylashuv") : __("Kun oxiri"), p.lat, p.lon, [
+			[__("Vaqt"), frappe.datetime.str_to_user(p.vaqt)],
+		]));
+	}
+
+	// Ketma-ket nuqtalar birinchisidan KX_STOP_METERS radius ichida qolib, KX_STOP_MINUTES dan uzoq davom etsa -
+	// bu to'xtash. Telefon turganda kam nuqta yuborishi mumkin: 2 nuqta orasida 30 daqiqa bo'lsa-yu joy
+	// o'zgarmagan bo'lsa, bu ham to'xtash hisoblanadi.
+	compute_stops(pts) {
+		const ms = (p) => (p._ms = p._ms || this.to_moment(p.vaqt).valueOf());
+		const dist = (a, b) => L.latLng(a.lat, a.lon).distanceTo([b.lat, b.lon]);
+		const stops = [];
+		let i = 0;
+		while (i < pts.length) {
+			const a = pts[i];
+			let j = i;
+			for (;;) {
+				if (j + 1 < pts.length && dist(a, pts[j + 1]) <= KX_STOP_METERS) j++;
+				// Bitta nuqta "sakrab" ketib, keyingisi yana shu joyda bo'lsa - bu GPS xatosi, to'xtash davom etadi
+				else if (j + 2 < pts.length && dist(a, pts[j + 2]) <= KX_STOP_METERS) j += 2;
+				else break;
+			}
+			const mins = (ms(pts[j]) - ms(a)) / 60000;
+			if (j > i && mins >= KX_STOP_MINUTES) {
+				const group = pts.slice(i, j + 1).filter((p) => dist(a, p) <= KX_STOP_METERS);
+				const prev = stops[stops.length - 1];
+				// GPS bir lahza "sakrab" ketsa bitta to'xtash ikkiga bo'linmasin
+				if (prev && ms(a) - prev.to_ms < KX_STOP_MINUTES * 60000 && dist(prev, a) <= 2 * KX_STOP_METERS) {
+					prev.to = pts[j].vaqt;
+					prev.to_ms = ms(pts[j]);
+					prev.mins = (prev.to_ms - prev.from_ms) / 60000;
+					prev.last_idx = j;
+				} else {
+					stops.push({
+						from: a.vaqt,
+						to: pts[j].vaqt,
+						from_ms: ms(a),
+						to_ms: ms(pts[j]),
+						mins,
+						lat: group.reduce((s, p) => s + p.lat, 0) / group.length,
+						lon: group.reduce((s, p) => s + p.lon, 0) / group.length,
+						last_idx: j,
+					});
+				}
+				i = j + 1;
+			} else {
+				i++;
+			}
+		}
+		stops.forEach((s) => (s.ongoing = s.last_idx === pts.length - 1));
+		return stops;
+	}
+
+	render_stops() {
+		const t = this.track;
+		t.stops = this.compute_stops(t.pts);
+		t.stops_layer.clearLayers();
+		t.stops.forEach((s, i) => {
+			const range = `${this.hhmm(s.from)} – ${s.ongoing ? __("hozirgacha") : this.hhmm(s.to)}`;
+			s.marker = L.marker([s.lat, s.lon], { icon: this.badge_icon(i + 1, "stop") })
+				.bindTooltip(__("To'xtash {0}: {1} ({2})", [i + 1, range, this.duration_text(s.mins)]))
+				.bindPopup(this.place_popup(__("To'xtash {0}", [i + 1]), s.lat, s.lon, [
+					[__("Vaqt"), range],
+					[__("Davomiyligi"), this.duration_text(s.mins)],
+				]))
+				.addTo(t.stops_layer);
+		});
+	}
+
+	focus_place(kind, idx) {
+		const t = this.track;
+		if (!t) return;
+		const m = kind === "start" ? t.start : kind === "end" ? t.end : t.stops[idx] && t.stops[idx].marker;
+		if (!m) return;
+		this.map.setView(m.getLatLng(), Math.max(this.map.getZoom(), 16));
+		m.openPopup();
 	}
 
 	render_summary() {
@@ -421,13 +566,50 @@ class KarerXarita {
 		const gaps_html = t.gaps.length
 			? `<div style="margin-top:6px;color:var(--orange-600)">${__("Uzilishlar: {0} ta, jami {1} daqiqa ma'lumot yo'q", [t.gaps.length, gap_mins])}</div>`
 			: "";
+		const stop_mins = t.stops.reduce((s, x) => s + x.mins, 0);
+		// Harakat vaqti: ketma-ket nuqtalar orasidagi vaqt (bitta to'xtash ichidagisi va uzilishlar hisobga olinmaydi)
+		const ms = (p) => (p._ms = p._ms || this.to_moment(p.vaqt).valueOf());
+		const same_stop = (a, b) => t.stops.some((s) => ms(a) >= s.from_ms && ms(b) <= s.to_ms);
+		let move_mins = 0;
+		for (let k = 1; k < t.pts.length; k++) {
+			const a = t.pts[k - 1];
+			const b = t.pts[k];
+			if (!same_stop(a, b) && !this.is_gap(a, b)) move_mins += (ms(b) - ms(a)) / 60000;
+		}
+		const today = t.date === frappe.datetime.get_today();
+		const fp = t.pts[0];
+		const lp = t.pts[t.pts.length - 1];
+		const row = (kind, idx, badge, cls, title, sub) => `
+			<div class="kx-stop-row" data-kind="${kind}" data-idx="${idx}">
+				<div class="kx-badge ${cls}">${badge}</div>
+				<div><b>${title}</b><div class="text-muted">${sub}</div></div>
+			</div>`;
+		const stops_html = `<div class="kx-stops">
+			<div style="font-weight:600;margin-bottom:2px">${__("To'xtashlar ({0} daqiqadan ko'p)", [KX_STOP_MINUTES])}: ${t.stops.length}</div>
+			${row("start", 0, "S", "start", __("Boshlanish") + " · " + this.hhmm(fp.vaqt), this.coord_text(fp.lat, fp.lon))}
+			${t.stops
+				.map((s, i) =>
+					row(
+						"stop",
+						i,
+						i + 1,
+						"stop",
+						`${this.hhmm(s.from)} – ${s.ongoing ? __("hozirgacha") : this.hhmm(s.to)} · ${this.duration_text(s.mins)}`,
+						this.coord_text(s.lat, s.lon)
+					)
+				)
+				.join("")}
+			${row("end", 0, "F", "end", (today ? __("Hozir") : __("Kun oxiri")) + " · " + this.hhmm(lp.vaqt), this.coord_text(lp.lat, lp.lon))}
+		</div>`;
 		this.$summary.html(`
 			<div style="font-weight:600;margin-bottom:4px">${frappe.utils.escape_html(this.label(p))} · ${frappe.datetime.str_to_user(t.date)}</div>
 			<div>${__("Yurgan masofa (GPS)")}: <b>${flt(t.km, 1)} km</b></div>
 			<div>${__("Maks. tezlik")}: <b>${flt(max_speed, 0)} ${__("km/soat")}</b></div>
 			<div>${__("Vaqt")}: ${this.to_moment(first).format("HH:mm")} – ${this.to_moment(last).format("HH:mm")}</div>
+			<div>${__("Turgan vaqti")}: <b>${this.duration_text(stop_mins)}</b> · ${__("Harakatda")}: <b>${this.duration_text(move_mins)}</b></div>
 			<div class="text-muted">${__("Nuqtalar")}: ${t.pts.length}</div>
 			${gaps_html}
+			${stops_html}
 			<div class="text-muted" style="margin-top:6px;font-size:11px;line-height:1.7">
 				${legend("4px solid #2563eb", __("GPS bo'yicha"))}<br>
 				${legend("4px dashed #f97316", __("Uzilish: ko'chalar bo'yicha taxminiy"))}<br>

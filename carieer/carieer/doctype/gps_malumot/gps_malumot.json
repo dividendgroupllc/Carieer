@@ -63,8 +63,7 @@
    "fieldtype": "Data",
    "label": "Model",
    "fetch_from": "vehicle.model",
-   "read_only": 1,
-   "in_list_view": 1
+   "read_only": 1
   },
   {
    "fieldname": "qurilma",
@@ -90,13 +89,15 @@
    "fieldname": "lat",
    "fieldtype": "Float",
    "label": "Latitude",
-   "precision": "7"
+   "precision": "7",
+   "in_list_view": 1
   },
   {
    "fieldname": "lon",
    "fieldtype": "Float",
    "label": "Longitude",
-   "precision": "7"
+   "precision": "7",
+   "in_list_view": 1
   },
   {
    "fieldname": "tezlik",
@@ -151,7 +152,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-09-30 17:00:00.000000",
+ "modified": "2026-10-01 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "GPS Malumot",
