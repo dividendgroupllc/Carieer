@@ -90,7 +90,7 @@ class KarerSotuv(Document):
 		si = self.make_sales_invoice()
 		self.db_set("sales_invoice", si.name)
 		if flt(self.paid_amount):
-			make_payment_entry(self, flt(self.paid_amount), self.mode_of_payment)
+			make_payment_entry(self, flt(self.paid_amount), self.mode_of_payment, posting_date=self.posting_date)
 		self.update_payment_status()
 		self.send_notification()
 
@@ -210,8 +210,9 @@ def get_payment_entries(sales_invoice: str) -> list[str]:
 	)
 
 
-def make_payment_entry(doc: "KarerSotuv", amount: float, mode_of_payment: str):
-	"""Sales Invoice ga qarshi Payment Entry yaratadi. amount - Karer Sotuv valyutasida."""
+def make_payment_entry(doc: "KarerSotuv", amount: float, mode_of_payment: str, posting_date=None):
+	"""Sales Invoice ga qarshi Payment Entry yaratadi. amount - Karer Sotuv valyutasida.
+	posting_date berilmasa - bugungi sana (keyinroq qabul qilingan to'lov)."""
 	from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 	from erpnext.accounts.doctype.sales_invoice.sales_invoice import get_bank_cash_account
 
@@ -243,7 +244,7 @@ def make_payment_entry(doc: "KarerSotuv", amount: float, mode_of_payment: str):
 		bank_amount=bank_amount,
 	)
 	pe.mode_of_payment = mode_of_payment
-	pe.posting_date = frappe.utils.nowdate()
+	pe.posting_date = posting_date or frappe.utils.nowdate()
 	pe.reference_no = doc.name
 	pe.reference_date = pe.posting_date
 	pe.remarks = _("Karer Sotuv {0} uchun to'lov").format(doc.name)

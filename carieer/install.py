@@ -129,6 +129,9 @@ STANDARD_PERMS = {
 		"Vehicle": ["read"],
 		"BOM": ["read"],
 		"Mode of Payment": ["read"],
+		# Yoqilgi Hisobi: haydovchi va zapravka (link maydonlari uchun faqat tanlash)
+		"Employee": ["select"],
+		"Supplier": ["select"],
 	},
 	"Karer Kassir": {
 		"Sales Invoice": ["read"],
@@ -136,6 +139,7 @@ STANDARD_PERMS = {
 		"Customer": ["read", "write", "create"],
 		"Item": ["read"],
 		"Warehouse": ["read"],
+		"Vehicle": ["select"],  # Karer Sotuv.vehicle
 		"Mode of Payment": ["read"],
 		"Account": ["read"],
 		"GL Entry": ["read", "report"],  # DDS hisoboti uchun
@@ -151,6 +155,8 @@ STANDARD_PERMS = {
 		"BOM": ["read", "write", "create", "submit"],
 		"Warehouse": ["read"],
 		"Vehicle": ["read", "write", "create"],
+		"Employee": ["select"],
+		"Price List": ["read"],  # Karer Sozlamalari.firmalararo_narx_varaqasi
 		"Mode of Payment": ["read"],
 		"Account": ["read"],
 		"GL Entry": ["read", "report"],

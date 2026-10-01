@@ -1,7 +1,7 @@
 {
  "app": "carieer",
  "charts": [],
- "content": "[{\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Karer</b></span>\", \"col\": 12}}, {\"id\": \"s0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Karer Sotuv\", \"col\": 3}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Qazib Olish\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Beton Ishlab Chiqarish\", \"col\": 3}}, {\"id\": \"s3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo Sotuv\", \"col\": 3}}, {\"id\": \"s4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Yoqilgi Hisobi\", \"col\": 3}}, {\"id\": \"r0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kontrol Hisobot\", \"col\": 3}}, {\"id\": \"r1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Material Hisobot\", \"col\": 3}}, {\"id\": \"r2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"DDS Hisobot\", \"col\": 3}}, {\"id\": \"r3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnika Xarajatlari\", \"col\": 3}}, {\"id\": \"c1\", \"type\": \"card\", \"data\": {\"card_name\": \"Sozlamalar\", \"col\": 4}}]",
+ "content": "[{\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Karer</b></span>\", \"col\": 12}}, {\"id\": \"s0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Karer Sotuv\", \"col\": 3}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Qazib Olish\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Beton Ishlab Chiqarish\", \"col\": 3}}, {\"id\": \"s3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo Sotuv\", \"col\": 3}}, {\"id\": \"s4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Yoqilgi Hisobi\", \"col\": 3}}, {\"id\": \"sgps\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnikalar xaritasi\", \"col\": 3}}, {\"id\": \"r0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kontrol Hisobot\", \"col\": 3}}, {\"id\": \"r1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Material Hisobot\", \"col\": 3}}, {\"id\": \"r2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"DDS Hisobot\", \"col\": 3}}, {\"id\": \"r3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnika Xarajatlari\", \"col\": 3}}, {\"id\": \"c1\", \"type\": \"card\", \"data\": {\"card_name\": \"Sozlamalar\", \"col\": 4}}]",
  "creation": "2026-09-28 10:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -89,7 +89,7 @@
    "dependencies": ""
   }
  ],
- "modified": "2026-09-28 10:00:00.000000",
+ "modified": "2026-09-29 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Karer",
@@ -136,6 +136,12 @@
    "type": "DocType",
    "color": "Grey",
    "doc_view": "List"
+  },
+  {
+   "label": "Texnikalar xaritasi",
+   "link_to": "karer-xarita",
+   "type": "Page",
+   "color": "Grey"
   },
   {
    "label": "Kontrol Hisobot",
