@@ -1,0 +1,233 @@
+{
+ "app": "carieer",
+ "charts": [],
+ "content": "[{\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Beton Zavod</b></span>\", \"col\": 12}}, {\"id\": \"hnCkdrRjFO\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kassa va Qarzlar\", \"col\": 3}}, {\"id\": \"s0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Beton Ishlab Chiqarish\", \"col\": 3}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Beton Sotuv\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Xarid (kirim)\", \"col\": 3}}, {\"id\": \"skassa\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kassa\", \"col\": 3}}, {\"id\": \"s3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Retsept (BOM)\", \"col\": 3}}, {\"id\": \"s4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo Sotuv\", \"col\": 3}}, {\"id\": \"s5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Yoqilgi Hisobi\", \"col\": 3}}, {\"id\": \"s6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnikalar xaritasi\", \"col\": 3}}, {\"id\": \"s7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kontrol Hisobot\", \"col\": 3}}, {\"id\": \"s8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Material Hisobot\", \"col\": 3}}, {\"id\": \"s9\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"DDS Hisobot\", \"col\": 3}}, {\"id\": \"s10\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnika Xarajatlari\", \"col\": 3}}, {\"id\": \"sfq\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo Qarzlar\", \"col\": 3}}, {\"id\": \"c1\", \"type\": \"card\", \"data\": {\"card_name\": \"Sozlamalar\", \"col\": 4}}, {\"id\": \"uubJqNSOLY\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo To'lov\", \"col\": 3}}]",
+ "creation": "2026-10-02 12:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "factory",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Beton Zavod",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Sozlamalar",
+   "link_count": 7,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Item",
+   "link_count": 0,
+   "link_to": "Item",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": ""
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Supplier",
+   "link_count": 0,
+   "link_to": "Supplier",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": ""
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Customer",
+   "link_count": 0,
+   "link_to": "Customer",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": ""
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Warehouse",
+   "link_count": 0,
+   "link_to": "Warehouse",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": ""
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Vehicle",
+   "link_count": 0,
+   "link_to": "Vehicle",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": ""
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Mode of Payment",
+   "link_count": 0,
+   "link_to": "Mode of Payment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": ""
+  }
+ ],
+ "modified": "2026-10-03 20:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Beton Zavod",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "Beton zavod xodimi"
+  },
+  {
+   "role": "Beton Operator"
+  },
+  {
+   "role": "Beton Kassir"
+  },
+  {
+   "role": "Beton Menejer"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "sequence_id": 51.0,
+ "shortcuts": [
+  {
+   "label": "Kassa va Qarzlar",
+   "link_to": "Kassa va Qarzlar",
+   "type": "Report",
+   "report_ref_doctype": "Sotuv",
+   "doc_view": "",
+   "color": "Green"
+  },
+  {
+   "label": "Beton Ishlab Chiqarish",
+   "link_to": "Beton Ishlab Chiqarish",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Beton Sotuv",
+   "link_to": "Sotuv",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Xarid (kirim)",
+   "link_to": "Purchase Receipt",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Kassa",
+   "link_to": "Kassa",
+   "type": "DocType",
+   "color": "Green",
+   "doc_view": "List"
+  },
+  {
+   "label": "Retsept (BOM)",
+   "link_to": "BOM",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Firmalararo Sotuv",
+   "link_to": "Firmalararo Sotuv",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Yoqilgi Hisobi",
+   "link_to": "Yoqilgi Hisobi",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Texnikalar xaritasi",
+   "link_to": "texnika-xarita",
+   "type": "Page",
+   "color": "Grey"
+  },
+  {
+   "label": "Kontrol Hisobot",
+   "link_to": "Kontrol Hisobot",
+   "type": "Report",
+   "color": "Blue",
+   "report_ref_doctype": "Sotuv",
+   "doc_view": ""
+  },
+  {
+   "label": "Material Hisobot",
+   "link_to": "Material Hisobot",
+   "type": "Report",
+   "color": "Blue",
+   "report_ref_doctype": "Stock Ledger Entry",
+   "doc_view": ""
+  },
+  {
+   "label": "DDS Hisobot",
+   "link_to": "DDS Hisobot",
+   "type": "Report",
+   "color": "Blue",
+   "report_ref_doctype": "GL Entry",
+   "doc_view": ""
+  },
+  {
+   "label": "Texnika Xarajatlari",
+   "link_to": "Texnika Xarajatlari",
+   "type": "Report",
+   "color": "Blue",
+   "report_ref_doctype": "Yoqilgi Hisobi",
+   "doc_view": ""
+  },
+  {
+   "label": "Firmalararo Qarzlar",
+   "link_to": "Firmalararo Qarzlar",
+   "type": "Report",
+   "report_ref_doctype": "GL Entry",
+   "color": "Blue",
+   "doc_view": ""
+  },
+  {
+   "label": "Firmalararo To'lov",
+   "link_to": "Firmalararo Tolov",
+   "type": "DocType",
+   "doc_view": "List"
+  }
+ ],
+ "title": "Beton Zavod",
+ "type": "Workspace"
+}

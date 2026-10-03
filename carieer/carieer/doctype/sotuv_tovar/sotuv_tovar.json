@@ -1,0 +1,115 @@
+{
+ "actions": [],
+ "creation": "2026-10-03 14:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "item_code",
+  "item_name",
+  "qty",
+  "uom",
+  "rate",
+  "amount",
+  "cb_1",
+  "warehouse",
+  "conversion_factor",
+  "stock_qty",
+  "currency"
+ ],
+ "fields": [
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Наименование",
+   "options": "Item",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 3
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Tovar nomi",
+   "fetch_from": "item_code.item_name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "label": "Кол-во",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "label": "Ед.изм",
+   "options": "UOM",
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "label": "Цена",
+   "options": "currency",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Сумма",
+   "options": "currency",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Ombor",
+   "options": "Warehouse",
+   "in_list_view": 1,
+   "columns": 1,
+   "description": "Bo'sh qoldirilsa o'zi qo'yiladi (Beton -> Beton ombori, qum/shag'al -> Karer ombori)"
+  },
+  {
+   "fieldname": "conversion_factor",
+   "fieldtype": "Float",
+   "label": "Koeffitsiyent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "stock_qty",
+   "fieldtype": "Float",
+   "label": "Ombor birligida",
+   "read_only": 1
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Valyuta",
+   "options": "Currency",
+   "hidden": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-03 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Sotuv Tovar",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
+}

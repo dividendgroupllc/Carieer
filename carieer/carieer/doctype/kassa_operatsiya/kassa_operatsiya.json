@@ -1,0 +1,276 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-09-28 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "asosiy_section",
+  "naming_series",
+  "company",
+  "posting_date",
+  "cb_1",
+  "turi",
+  "mode_of_payment",
+  "kassa_hisobi",
+  "cb_2",
+  "currency",
+  "amount",
+  "kassa_qoldigi",
+  "modda_section",
+  "modda",
+  "qabul_kassa",
+  "qabul_summa",
+  "cb_3",
+  "kimga",
+  "vehicle",
+  "cb_4",
+  "izoh",
+  "journal_entry",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "asosiy_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "KO-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Seriya",
+   "no_copy": 1,
+   "options": "KO-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Firma",
+   "options": "Company",
+   "remember_last_selected_value": 1,
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Sana",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Chiqim (xarajat)",
+   "fieldname": "turi",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Operatsiya turi",
+   "options": "Chiqim (xarajat)\nKirim (boshqa tushum)\nKassalar orasida o'tkazma",
+   "reqd": 1
+  },
+  {
+   "fieldname": "mode_of_payment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Kassa (to'lov turi)",
+   "options": "Mode of Payment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "kassa_hisobi",
+   "fieldtype": "Link",
+   "label": "Kassa hisobi",
+   "options": "Account",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Valyuta",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Summa",
+   "options": "currency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "kassa_qoldigi",
+   "fieldtype": "Currency",
+   "label": "Kassadagi qoldiq",
+   "no_copy": 1,
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "modda_section",
+   "fieldtype": "Section Break",
+   "label": "Nima uchun"
+  },
+  {
+   "depends_on": "eval:doc.turi!=\"Kassalar orasida o'tkazma\"",
+   "fieldname": "modda",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Modda (xarajat / daromad hisobi)",
+   "options": "Account"
+  },
+  {
+   "depends_on": "eval:doc.turi==\"Kassalar orasida o'tkazma\"",
+   "fieldname": "qabul_kassa",
+   "fieldtype": "Link",
+   "label": "Qabul qiluvchi kassa",
+   "options": "Mode of Payment"
+  },
+  {
+   "depends_on": "eval:doc.turi==\"Kassalar orasida o'tkazma\"",
+   "fieldname": "qabul_summa",
+   "fieldtype": "Currency",
+   "label": "Qabul qilingan summa (valyuta boshqa bo'lsa)"
+  },
+  {
+   "fieldname": "cb_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "kimga",
+   "fieldtype": "Data",
+   "label": "Kimga / kimdan"
+  },
+  {
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "label": "Texnika (agar texnika xarajati bo'lsa)",
+   "options": "Vehicle"
+  },
+  {
+   "fieldname": "cb_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "izoh",
+   "fieldtype": "Small Text",
+   "label": "Izoh"
+  },
+  {
+   "fieldname": "journal_entry",
+   "fieldtype": "Link",
+   "label": "Journal Entry",
+   "no_copy": 1,
+   "options": "Journal Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Kassa Operatsiya",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-03 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Kassa Operatsiya",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Menejer",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Kassir",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Beton Menejer",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Beton Kassir",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

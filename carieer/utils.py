@@ -1,5 +1,7 @@
 """Umumiy yordamchi funksiyalar (Karer ilovasi)."""
 
+from contextlib import contextmanager
+
 import frappe
 from frappe import _
 from frappe.utils import flt
@@ -36,6 +38,53 @@ def get_rate(from_currency: str, to_currency: str, date=None) -> float:
 def validate_warehouse_company(warehouse: str, company: str, label: str = "Ombor"):
 	if warehouse and frappe.get_cached_value("Warehouse", warehouse, "company") != company:
 		frappe.throw(_("{0} ({1}) {2} firmasiga tegishli emas").format(label, warehouse, company))
+
+
+@contextmanager
+def as_admin():
+	"""Firmalararo hujjat ikkinchi firma kitobiga ham yozadi (Sales/Purchase Invoice, Payment Entry), xodimning
+	esa u firma hisoblarini o'qishga ruxsati yo'q (User Permission). Shu qism tizim nomidan bajariladi."""
+	user = frappe.session.user
+	if user == "Administrator":
+		yield
+		return
+	frappe.set_user("Administrator")
+	try:
+		yield
+	finally:
+		frappe.set_user(user)
+
+
+def validate_not_internal(party_type: str | None, party: str | None, tavsiya: str):
+	"""O'zimizning ikkinchi firmamiz oddiy Sotuv / Kassa'da tanlanmasin: u faqat bitta firma kitobiga yoziladi
+	va ikki kitob orasida farq paydo bo'ladi. Buning uchun Firmalararo Sotuv / To'lov bor (ikkala kitobga yozadi)."""
+	field = {"Customer": "is_internal_customer", "Supplier": "is_internal_supplier"}.get(party_type)
+	if field and party and frappe.db.get_value(party_type, party, field):
+		frappe.throw(
+			_("{0} - bu o'zimizning firmamiz. U bilan hisob-kitobni <b>{1}</b> orqali qiling (ikkala firma kitobiga yoziladi).").format(
+				party, tavsiya
+			),
+			title=_("Ichki firma"),
+		)
+
+
+# ------------------------------------------------------------------ Kategoriya -> hisob
+@frappe.whitelist()
+def get_kategoriya_account(kategoriya: str | None, company: str | None, root_type: str | None = None) -> str | None:
+	"""Kassa Kategoriya -> shu firmadagi hisob (modda). Google Sheets'dagi kabi kassir faqat kategoriyani
+	tanlaydi, hisob (hisoblar rejasidagi modda) o'zi qo'yiladi. Hisob nomi = Kategoriya.hisob_nomi yoki
+	kategoriya nomi. root_type berilsa (Expense / Income) faqat shu turdagi hisob qaytadi."""
+	if not kategoriya or not company:
+		return None
+	hisob_nomi = frappe.db.get_value("Kassa Kategoriya", kategoriya, "hisob_nomi")
+	for account_name in dict.fromkeys(filter(None, (hisob_nomi, kategoriya))):
+		filters = {"company": company, "account_name": account_name, "is_group": 0, "disabled": 0}
+		if root_type:
+			filters["root_type"] = root_type
+		account = frappe.db.get_value("Account", filters, "name")
+		if account:
+			return account
+	return None
 
 
 # ------------------------------------------------------------------ SMS
@@ -107,7 +156,7 @@ def get_firma_defaults(company: str) -> dict:
 
 @frappe.whitelist()
 def get_item_warehouse(item_code: str, company: str) -> str | None:
-	"""Karer Sotuv uchun: tovar qaysi omborda bor bo'lsa o'sha ombor (Beton -> Beton ombori, Shag'al -> Karer ombori).
+	"""Sotuv uchun: tovar qaysi omborda bor bo'lsa o'sha ombor (Beton -> Beton ombori, Shag'al -> Karer ombori).
 	Avval Karer Sozlamalari'dagi firma omborlari, keyin qoldig'i eng ko'p ombor, bo'lmasa Item'ning standart ombori."""
 	row = get_firma_sozlama(company)
 	# BOM bilan ishlab chiqariladigan tovar (beton) avval Beton omboridan, qolganlari Karer omboridan
@@ -136,9 +185,63 @@ def get_exchange_rate_for(from_currency: str, to_currency: str, date: str | None
 	return get_rate(from_currency, to_currency, date)
 
 
-KARER_ROLES = {"Karer Operator", "Karer Kassir", "Karer Menejer", "System Manager"}
+def get_allowed_companies() -> list[str]:
+	"""Xodim faqat qaysi firma(lar)ni ko'ra oladi (User Permission -> Company). Bo'sh ro'yxat = cheklov yo'q."""
+	from frappe.core.doctype.user_permission.user_permission import get_permitted_documents
+
+	return get_permitted_documents("Company")
+
+
+def check_report_company(filters: frappe._dict):
+	"""Hisobotlar SQL bilan yozilgan (ruxsatlar avtomatik qo'llanmaydi): firmaga bog'langan xodim
+	firmani bo'sh qoldirsa - o'z firmasi qo'yiladi, boshqa firmani tanlasa - xato."""
+	allowed = get_allowed_companies()
+	if not allowed:
+		return
+	if not filters.get("company"):
+		filters.company = allowed[0]
+	elif filters.company not in allowed:
+		frappe.throw(_("{0} firmasi ma'lumotlarini ko'rishga ruxsatingiz yo'q").format(filters.company), frappe.PermissionError)
+
+
+KARER_ROLES = {"Karer Operator", "Karer Kassir", "Karer Menejer", "Karer xodimi"}
+BETON_ROLES = {"Beton Operator", "Beton Kassir", "Beton Menejer", "Beton zavod xodimi"}
+
+
+def get_user_firma(user: str | None = None) -> str | None:
+	"""Xodim qaysi zavodniki: "Karer" / "Beton". Admin yoki ikkala zavod xodimi bo'lsa None."""
+	roles = set(frappe.get_roles(user))
+	if "System Manager" in roles:
+		return None
+	karer, beton = bool(roles & KARER_ROLES), bool(roles & BETON_ROLES)
+	if karer == beton:
+		return None
+	return "Karer" if karer else "Beton"
 
 
 def has_app_permission() -> bool:
-	"""Desktop'dagi Karer ikonkasi faqat Karer rollariga ko'rinadi."""
-	return bool(KARER_ROLES & set(frappe.get_roles()))
+	"""Bosh sahifadagi ilova ikonkasi: ikkala firma xodimlari va System Manager."""
+	return bool((KARER_ROLES | BETON_ROLES | {"System Manager"}) & set(frappe.get_roles()))
+
+
+FIRMA_KORINISHI = {
+	"Karer": ("Karer", "/assets/carieer/karer-logo.svg"),
+	"Beton": ("Beton Zavod", "/assets/carieer/beton-logo.svg"),
+}
+
+
+def boot_session(bootinfo):
+	"""Beton xodimi ilova nomini va sidebar sarlavhasini "Beton Zavod", karer xodimi "Karer" deb ko'radi
+	(ilova va modul nomi "Carieer" bo'lsa ham)."""
+	firma = get_user_firma()
+	bootinfo.carieer_firma = firma
+	if not firma:
+		return
+	title, logo = FIRMA_KORINISHI[firma]
+	for app in bootinfo.get("app_data") or []:
+		if app.get("app_name") == "carieer":
+			app["app_title"] = title
+			app["app_logo_url"] = logo
+	sidebar = (bootinfo.get("module_sidebars") or {}).get("Carieer")
+	if sidebar:
+		sidebar["label"] = title

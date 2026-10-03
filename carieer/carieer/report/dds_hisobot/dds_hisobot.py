@@ -5,6 +5,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate
 
+from carieer.utils import check_report_company
+
 PARTY_LABEL = {
 	"Customer": (_("Mijozlardan tushum"), _("Mijozlarga qaytarish")),
 	"Supplier": (_("Yetkazib beruvchidan qaytim"), _("Yetkazib beruvchilarga to'lov")),
@@ -15,6 +17,7 @@ PARTY_LABEL = {
 
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
+	check_report_company(filters)
 	return get_columns(), get_data(filters)
 
 

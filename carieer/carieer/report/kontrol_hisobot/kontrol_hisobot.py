@@ -4,6 +4,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+from carieer.utils import check_report_company
+
 GROUPS = {
 	"Mijoz": ("customer", _("Mijoz"), "Link", "Customer"),
 	"Tovar": ("item_code", _("Tovar"), "Link", "Item"),
@@ -15,6 +17,7 @@ GROUPS = {
 
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
+	check_report_company(filters)
 	data = get_data(filters)
 	group_by = filters.get("group_by")
 	if group_by and group_by in GROUPS:
@@ -24,45 +27,68 @@ def execute(filters=None):
 	return columns, data, None, get_chart(filters), get_summary(filters)
 
 
-def conditions(filters):
-	cond = ["docstatus = 1", "posting_date between %(from_date)s and %(to_date)s"]
-	for f in ("company", "customer", "item_code", "warehouse", "status", "currency"):
+def conditions(filters, alias="ks"):
+	cond = [f"{alias}.docstatus = 1", f"{alias}.posting_date between %(from_date)s and %(to_date)s"]
+	for f in ("company", "customer", "status", "currency", "tip"):
 		if filters.get(f):
-			cond.append(f"{f} = %({f})s")
+			cond.append(f"{alias}.{f} = %({f})s")
 	if filters.get("mashina_raqami"):
-		cond.append("mashina_raqami like %(mashina_like)s")
+		cond.append(f"{alias}.mashina_raqami like %(mashina_like)s")
 		filters.mashina_like = f"%{filters.mashina_raqami}%"
+	if filters.get("item_code"):
+		cond.append(
+			f"""exists(select 1 from `tabSotuv Tovar` t where t.parent = {alias}.name and t.item_code = %(item_code)s)"""
+		)
 	return " and ".join(cond)
 
 
 def get_data(filters):
-	return frappe.db.sql(
-		f"""select name, posting_date, posting_time, customer, customer_name, mashina_raqami, haydovchi,
-			item_code, item_name, qty, uom, stock_qty, rate, currency, amount, base_amount,
-			total_paid, outstanding_amount, status, warehouse
-		from `tabKarer Sotuv` where {conditions(filters)}
-		order by posting_date, posting_time, name""",
-		filters,
+	"""Har bir tovar va xizmat qatori alohida ("Продажа карьер" varag'idagi kabi).
+	To'langan / qarz hujjat bo'yicha - faqat hujjatning birinchi qatorida ko'rsatiladi."""
+	rows = frappe.db.sql(
+		f"""select ks.name, ks.posting_date, ks.posting_time, ks.tip, ks.customer, ks.customer_name, ks.mashina_raqami,
+			ks.currency, ks.conversion_rate, ks.total_paid, ks.outstanding_amount, ks.status,
+			t.item_code, t.item_name, t.qty, t.uom, t.stock_qty, t.rate, t.amount, t.warehouse, t.idx, 0 as is_service
+		from `tabSotuv` ks join `tabSotuv Tovar` t on t.parent = ks.name
+		where {conditions(filters)}
+		union all
+		select ks.name, ks.posting_date, ks.posting_time, ks.tip, ks.customer, ks.customer_name, ks.mashina_raqami,
+			ks.currency, ks.conversion_rate, ks.total_paid, ks.outstanding_amount, ks.status,
+			x.xizmat, x.xizmat, x.qty, '', 0, x.rate, x.amount, '', 100 + x.idx, 1
+		from `tabSotuv` ks join `tabSotuv Xizmat` x on x.parent = ks.name
+		where {conditions(filters)} and %(show_services)s = 1
+		order by posting_date, posting_time, name, idx""",
+		dict(filters, show_services=0 if filters.get("item_code") else 1),
 		as_dict=True,
 	)
+	seen = set()
+	for r in rows:
+		r.base_amount = flt(r.amount) * flt(r.conversion_rate or 1)
+		if r.name in seen:
+			r.total_paid = r.outstanding_amount = 0
+			r.status = ""
+		seen.add(r.name)
+	return rows
 
 
 def get_columns():
 	return [
-		{"fieldname": "posting_date", "label": _("Sana"), "fieldtype": "Date", "width": 95},
-		{"fieldname": "name", "label": _("Hujjat"), "fieldtype": "Link", "options": "Karer Sotuv", "width": 140},
-		{"fieldname": "customer", "label": _("Mijoz"), "fieldtype": "Link", "options": "Customer", "width": 160},
-		{"fieldname": "mashina_raqami", "label": _("Mashina"), "fieldtype": "Data", "width": 100},
-		{"fieldname": "item_code", "label": _("Tovar"), "fieldtype": "Link", "options": "Item", "width": 120},
-		{"fieldname": "qty", "label": _("Miqdor"), "fieldtype": "Float", "width": 90},
-		{"fieldname": "uom", "label": _("Birlik"), "fieldtype": "Data", "width": 70},
-		{"fieldname": "currency", "label": _("Valyuta"), "fieldtype": "Link", "options": "Currency", "width": 70},
-		{"fieldname": "rate", "label": _("Narx"), "fieldtype": "Currency", "options": "currency", "width": 100},
-		{"fieldname": "amount", "label": _("Summa"), "fieldtype": "Currency", "options": "currency", "width": 120},
-		{"fieldname": "total_paid", "label": _("To'langan"), "fieldtype": "Currency", "options": "currency", "width": 120},
-		{"fieldname": "outstanding_amount", "label": _("Qarz"), "fieldtype": "Currency", "options": "currency", "width": 120},
-		{"fieldname": "base_amount", "label": _("Summa (UZS)"), "fieldtype": "Currency", "width": 130},
-		{"fieldname": "status", "label": _("Holat"), "fieldtype": "Data", "width": 110},
+		{"fieldname": "posting_date", "label": _("Дата"), "fieldtype": "Date", "width": 95},
+		{"fieldname": "name", "label": _("Hujjat"), "fieldtype": "Link", "options": "Sotuv", "width": 130},
+		{"fieldname": "tip", "label": _("Тип"), "fieldtype": "Data", "width": 70},
+		{"fieldname": "item_code", "label": _("Наименование"), "fieldtype": "Link", "options": "Item", "width": 120},
+		{"fieldname": "qty", "label": _("Кол-во"), "fieldtype": "Float", "width": 80},
+		{"fieldname": "uom", "label": _("Ед.изм"), "fieldtype": "Data", "width": 70},
+		{"fieldname": "rate", "label": _("Цена"), "fieldtype": "Currency", "options": "currency", "width": 100},
+		{"fieldname": "currency", "label": _("Валюта"), "fieldtype": "Link", "options": "Currency", "width": 65},
+		{"fieldname": "amount", "label": _("Сумма"), "fieldtype": "Currency", "options": "currency", "width": 120},
+		{"fieldname": "customer", "label": _("Клиент"), "fieldtype": "Link", "options": "Customer", "width": 150},
+		{"fieldname": "mashina_raqami", "label": _("Номер машины"), "fieldtype": "Data", "width": 110},
+		{"fieldname": "conversion_rate", "label": _("Курс"), "fieldtype": "Float", "precision": 2, "width": 80},
+		{"fieldname": "base_amount", "label": _("Сумма (сўм)"), "fieldtype": "Currency", "width": 120},
+		{"fieldname": "total_paid", "label": _("Оплачено"), "fieldtype": "Currency", "options": "currency", "width": 110},
+		{"fieldname": "outstanding_amount", "label": _("Долг"), "fieldtype": "Currency", "options": "currency", "width": 110},
+		{"fieldname": "status", "label": _("Holat"), "fieldtype": "Data", "width": 100},
 	]
 
 
@@ -76,7 +102,8 @@ def grouped(rows, group_by):
 			frappe._dict(group=r[key], currency=r.currency, count=0, stock_qty=0, amount=0, total_paid=0,
 						 outstanding_amount=0, base_amount=0),
 		)
-		g.count += 1
+		g.count += 0 if r.name in g.setdefault("docs", set()) else 1
+		g.docs.add(r.name)
 		for f in ("stock_qty", "amount", "total_paid", "outstanding_amount", "base_amount"):
 			g[f] += flt(r[f])
 	col = {"fieldname": "group", "label": label, "fieldtype": ftype, "width": 180}
@@ -98,7 +125,7 @@ def grouped(rows, group_by):
 def get_summary(filters):
 	rows = frappe.db.sql(
 		f"""select currency, sum(amount) amount, sum(total_paid) paid, sum(outstanding_amount) debt, count(*) cnt
-		from `tabKarer Sotuv` where {conditions(filters)} group by currency""",
+		from `tabSotuv` ks where {conditions(filters)} group by currency""",
 		filters,
 		as_dict=True,
 	)
@@ -116,7 +143,7 @@ def get_summary(filters):
 
 def get_chart(filters):
 	rows = frappe.db.sql(
-		f"""select posting_date, sum(base_amount) total from `tabKarer Sotuv`
+		f"""select posting_date, sum(base_amount) total from `tabSotuv` ks
 		where {conditions(filters)} group by posting_date order by posting_date""",
 		filters,
 		as_dict=True,

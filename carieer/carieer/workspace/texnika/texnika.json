@@ -1,0 +1,117 @@
+{
+ "app": "carieer",
+ "charts": [],
+ "content": "[{\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Texnika</b></span>\", \"col\": 12}}, {\"id\": \"s0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnikalar xaritasi\", \"col\": 3}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Yoqilgi Hisobi\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnikalar\", \"col\": 3}}, {\"id\": \"s3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"GPS Malumot\", \"col\": 3}}, {\"id\": \"s4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnika Xarajatlari\", \"col\": 3}}, {\"id\": \"c1\", \"type\": \"card\", \"data\": {\"card_name\": \"Sozlamalar\", \"col\": 4}}]",
+ "creation": "2026-10-03 12:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "map",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Texnika",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Sozlamalar",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Vehicle",
+   "link_count": 0,
+   "link_to": "Vehicle",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": ""
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Employee",
+   "link_count": 0,
+   "link_to": "Employee",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": ""
+  }
+ ],
+ "modified": "2026-10-03 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Texnika",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "Karer Menejer"
+  },
+  {
+   "role": "Karer Operator"
+  },
+  {
+   "role": "Beton Menejer"
+  },
+  {
+   "role": "Beton Operator"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "sequence_id": 58.0,
+ "shortcuts": [
+  {
+   "label": "Texnikalar xaritasi",
+   "link_to": "texnika-xarita",
+   "type": "Page",
+   "color": "Grey"
+  },
+  {
+   "label": "Yoqilgi Hisobi",
+   "link_to": "Yoqilgi Hisobi",
+   "type": "DocType",
+   "color": "Orange",
+   "doc_view": "List",
+   "stats_filter": "[[\"Yoqilgi Hisobi\", \"docstatus\", \"=\", 0, false]]",
+   "format": "{} Draft"
+  },
+  {
+   "label": "Texnikalar",
+   "link_to": "Vehicle",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "GPS Malumot",
+   "link_to": "GPS Malumot",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Texnika Xarajatlari",
+   "link_to": "Texnika Xarajatlari",
+   "type": "Report",
+   "color": "Blue",
+   "report_ref_doctype": "Yoqilgi Hisobi",
+   "doc_view": ""
+  }
+ ],
+ "title": "Texnika",
+ "type": "Workspace"
+}

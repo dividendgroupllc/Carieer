@@ -1,0 +1,71 @@
+{
+ "actions": [],
+ "creation": "2026-10-03 14:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "xizmat",
+  "qty",
+  "rate",
+  "amount",
+  "currency"
+ ],
+ "fields": [
+  {
+   "fieldname": "xizmat",
+   "fieldtype": "Link",
+   "label": "Наименование операции",
+   "options": "Item",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 4,
+   "description": "Xizmat (ombor tovari emas): Погрузчик, Доставка..."
+  },
+  {
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "label": "Кол-во",
+   "default": "1",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "label": "Цена",
+   "options": "currency",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Сумма",
+   "options": "currency",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Valyuta",
+   "options": "Currency",
+   "hidden": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-03 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Sotuv Xizmat",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
+}

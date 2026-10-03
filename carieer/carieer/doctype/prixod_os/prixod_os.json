@@ -1,0 +1,271 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-10-03 15:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "company",
+  "sana",
+  "cb_1",
+  "nomi",
+  "hisob",
+  "cb_2",
+  "status",
+  "manba_section",
+  "supplier",
+  "supplier_name",
+  "cb_3",
+  "kredit_hisob",
+  "summa_section",
+  "qty",
+  "rate",
+  "amount",
+  "cb_4",
+  "currency",
+  "kurs",
+  "base_amount",
+  "izoh_section",
+  "izoh",
+  "journal_entry",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Seriya",
+   "options": "POS-.YYYY.-",
+   "default": "POS-.YYYY.-",
+   "reqd": 1,
+   "print_hide": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Firma",
+   "options": "Company",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "remember_last_selected_value": 1
+  },
+  {
+   "fieldname": "sana",
+   "fieldtype": "Date",
+   "label": "Sana",
+   "default": "Today",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "nomi",
+   "fieldtype": "Data",
+   "label": "Asosiy vosita nomi",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "Masalan: Самосвал HOHAN, Дробилка, Земля, Лицензия"
+  },
+  {
+   "fieldname": "hisob",
+   "fieldtype": "Link",
+   "label": "Asosiy vosita hisobi",
+   "options": "Account",
+   "reqd": 1,
+   "description": "Balansdagi \"Оборудование\" (Fixed Asset) hisobi"
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Holat",
+   "options": "Draft\nTasdiqlangan\nBekor qilingan",
+   "default": "Draft",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "manba_section",
+   "fieldtype": "Section Break",
+   "label": "Kimdan / qaysi hisobdan"
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Yetkazib beruvchi (Поставщик)",
+   "options": "Supplier",
+   "in_standard_filter": 1,
+   "description": "Tanlansa - yetkazib beruvchi oldida qarz paydo bo'ladi (Akt sverka'da chiqadi), to'lov Kassa orqali"
+  },
+  {
+   "fieldname": "supplier_name",
+   "fieldtype": "Data",
+   "label": "Yetkazib beruvchi nomi",
+   "fetch_from": "supplier.supplier_name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "kredit_hisob",
+   "fieldtype": "Link",
+   "label": "Manba hisobi (ustav kapitali)",
+   "options": "Account",
+   "depends_on": "eval:!doc.supplier",
+   "mandatory_depends_on": "eval:!doc.supplier",
+   "description": "Yetkazib beruvchi bo'lmasa: ta'sischi kiritgan mulk -> ustav kapitali (Equity) hisobi"
+  },
+  {
+   "fieldname": "summa_section",
+   "fieldtype": "Section Break",
+   "label": "Summa"
+  },
+  {
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "label": "Kol-vo",
+   "default": "1",
+   "reqd": 1
+  },
+  {
+   "fieldname": "rate",
+   "label": "Narx",
+   "reqd": 1,
+   "fieldtype": "Currency",
+   "options": "currency"
+  },
+  {
+   "fieldname": "amount",
+   "label": "Summa",
+   "read_only": 1,
+   "in_list_view": 1,
+   "fieldtype": "Currency",
+   "options": "currency"
+  },
+  {
+   "fieldname": "cb_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Valyuta",
+   "options": "Currency",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "kurs",
+   "fieldtype": "Float",
+   "label": "Kurs (firma valyutasiga)",
+   "default": "1",
+   "precision": "4"
+  },
+  {
+   "fieldname": "base_amount",
+   "fieldtype": "Currency",
+   "label": "Summa (firma valyutasida)",
+   "options": "Company:company:default_currency",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "izoh_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "izoh",
+   "fieldtype": "Small Text",
+   "label": "Izoh"
+  },
+  {
+   "fieldname": "journal_entry",
+   "fieldtype": "Link",
+   "label": "Journal Entry",
+   "options": "Journal Entry",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "Prixod OS",
+   "read_only": 1,
+   "no_copy": 1,
+   "print_hide": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-03 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Prixod OS",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "amend": 1,
+   "cancel": 1,
+   "submit": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "amend": 1,
+   "cancel": 1,
+   "submit": 1,
+   "role": "Karer Menejer"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "amend": 1,
+   "cancel": 1,
+   "submit": 1,
+   "role": "Beton Menejer"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "nomi",
+ "track_changes": 1
+}

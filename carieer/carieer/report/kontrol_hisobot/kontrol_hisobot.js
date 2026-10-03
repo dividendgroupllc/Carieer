@@ -5,7 +5,7 @@ frappe.query_reports["Kontrol Hisobot"] = {
 		{ fieldname: "to_date", label: __("Gacha"), fieldtype: "Date", default: frappe.datetime.get_today(), reqd: 1 },
 		{ fieldname: "customer", label: __("Mijoz"), fieldtype: "Link", options: "Customer" },
 		{ fieldname: "item_code", label: __("Tovar"), fieldtype: "Link", options: "Item" },
-		{ fieldname: "warehouse", label: __("Ombor"), fieldtype: "Link", options: "Warehouse" },
+		{ fieldname: "tip", label: __("Тип"), fieldtype: "Select", options: "\nKarer\nBeton" },
 		{ fieldname: "mashina_raqami", label: __("Mashina raqami"), fieldtype: "Data" },
 		{ fieldname: "currency", label: __("Valyuta"), fieldtype: "Link", options: "Currency" },
 		{ fieldname: "status", label: __("Holat"), fieldtype: "Select", options: "\nTo'lanmagan\nQisman to'langan\nTo'langan" },

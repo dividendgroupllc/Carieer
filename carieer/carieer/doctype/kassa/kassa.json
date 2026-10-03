@@ -1,0 +1,384 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-10-02 17:30:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "asosiy_section",
+  "naming_series",
+  "company",
+  "sana",
+  "cb_1",
+  "turi",
+  "cb_2",
+  "status",
+  "kassa_section",
+  "mode_of_payment",
+  "kassa_hisobi",
+  "cb_3",
+  "kassa_valyutasi",
+  "qoldiq",
+  "otkazma_section",
+  "mode_of_payment_to",
+  "kassa_hisobi_to",
+  "cb_4",
+  "kassa_valyutasi_to",
+  "qoldiq_to",
+  "kontragent_section",
+  "party_type",
+  "party",
+  "party_name",
+  "cb_5",
+  "hisob",
+  "cost_center",
+  "summa_section",
+  "amount",
+  "kategoriya",
+  "cb_6",
+  "izoh",
+  "hujjat_section",
+  "linked_doctype",
+  "cb_7",
+  "linked_entry",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "asosiy_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Seriya",
+   "options": "KAS-.YYYY.-",
+   "reqd": 1,
+   "default": "KAS-.YYYY.-",
+   "print_hide": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Firma",
+   "options": "Company",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "remember_last_selected_value": 1
+  },
+  {
+   "fieldname": "sana",
+   "fieldtype": "Date",
+   "label": "Sana",
+   "default": "Today",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "turi",
+   "fieldtype": "Select",
+   "label": "Turi",
+   "options": "\nKirim\nChiqim\nO'tkazma",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Kirim: kassaga pul kirdi. Chiqim: kassadan pul chiqdi. O'tkazma: bir kassadan boshqasiga"
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Holat",
+   "options": "Draft\nTasdiqlangan\nBekor qilingan",
+   "default": "Draft",
+   "read_only": 1,
+   "no_copy": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "kassa_section",
+   "fieldtype": "Section Break",
+   "label": "Kassa"
+  },
+  {
+   "fieldname": "mode_of_payment",
+   "fieldtype": "Link",
+   "label": "Kassa (to'lov turi)",
+   "options": "Mode of Payment",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "kassa_hisobi",
+   "fieldtype": "Link",
+   "label": "Kassa hisobi",
+   "options": "Account",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "kassa_valyutasi",
+   "fieldtype": "Link",
+   "label": "Kassa valyutasi",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "qoldiq",
+   "fieldtype": "Currency",
+   "label": "Kassadagi qoldiq",
+   "options": "kassa_valyutasi",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "otkazma_section",
+   "fieldtype": "Section Break",
+   "label": "Qaysi kassaga",
+   "depends_on": "eval:doc.turi === \"O'tkazma\""
+  },
+  {
+   "fieldname": "mode_of_payment_to",
+   "fieldtype": "Link",
+   "label": "Kassa (qayerga)",
+   "options": "Mode of Payment",
+   "mandatory_depends_on": "eval:doc.turi === \"O'tkazma\""
+  },
+  {
+   "fieldname": "kassa_hisobi_to",
+   "fieldtype": "Link",
+   "label": "Kassa hisobi (qayerga)",
+   "options": "Account",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "kassa_valyutasi_to",
+   "fieldtype": "Link",
+   "label": "Valyuta (qayerga)",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "qoldiq_to",
+   "fieldtype": "Currency",
+   "label": "Qoldiq (qayerga)",
+   "options": "kassa_valyutasi_to",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "kontragent_section",
+   "fieldtype": "Section Break",
+   "label": "Kontragent",
+   "depends_on": "eval:in_list(['Kirim', 'Chiqim'], doc.turi)"
+  },
+  {
+   "fieldname": "party_type",
+   "fieldtype": "Select",
+   "label": "Kontragent turi",
+   "options": "\nCustomer\nSupplier\nEmployee\nShareholder\nXarajat\nDaromad\nDividend",
+   "mandatory_depends_on": "eval:in_list(['Kirim', 'Chiqim'], doc.turi)",
+   "in_standard_filter": 1,
+   "description": "Customer: mijoz, Supplier: yetkazib beruvchi, Employee: xodim, Shareholder: ta'sischi, Xarajat: xarajat hisobi, Dividend: dividend to'lovi"
+  },
+  {
+   "fieldname": "party",
+   "fieldtype": "Dynamic Link",
+   "label": "Kontragent",
+   "options": "party_type",
+   "in_standard_filter": 1,
+   "depends_on": "eval:in_list(['Customer', 'Supplier', 'Employee', 'Shareholder'], doc.party_type)",
+   "mandatory_depends_on": "eval:in_list(['Customer', 'Supplier', 'Employee', 'Shareholder'], doc.party_type)"
+  },
+  {
+   "fieldname": "party_name",
+   "fieldtype": "Data",
+   "label": "Kontragent nomi",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "cb_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "hisob",
+   "fieldtype": "Link",
+   "label": "Hisob",
+   "options": "Account",
+   "depends_on": "eval:in_list(['Xarajat', 'Daromad', 'Dividend'], doc.party_type)",
+   "mandatory_depends_on": "eval:in_list(['Xarajat', 'Daromad', 'Dividend'], doc.party_type)",
+   "description": "Kategoriya tanlansa avtomatik qo'yiladi"
+  },
+  {
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Xarajat markazi",
+   "options": "Cost Center",
+   "depends_on": "eval:in_list(['Xarajat', 'Daromad'], doc.party_type)"
+  },
+  {
+   "fieldname": "summa_section",
+   "fieldtype": "Section Break",
+   "label": "Summa"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Summa",
+   "options": "kassa_valyutasi",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "kategoriya",
+   "fieldtype": "Link",
+   "label": "Kategoriya",
+   "options": "Kassa Kategoriya",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Masalan: Самосвал услуга, Доставка, Ijara"
+  },
+  {
+   "fieldname": "cb_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "izoh",
+   "fieldtype": "Small Text",
+   "label": "Izoh"
+  },
+  {
+   "fieldname": "hujjat_section",
+   "fieldtype": "Section Break",
+   "label": "Bog'langan hujjat",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "linked_doctype",
+   "fieldtype": "Select",
+   "label": "Hujjat turi",
+   "options": "\nPayment Entry\nJournal Entry",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "cb_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "linked_entry",
+   "fieldtype": "Dynamic Link",
+   "label": "Hujjat",
+   "options": "linked_doctype",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "Kassa",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-03 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Kassa",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1,
+   "role": "System Manager",
+   "delete": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1,
+   "role": "Karer Menejer"
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "submit": 1,
+   "write": 1,
+   "role": "Karer Kassir"
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "submit": 1,
+   "write": 1,
+   "role": "Beton Menejer"
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "submit": 1,
+   "write": 1,
+   "role": "Beton Kassir"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "party_name",
+ "track_changes": 1
+}

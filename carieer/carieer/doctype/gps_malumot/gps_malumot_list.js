@@ -2,7 +2,7 @@
 
 frappe.listview_settings["GPS Malumot"] = {
 	onload(listview) {
-		if (!frappe.user.has_role(["System Manager", "Karer Menejer"])) return;
+		if (!frappe.user.has_role(["System Manager", "Karer Menejer", "Beton Menejer"])) return;
 		listview.page.add_inner_button(__("Tozalash"), () => {
 			const d = new frappe.ui.Dialog({
 				title: __("GPS nuqtalarni o'chirish"),

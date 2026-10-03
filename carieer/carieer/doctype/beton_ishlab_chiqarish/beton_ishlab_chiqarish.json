@@ -184,7 +184,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-28 10:00:00.000000",
+ "modified": "2026-10-03 19:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Beton Ishlab Chiqarish",
@@ -215,7 +215,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Karer Menejer",
+   "role": "Beton Menejer",
    "share": 1,
    "submit": 1,
    "write": 1
@@ -227,7 +227,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Karer Operator",
+   "role": "Beton Operator",
    "share": 1,
    "submit": 1,
    "write": 1

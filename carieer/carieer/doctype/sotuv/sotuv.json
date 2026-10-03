@@ -1,0 +1,449 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "allow_rename": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-09-28 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "asosiy_section",
+  "naming_series",
+  "posting_date",
+  "posting_time",
+  "cb_1",
+  "tip",
+  "company",
+  "cb_2",
+  "currency",
+  "conversion_rate",
+  "dostavka",
+  "cb_3",
+  "status",
+  "mijoz_section",
+  "party_type",
+  "customer",
+  "customer_name",
+  "mobile_no",
+  "cb_4",
+  "mashina_raqami",
+  "haydovchi",
+  "vehicle",
+  "tovar_section",
+  "items",
+  "xizmat_section",
+  "xizmatlar",
+  "tolov_section",
+  "tolovlar",
+  "jami_section",
+  "itog",
+  "xizmat_jami",
+  "cb_5",
+  "amount",
+  "base_amount",
+  "cb_6",
+  "total_paid",
+  "outstanding_amount",
+  "hujjat_section",
+  "sales_invoice",
+  "cb_7",
+  "izoh",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "asosiy_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Seriya",
+   "options": "KS-.YYYY.-",
+   "default": "KS-.YYYY.-",
+   "reqd": 1,
+   "print_hide": 1
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Дата",
+   "default": "Today",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "posting_time",
+   "fieldtype": "Time",
+   "label": "Vaqt",
+   "default": "Now"
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "tip",
+   "fieldtype": "Select",
+   "label": "Тип",
+   "options": "Karer\nBeton",
+   "default": "Karer",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Firma",
+   "options": "Company",
+   "reqd": 1,
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Валюта",
+   "options": "Currency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "conversion_rate",
+   "fieldtype": "Float",
+   "label": "Kurs (firma valyutasiga)",
+   "precision": "4",
+   "depends_on": "eval:doc.currency && doc.conversion_rate != 1"
+  },
+  {
+   "fieldname": "dostavka",
+   "fieldtype": "Select",
+   "label": "Доставка",
+   "options": "Нет\nДа",
+   "default": "Нет"
+  },
+  {
+   "fieldname": "cb_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Holat",
+   "options": "Draft\nTo'lanmagan\nQisman to'langan\nTo'langan\nCancelled",
+   "default": "Draft",
+   "read_only": 1,
+   "no_copy": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "mijoz_section",
+   "fieldtype": "Section Break",
+   "label": "Клиент"
+  },
+  {
+   "fieldname": "party_type",
+   "fieldtype": "Select",
+   "label": "Тип контрагент",
+   "options": "Клиент",
+   "default": "Клиент",
+   "reqd": 1
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Клиент",
+   "options": "Customer",
+   "reqd": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Mijoz nomi",
+   "fetch_from": "customer.customer_name",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "mobile_no",
+   "fieldtype": "Data",
+   "label": "Telefon (SMS)",
+   "options": "Phone",
+   "fetch_from": "customer.mobile_no",
+   "fetch_if_empty": 1
+  },
+  {
+   "fieldname": "cb_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "mashina_raqami",
+   "fieldtype": "Data",
+   "label": "Номер машины",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "haydovchi",
+   "fieldtype": "Data",
+   "label": "Haydovchi"
+  },
+  {
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "label": "O'z texnikamiz (dostavka)",
+   "options": "Vehicle",
+   "depends_on": "eval:doc.dostavka=='Да'"
+  },
+  {
+   "fieldname": "tovar_section",
+   "fieldtype": "Section Break",
+   "label": "Товары"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Товары",
+   "options": "Sotuv Tovar",
+   "reqd": 1
+  },
+  {
+   "fieldname": "xizmat_section",
+   "fieldtype": "Section Break",
+   "label": "Услуги",
+   "collapsible": 1,
+   "collapsible_depends_on": "xizmatlar"
+  },
+  {
+   "fieldname": "xizmatlar",
+   "fieldtype": "Table",
+   "label": "Услуги",
+   "options": "Sotuv Xizmat"
+  },
+  {
+   "fieldname": "tolov_section",
+   "fieldtype": "Section Break",
+   "label": "Оплаты"
+  },
+  {
+   "fieldname": "tolovlar",
+   "fieldtype": "Table",
+   "label": "Оплаты",
+   "options": "Sotuv Tolov",
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "jami_section",
+   "fieldtype": "Section Break",
+   "label": "Итог"
+  },
+  {
+   "fieldname": "itog",
+   "fieldtype": "Currency",
+   "label": "Итог (tovarlar)",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "xizmat_jami",
+   "fieldtype": "Currency",
+   "label": "Услуг",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Общий",
+   "options": "currency",
+   "read_only": 1,
+   "in_list_view": 1,
+   "bold": 1
+  },
+  {
+   "fieldname": "base_amount",
+   "fieldtype": "Currency",
+   "label": "Общий (firma valyutasida)",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_paid",
+   "fieldtype": "Currency",
+   "label": "Оплачено",
+   "options": "currency",
+   "read_only": 1,
+   "no_copy": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "outstanding_amount",
+   "fieldtype": "Currency",
+   "label": "Долг",
+   "options": "currency",
+   "read_only": 1,
+   "no_copy": 1,
+   "allow_on_submit": 1,
+   "bold": 1
+  },
+  {
+   "fieldname": "hujjat_section",
+   "fieldtype": "Section Break",
+   "label": "Bog'langan hujjatlar",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "sales_invoice",
+   "fieldtype": "Link",
+   "label": "Sales Invoice",
+   "options": "Sales Invoice",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "cb_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "izoh",
+   "fieldtype": "Small Text",
+   "label": "Примечание"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "Sotuv",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-03 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Sotuv",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Menejer",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Operator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Kassir",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Beton Menejer",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Beton Operator",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "cancel": 1,
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Beton Kassir",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "customer_name,mashina_raqami,item_code",
+ "show_title_field_in_link": 0,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "customer_name",
+ "track_changes": 1
+}

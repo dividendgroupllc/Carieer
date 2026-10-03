@@ -14,7 +14,7 @@ from frappe.utils import add_days, flt, get_datetime, get_system_timezone, getda
 GPS_EVENT = "karer_gps"
 # Shundan eski GPS Malumot yozuvlari har kuni o'chiriladi (jadval cheksiz o'smasin)
 GPS_SAQLASH_KUN = 90
-XARITA_ROLLARI = ("System Manager", "Karer Menejer", "Karer Operator")
+XARITA_ROLLARI = ("System Manager", "Karer Menejer", "Karer Operator", "Beton Menejer", "Beton Operator")
 
 
 def check_token(token: str | None):
@@ -76,12 +76,20 @@ def gps_push():
 	"""
 	check_token(frappe.get_request_header("X-Karer-Token"))
 
-	payload = frappe.request.get_json(silent=True) or json.loads(frappe.request.data or "{}")
+	payload = frappe.request.get_json(silent=True)
+	if payload is None:
+		try:
+			payload = json.loads(frappe.request.data or "{}")
+		except ValueError:
+			frappe.throw(_("JSON noto'g'ri formatda"), frappe.ValidationError)
 	rows = payload if isinstance(payload, list) else [payload]
 	saved = 0
 	for d in rows:
+		if not isinstance(d, dict):
+			continue
 		imei = str(d.get("imei") or "").strip()
-		if not imei:
+		# Koordinatasiz nuqta xaritada (0, 0) bo'lib chiqmasin
+		if not imei or d.get("lat") in (None, "") or d.get("lon") in (None, ""):
 			continue
 		point = save_point(
 			imei,
@@ -216,7 +224,21 @@ def to_system_time(value) -> datetime:
 		return now_datetime()
 
 
-# ------------------------------------------------------------------ Xarita sahifasi (karer-xarita)
+# ------------------------------------------------------------------ Xarita sahifasi (texnika-xarita)
+def allowed_imeis() -> set[str] | None:
+	"""Firmaga bog'langan xodim faqat o'z firmasi texnikalarini ko'radi. None = cheklov yo'q (admin)."""
+	from carieer.utils import get_allowed_companies
+
+	companies = get_allowed_companies()
+	if not companies:
+		return None
+	return set(
+		frappe.get_all(
+			"Vehicle", filters={"company": ["in", companies], "gps_imei": ["is", "set"]}, pluck="gps_imei"
+		)
+	)
+
+
 @frappe.whitelist()
 def get_live_positions(days: int = 7) -> list[dict]:
 	"""Har bir GPS qurilmaning oxirgi nuqtasi + GPS IMEI yozilgan, lekin hali ma'lumot kelmagan texnikalar."""
@@ -246,6 +268,9 @@ def get_live_positions(days: int = 7) -> list[dict]:
 		p["vehicle"] = v.name  # IMEI keyinroq Vehicle ga yozilgan bo'lsa ham to'g'ri nom chiqsin
 		p["texnika_turi"] = v.texnika_turi
 		p["model"] = " ".join(filter(None, (v.make, v.model)))
+	allowed = allowed_imeis()
+	if allowed is not None:
+		out = {imei: p for imei, p in out.items() if imei in allowed}
 	return sorted(out.values(), key=lambda p: (p.get("vehicle") or p["gps_imei"]))
 
 
@@ -253,6 +278,9 @@ def get_live_positions(days: int = 7) -> list[dict]:
 def get_track(gps_imei: str, date: str) -> list[dict]:
 	"""Bitta qurilmaning tanlangan kundagi yurgan yo'li."""
 	frappe.only_for(XARITA_ROLLARI)
+	allowed = allowed_imeis()
+	if allowed is not None and gps_imei not in allowed:
+		frappe.throw(_("Bu texnikani ko'rishga ruxsatingiz yo'q"), frappe.PermissionError)
 	day = getdate(date)
 	return frappe.db.sql(
 		"""select vaqt, lat, lon, tezlik from `tabGPS Malumot`
@@ -278,7 +306,7 @@ def sync_vehicle_gps(doc, method=None):
 def delete_gps_points(gps_imei: str | None = None, to_date: str | None = None) -> int:
 	"""GPS Malumot ro'yxatidagi "Tozalash" tugmasi: nuqtalarni bitta SQL bilan tez o'chiradi
 	(standart bulk delete minglab nuqtani bittalab, fonda o'chiradi va juda sekin)."""
-	frappe.only_for(("System Manager", "Karer Menejer"))
+	frappe.only_for(("System Manager", "Karer Menejer", "Beton Menejer"))
 	filters = {}
 	if gps_imei:
 		filters["gps_imei"] = gps_imei

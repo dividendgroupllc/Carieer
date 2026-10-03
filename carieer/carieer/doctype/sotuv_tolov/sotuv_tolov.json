@@ -1,0 +1,124 @@
+{
+ "actions": [],
+ "creation": "2026-10-03 14:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "sana",
+  "mode_of_payment",
+  "valyuta",
+  "summa",
+  "kurs",
+  "sotuv_summa",
+  "cb_1",
+  "kim",
+  "izoh",
+  "payment_entry",
+  "currency"
+ ],
+ "fields": [
+  {
+   "fieldname": "sana",
+   "fieldtype": "Date",
+   "label": "Sana",
+   "default": "Today",
+   "in_list_view": 1,
+   "columns": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "mode_of_payment",
+   "fieldtype": "Link",
+   "label": "Счёт (kassa)",
+   "options": "Mode of Payment",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "valyuta",
+   "fieldtype": "Link",
+   "label": "Валюта",
+   "options": "Currency",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "summa",
+   "fieldtype": "Float",
+   "label": "Сумма",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2,
+   "precision": "2",
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "kurs",
+   "fieldtype": "Float",
+   "label": "Курс",
+   "precision": "4",
+   "in_list_view": 1,
+   "columns": 1,
+   "allow_on_submit": 1,
+   "description": "To'lov valyutasidan sotuv valyutasiga"
+  },
+  {
+   "fieldname": "sotuv_summa",
+   "fieldtype": "Currency",
+   "label": "Sotuv valyutasida",
+   "options": "currency",
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "kim",
+   "fieldtype": "Data",
+   "label": "Кто оплатил",
+   "in_list_view": 1,
+   "columns": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "izoh",
+   "fieldtype": "Data",
+   "label": "Примечание",
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "payment_entry",
+   "fieldtype": "Link",
+   "label": "Payment Entry",
+   "options": "Payment Entry",
+   "read_only": 1,
+   "no_copy": 1,
+   "allow_on_submit": 1
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Valyuta",
+   "options": "Currency",
+   "hidden": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-03 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Sotuv Tolov",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
+}

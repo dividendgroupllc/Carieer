@@ -6,6 +6,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+from carieer.utils import check_report_company
+
 IN_COLS = [
 	("kirim_qazish", _("Qazib olindi")),
 	("kirim_ishlab", _("Ishlab chiqarildi")),
@@ -23,6 +25,7 @@ OUT_COLS = [
 
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
+	check_report_company(filters)
 	return get_columns(), get_data(filters)
 
 

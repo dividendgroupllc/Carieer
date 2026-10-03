@@ -11,12 +11,19 @@
  "link_to": "Karer",
  "link_type": "Workspace Sidebar",
  "logo_url": "",
- "modified": "2026-09-28 10:00:00.000000",
+ "modified": "2026-10-03 19:00:00.000000",
  "modified_by": "Administrator",
  "name": "Karer",
  "owner": "Administrator",
  "parent_icon": "",
  "restrict_removal": 0,
- "roles": [],
+ "roles": [
+  {
+   "role": "Karer xodimi"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
  "standard": 1
 }

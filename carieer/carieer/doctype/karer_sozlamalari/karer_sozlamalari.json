@@ -5,6 +5,10 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "post_section",
+  "karer_firma",
+  "post_cb",
+  "beton_firma",
   "firmalar_section",
   "firmalar",
   "firmalararo_narx_varaqasi",
@@ -21,6 +25,30 @@
  ],
  "fields": [
   {
+   "fieldname": "post_section",
+   "fieldtype": "Section Break",
+   "label": "Sotuv posti",
+   "description": "Postdagi sotuvda Tip (Karer / Beton) tanlanganda qaysi firma nomidan sotilishi"
+  },
+  {
+   "fieldname": "karer_firma",
+   "fieldtype": "Link",
+   "label": "Karer firmasi",
+   "options": "Company",
+   "ignore_user_permissions": 1
+  },
+  {
+   "fieldname": "post_cb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "beton_firma",
+   "fieldtype": "Link",
+   "label": "Beton zavod firmasi",
+   "options": "Company",
+   "ignore_user_permissions": 1
+  },
+  {
    "fieldname": "firmalar_section",
    "fieldtype": "Section Break",
    "label": "Firmalar"
@@ -36,7 +64,8 @@
    "fieldname": "firmalararo_narx_varaqasi",
    "fieldtype": "Link",
    "label": "Firmalararo narx varaqasi",
-   "options": "Price List"
+   "options": "Price List",
+   "ignore_user_permissions": 1
   },
   {
    "fieldname": "sms_section",
@@ -102,7 +131,7 @@
  "index_web_pages_for_search": 0,
  "issingle": 1,
  "links": [],
- "modified": "2026-09-28 10:00:00.000000",
+ "modified": "2026-10-03 19:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Karer Sozlamalari",

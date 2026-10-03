@@ -1,0 +1,108 @@
+{
+ "app": "carieer",
+ "charts": [],
+ "content": "[{\"id\": \"h0\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Kassa</b></span>\", \"col\": 12}}, {\"id\": \"UccPEskFLe\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kassa va Qarzlar\", \"col\": 3}}, {\"id\": \"s0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kassa kirim-chiqim\", \"col\": 3}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Yangi chiqim (xarajat)\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"To'lanmagan sotuvlar\", \"col\": 3}}, {\"id\": \"s3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"To'lovlar (Payment Entry)\", \"col\": 3}}, {\"id\": \"s4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Mijozlar\", \"col\": 3}}, {\"id\": \"h5\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Hisobotlar</b></span>\", \"col\": 12}}, {\"id\": \"s5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kontrol Hisobot\", \"col\": 3}}, {\"id\": \"s6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"DDS Hisobot\", \"col\": 3}}]",
+ "creation": "2026-09-28 10:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "wallet",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Kassa",
+ "links": [],
+ "modified": "2026-10-03 20:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Kassa",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "Karer Menejer"
+  },
+  {
+   "role": "Karer Kassir"
+  },
+  {
+   "role": "Beton Menejer"
+  },
+  {
+   "role": "Beton Kassir"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "sequence_id": 51.0,
+ "shortcuts": [
+  {
+   "label": "Kassa va Qarzlar",
+   "type": "Report",
+   "link_to": "Kassa va Qarzlar",
+   "doc_view": "",
+   "report_ref_doctype": "Sotuv",
+   "color": "Green"
+  },
+  {
+   "label": "Kassa kirim-chiqim",
+   "type": "DocType",
+   "link_to": "Kassa Operatsiya",
+   "color": "Red",
+   "doc_view": "List"
+  },
+  {
+   "label": "Yangi chiqim (xarajat)",
+   "type": "DocType",
+   "link_to": "Kassa Operatsiya",
+   "color": "Red",
+   "doc_view": "New"
+  },
+  {
+   "label": "To'lanmagan sotuvlar",
+   "type": "DocType",
+   "link_to": "Sotuv",
+   "color": "Orange",
+   "doc_view": "List",
+   "stats_filter": "[[\"Sotuv\", \"status\", \"in\", [\"To'lanmagan\", \"Qisman to'langan\"]]]"
+  },
+  {
+   "label": "To'lovlar (Payment Entry)",
+   "type": "DocType",
+   "link_to": "Payment Entry",
+   "color": "Green",
+   "doc_view": "List"
+  },
+  {
+   "label": "Mijozlar",
+   "type": "DocType",
+   "link_to": "Customer",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Kontrol Hisobot",
+   "type": "Report",
+   "link_to": "Kontrol Hisobot",
+   "color": "Blue",
+   "doc_view": "",
+   "report_ref_doctype": "Sotuv"
+  },
+  {
+   "label": "DDS Hisobot",
+   "type": "Report",
+   "link_to": "DDS Hisobot",
+   "color": "Purple",
+   "doc_view": "",
+   "report_ref_doctype": "GL Entry"
+  }
+ ],
+ "title": "Kassa",
+ "type": "Workspace"
+}

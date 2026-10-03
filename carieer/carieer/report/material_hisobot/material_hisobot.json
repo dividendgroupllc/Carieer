@@ -9,7 +9,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letterhead": null,
- "modified": "2026-09-28 10:00:00.000000",
+ "modified": "2026-10-03 19:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Material Hisobot",
@@ -26,10 +26,19 @@
    "role": "Karer Menejer"
   },
   {
+   "role": "Karer Operator"
+  },
+  {
    "role": "Stock User"
   },
   {
    "role": "Stock Manager"
+  },
+  {
+   "role": "Beton Menejer"
+  },
+  {
+   "role": "Beton Operator"
   }
  ]
 }

@@ -1,0 +1,145 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-03 11:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "kategoriya",
+  "turi",
+  "taqsimot",
+  "cb1",
+  "guruh_1",
+  "guruh_2",
+  "hisob_nomi",
+  "sb1",
+  "izoh"
+ ],
+ "fields": [
+  {
+   "fieldname": "kategoriya",
+   "fieldtype": "Data",
+   "label": "Kategoriya",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "turi",
+   "fieldtype": "Select",
+   "label": "Turi",
+   "options": "Ikkalasi\nKirim\nChiqim",
+   "default": "Ikkalasi",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "taqsimot",
+   "fieldtype": "Select",
+   "label": "Taqsimot (Произв / Прибыль / На ОС)",
+   "options": "\nПроизв\nПрибыль\nНа ОС"
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "guruh_1",
+   "fieldtype": "Data",
+   "label": "Категория 1 типа",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Masalan: Производственный расход. Hisoblar rejasida shu nomli guruh ostida turadi (P&L Разбитый)"
+  },
+  {
+   "fieldname": "guruh_2",
+   "fieldtype": "Data",
+   "label": "Категория 2 типа",
+   "in_list_view": 1,
+   "description": "Masalan: Топливо и Газ"
+  },
+  {
+   "fieldname": "hisob_nomi",
+   "fieldtype": "Data",
+   "label": "Hisob nomi (hisoblar rejasida)",
+   "description": "Bo'sh bo'lsa kategoriya nomi bilan bir xil hisob qidiriladi. Kassa / Начисление'da kategoriya tanlansa shu hisob avtomatik qo'yiladi"
+  },
+  {
+   "fieldname": "sb1",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "izoh",
+   "fieldtype": "Small Text",
+   "label": "Izoh"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-03 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Kassa Kategoriya",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Karer Menejer"
+  },
+  {
+   "read": 1,
+   "role": "Karer Kassir"
+  },
+  {
+   "read": 1,
+   "role": "Karer Operator"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Beton Menejer"
+  },
+  {
+   "read": 1,
+   "role": "Beton Kassir"
+  },
+  {
+   "read": 1,
+   "role": "Beton Operator"
+  }
+ ],
+ "sort_field": "kategoriya",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "field:kategoriya",
+ "naming_rule": "By fieldname",
+ "title_field": "kategoriya"
+}

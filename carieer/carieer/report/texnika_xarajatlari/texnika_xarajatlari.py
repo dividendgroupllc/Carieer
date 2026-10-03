@@ -4,9 +4,12 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+from carieer.utils import check_report_company
+
 
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
+	check_report_company(filters)
 	cond = ["y.docstatus = 1", "y.posting_date between %(from_date)s and %(to_date)s"]
 	if filters.get("company"):
 		cond.append("y.company = %(company)s")

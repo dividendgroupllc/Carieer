@@ -32,7 +32,12 @@ class BetonIshlabChiqarish(Document):
 
 		self.set("xomashyolar", [])
 		items = get_bom_items_as_dict(self.bom, self.company, qty=flt(self.qty), fetch_exploded=1)
+		jami = 0
 		for it in items.values():
+			balance = get_stock_balance(
+				it.item_code, self.xomashyo_ombori, self.posting_date, self.posting_time, with_valuation_rate=True
+			)
+			jami += flt(it.qty) * flt(balance[1])  # ombordagi tan narx bo'yicha
 			self.append(
 				"xomashyolar",
 				{
@@ -40,11 +45,13 @@ class BetonIshlabChiqarish(Document):
 					"item_name": it.item_name,
 					"required_qty": flt(it.qty, 3),
 					"uom": it.stock_uom,
-					"available_qty": flt(
-						get_stock_balance(it.item_code, self.xomashyo_ombori, self.posting_date, self.posting_time)
-					),
+					"available_qty": flt(balance[0]),
 				},
 			)
+		# Draft'da taxminiy tan narx (xomashyo ombordagi narxlari bo'yicha). Submit'da Stock Entry'dagi
+		# haqiqiy qiymat bilan almashtiriladi (on_submit -> db_set).
+		self.jami_xarajat = jami
+		self.birlik_tan_narx = flt(jami / flt(self.qty)) if flt(self.qty) else 0
 
 	def before_submit(self):
 		kam = [

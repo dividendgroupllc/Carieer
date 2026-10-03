@@ -1,0 +1,307 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-10-03 11:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "company",
+  "sana",
+  "cb_1",
+  "turi",
+  "kategoriya",
+  "cb_2",
+  "status",
+  "kontragent_section",
+  "party_type",
+  "party",
+  "party_name",
+  "cb_3",
+  "hisob",
+  "cost_center",
+  "summa_section",
+  "qty",
+  "rate",
+  "amount",
+  "cb_4",
+  "currency",
+  "kurs",
+  "base_amount",
+  "izoh_section",
+  "izoh",
+  "journal_entry",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Seriya",
+   "options": "NCH-.YYYY.-",
+   "default": "NCH-.YYYY.-",
+   "reqd": 1,
+   "print_hide": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Firma",
+   "options": "Company",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "remember_last_selected_value": 1
+  },
+  {
+   "fieldname": "sana",
+   "fieldtype": "Date",
+   "label": "Sana",
+   "default": "Today",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "turi",
+   "fieldtype": "Select",
+   "label": "Turi",
+   "options": "Продажа услуга\nЗакуп услуга",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Продажа услуга: biz xizmat ko'rsatdik (mijoz qarzdor). Закуп услуга: bizga xizmat ko'rsatildi (biz qarzdormiz)"
+  },
+  {
+   "fieldname": "kategoriya",
+   "fieldtype": "Link",
+   "label": "Kategoriya",
+   "options": "Kassa Kategoriya",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Masalan: Доставка, Самосвал услуга"
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Holat",
+   "options": "Draft\nTasdiqlangan\nBekor qilingan",
+   "default": "Draft",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "kontragent_section",
+   "fieldtype": "Section Break",
+   "label": "Kontragent"
+  },
+  {
+   "fieldname": "party_type",
+   "fieldtype": "Select",
+   "label": "Kontragent turi",
+   "options": "Customer\nSupplier",
+   "reqd": 1
+  },
+  {
+   "fieldname": "party",
+   "fieldtype": "Dynamic Link",
+   "label": "Kontragent",
+   "options": "party_type",
+   "reqd": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "party_name",
+   "fieldtype": "Data",
+   "label": "Kontragent nomi",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "cb_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "hisob",
+   "fieldtype": "Link",
+   "label": "Daromad / xarajat hisobi",
+   "options": "Account",
+   "reqd": 1,
+   "description": "Продажа: daromad hisobi, Закуп: xarajat hisobi"
+  },
+  {
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Xarajat markazi",
+   "options": "Cost Center"
+  },
+  {
+   "fieldname": "summa_section",
+   "fieldtype": "Section Break",
+   "label": "Summa"
+  },
+  {
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "label": "Kol-vo",
+   "default": "1",
+   "reqd": 1
+  },
+  {
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "label": "Narx",
+   "options": "currency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Summa",
+   "options": "currency",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "cb_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Valyuta",
+   "options": "Currency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "kurs",
+   "fieldtype": "Float",
+   "label": "Kurs (firma valyutasiga)",
+   "default": "1",
+   "precision": "4"
+  },
+  {
+   "fieldname": "base_amount",
+   "fieldtype": "Currency",
+   "label": "Summa (firma valyutasida)",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "izoh_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "izoh",
+   "fieldtype": "Small Text",
+   "label": "Izoh"
+  },
+  {
+   "fieldname": "journal_entry",
+   "fieldtype": "Link",
+   "label": "Journal Entry",
+   "options": "Journal Entry",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "options": "Nachislenie",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-03 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Nachislenie",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "amend": 1,
+   "cancel": 1,
+   "submit": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "amend": 1,
+   "cancel": 1,
+   "submit": 1,
+   "role": "Karer Menejer"
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "write": 1,
+   "print": 1,
+   "report": 1,
+   "amend": 1,
+   "cancel": 1,
+   "submit": 1,
+   "role": "Karer Kassir"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "amend": 1,
+   "cancel": 1,
+   "submit": 1,
+   "role": "Beton Menejer"
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "write": 1,
+   "print": 1,
+   "report": 1,
+   "amend": 1,
+   "cancel": 1,
+   "submit": 1,
+   "role": "Beton Kassir"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "naming_series:",
+ "is_submittable": 1,
+ "title_field": "party_name"
+}

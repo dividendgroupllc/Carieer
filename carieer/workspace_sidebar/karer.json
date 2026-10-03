@@ -16,7 +16,8 @@
    "link_type": "Workspace",
    "show_arrow": 0,
    "type": "Link",
-   "link_to": "Karer"
+   "link_to": "Karer",
+   "idx": 1
   },
   {
    "child": 0,
@@ -27,7 +28,8 @@
    "label": "Hujjatlar",
    "link_type": "DocType",
    "show_arrow": 0,
-   "type": "Section Break"
+   "type": "Section Break",
+   "idx": 2
   },
   {
    "child": 1,
@@ -35,11 +37,12 @@
    "icon": "shopping-cart",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Karer Sotuv",
+   "label": "Sotuv",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link",
-   "link_to": "Karer Sotuv"
+   "link_to": "Sotuv",
+   "idx": 3
   },
   {
    "child": 1,
@@ -51,19 +54,8 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link",
-   "link_to": "Qazib Olish"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "icon": "factory",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Beton Ishlab Chiqarish",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link",
-   "link_to": "Beton Ishlab Chiqarish"
+   "link_to": "Qazib Olish",
+   "idx": 4
   },
   {
    "child": 1,
@@ -75,7 +67,201 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link",
-   "link_to": "Firmalararo Sotuv"
+   "link_to": "Firmalararo Sotuv",
+   "idx": 5
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "move-horizontal",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Firmalararo To'lov",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Firmalararo Tolov",
+   "idx": 6
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "file",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Xarid (kirim)",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Purchase Receipt",
+   "idx": 7
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "download",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Xarid hisob-fakturasi",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Purchase Invoice",
+   "idx": 8
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "list",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Retsept (BOM)",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "BOM",
+   "idx": 9
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "file",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Ombor kirim-chiqim",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Stock Entry",
+   "idx": 10
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "file",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Inventarizatsiya",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Stock Reconciliation",
+   "idx": 11
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "wallet",
+   "indent": 1,
+   "keep_closed": 0,
+   "label": "Kassa va hisob-kitob",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Section Break",
+   "idx": 12
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "wallet",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Kassa",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Kassa",
+   "idx": 13
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "file-plus",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Начисление",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Nachislenie",
+   "idx": 14
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "truck",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Приход ОС",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Prixod OS",
+   "idx": 15
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "file",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "To'lovlar",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Payment Entry",
+   "idx": 16
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "file",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Jurnal",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Journal Entry",
+   "idx": 17
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "file",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Sotuv hisob-fakturalari",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Sales Invoice",
+   "idx": 18
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "truck",
+   "indent": 1,
+   "keep_closed": 0,
+   "label": "Texnika",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Section Break",
+   "idx": 19
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "truck",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Texnikalar",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Vehicle",
+   "idx": 20
   },
   {
    "child": 1,
@@ -87,19 +273,8 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link",
-   "link_to": "Yoqilgi Hisobi"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "icon": "truck",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "Vehicle",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link",
-   "link_to": "Vehicle"
+   "link_to": "Yoqilgi Hisobi",
+   "idx": 21
   },
   {
    "child": 1,
@@ -111,7 +286,8 @@
    "link_type": "Page",
    "show_arrow": 0,
    "type": "Link",
-   "link_to": "karer-xarita"
+   "link_to": "texnika-xarita",
+   "idx": 22
   },
   {
    "child": 1,
@@ -123,7 +299,8 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link",
-   "link_to": "GPS Malumot"
+   "link_to": "GPS Malumot",
+   "idx": 23
   },
   {
    "child": 0,
@@ -134,55 +311,280 @@
    "label": "Hisobotlar",
    "link_type": "DocType",
    "show_arrow": 0,
-   "type": "Section Break"
+   "type": "Section Break",
+   "idx": 24
   },
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "",
+   "icon": "table",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Kassa va Qarzlar",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Kassa va Qarzlar",
+   "idx": 25
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "table",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "DDS",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "DDS",
+   "idx": 26
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "table",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Cash Flow (oyma-oy)",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Pul Oqimi",
+   "idx": 27
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "table",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "P&L (foyda/zarar)",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Foyda Zarar",
+   "idx": 28
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "table",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Balans",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Balans",
+   "idx": 29
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "table",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Akt Sverka",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Akt Sverka",
+   "idx": 30
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "table",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Kontragent Otchet",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Kontragent Otchet",
+   "idx": 31
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "table",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Firmalararo Qarzlar",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Firmalararo Qarzlar",
+   "idx": 32
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "table",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Qarzdorlik",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Qarzdorlik",
+   "idx": 33
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "table",
    "indent": 0,
    "keep_closed": 0,
    "label": "Kontrol Hisobot",
    "link_type": "Report",
    "show_arrow": 0,
    "type": "Link",
-   "link_to": "Kontrol Hisobot"
+   "link_to": "Kontrol Hisobot",
+   "idx": 34
   },
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "",
+   "icon": "table",
    "indent": 0,
    "keep_closed": 0,
    "label": "Material Hisobot",
    "link_type": "Report",
    "show_arrow": 0,
    "type": "Link",
-   "link_to": "Material Hisobot"
+   "link_to": "Material Hisobot",
+   "idx": 35
   },
   {
    "child": 1,
    "collapsible": 1,
-   "icon": "",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "DDS Hisobot",
-   "link_type": "Report",
-   "show_arrow": 0,
-   "type": "Link",
-   "link_to": "DDS Hisobot"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "icon": "",
+   "icon": "table",
    "indent": 0,
    "keep_closed": 0,
    "label": "Texnika Xarajatlari",
    "link_type": "Report",
    "show_arrow": 0,
    "type": "Link",
-   "link_to": "Texnika Xarajatlari"
+   "link_to": "Texnika Xarajatlari",
+   "idx": 36
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "layout-grid",
+   "indent": 1,
+   "keep_closed": 0,
+   "label": "Bo'limlar",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Section Break",
+   "idx": 37
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "wallet",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Kassa admin",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Kassa admin",
+   "idx": 38
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "wallet",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Kassa (kassir)",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Kassa",
+   "idx": 39
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "file-text",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Buxgalter oynasi",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Buxgalter oynasi",
+   "idx": 40
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "layout-dashboard",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Ombor",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Carieer Ombor",
+   "idx": 41
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "package",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Omborchi",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Omborchi",
+   "idx": 42
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "shopping-cart",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Sotuv operator",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Sotuv operator",
+   "idx": 43
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "truck",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Taminotchi",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Taminotchi",
+   "idx": 44
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "map",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Texnika",
+   "link_type": "Workspace",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Texnika",
+   "idx": 45
   },
   {
    "child": 0,
@@ -193,7 +595,8 @@
    "label": "Sozlamalar",
    "link_type": "DocType",
    "show_arrow": 0,
-   "type": "Section Break"
+   "type": "Section Break",
+   "idx": 46
   },
   {
    "child": 1,
@@ -205,7 +608,21 @@
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link",
-   "link_to": "Karer Sozlamalari"
+   "link_to": "Karer Sozlamalari",
+   "idx": 47
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "settings",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Kassa Kategoriya",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Kassa Kategoriya",
+   "idx": 48
   },
   {
    "child": 1,
@@ -213,11 +630,38 @@
    "icon": "users",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Customer",
+   "label": "Mijozlar",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link",
-   "link_to": "Customer"
+   "link_to": "Customer",
+   "idx": 49
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "users",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Ta'minotchilar",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Supplier",
+   "idx": 50
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "file",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Xodimlar",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Employee",
+   "idx": 51
   },
   {
    "child": 1,
@@ -225,23 +669,12 @@
    "icon": "package",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Item",
+   "label": "Tovarlar",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link",
-   "link_to": "Item"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "icon": "list",
-   "indent": 0,
-   "keep_closed": 0,
-   "label": "BOM",
-   "link_type": "DocType",
-   "show_arrow": 0,
-   "type": "Link",
-   "link_to": "BOM"
+   "link_to": "Item",
+   "idx": 52
   },
   {
    "child": 1,
@@ -249,11 +682,25 @@
    "icon": "warehouse",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Warehouse",
+   "label": "Omborlar",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link",
-   "link_to": "Warehouse"
+   "link_to": "Warehouse",
+   "idx": 53
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "file",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "O'lchov birliklari",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "UOM",
+   "idx": 54
   },
   {
    "child": 1,
@@ -261,14 +708,41 @@
    "icon": "wallet",
    "indent": 0,
    "keep_closed": 0,
-   "label": "Mode of Payment",
+   "label": "To'lov turlari (kassalar)",
    "link_type": "DocType",
    "show_arrow": 0,
    "type": "Link",
-   "link_to": "Mode of Payment"
+   "link_to": "Mode of Payment",
+   "idx": 55
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "file",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Hisoblar rejasi",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Account",
+   "idx": 56
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "file",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Valyuta kursi",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Currency Exchange",
+   "idx": 57
   }
  ],
- "modified": "2026-09-29 16:00:00.000000",
+ "modified": "2026-10-03 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Karer",

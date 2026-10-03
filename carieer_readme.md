@@ -29,7 +29,7 @@ Ketma-ketlik bilan o'qing: avval tushunchalar, keyin sozlash, keyin kundalik ish
 | **ERPNext** | Frappe ustidagi tayyor ERP: ombor, buxgalteriya, sotuv, xarid, ishlab chiqarish |
 | **carieer** | Bizning ilova: karer biznesi uchun soddalashtirilgan formalar + hisobotlar + GPS |
 
-**Asosiy g'oya:** foydalanuvchi faqat bizning oddiy formalarni to'ldiradi (Karer Sotuv, Qazib Olish, ...).
+**Asosiy g'oya:** foydalanuvchi faqat bizning oddiy formalarni to'ldiradi (Sotuv, Qazib Olish, ...).
 Murakkab ERPNext hujjatlari (Sales Invoice, Stock Entry, Payment Entry, GL Entry) **avtomatik** yaratiladi.
 Shuning uchun omborchi va buxgalter bir xil to'g'ri raqamlarni ko'radi.
 
@@ -37,14 +37,14 @@ Shuning uchun omborchi va buxgalter bir xil to'g'ri raqamlarni ko'radi.
 ```
  Qazib Olish ──▶ Karer ombori (qum, shag'al, tan narx 0)
                      │
-                     ├──▶ Karer Sotuv ──▶ mijozga sotildi (Sales Invoice + to'lov + SMS)
+                     ├──▶ Sotuv ──▶ mijozga sotildi (Sales Invoice + to'lov + SMS)
                      │
                      └──▶ (ko'chirish) ──▶ Beton xomashyo ombori ◀── Xarid (sement, ximikat)
                                                    │
                                      Beton Ishlab Chiqarish (BOM bo'yicha)
                                                    │
                                                    ▼
-                                           Beton ombori ──▶ Karer Sotuv (beton sotish)
+                                           Beton ombori ──▶ Sotuv (beton sotish)
 
  Yoqilg'i ombori ──▶ Yoqilg'i Hisobi ──▶ texnikaga sarf (km, 100 km ga litr)
  Telefon (Traccar Client) ──▶ GPS Malumot ──▶ Texnikalar xaritasi (onlayn)
@@ -136,12 +136,12 @@ Bu buyruq quyidagilarni yaratadi (qayta ishga tushirish xavfsiz):
 
 | Bo'lim | Maydon | Nima uchun |
 |---|---|---|
-| Firmalar | Sotuv (karer) ombori | Karer Sotuv'da standart ombor |
+| Firmalar | Sotuv (karer) ombori | Sotuv'da standart ombor |
 | | Qazib olingan tovar ombori | Qazib Olish kirim qiladigan ombor |
 | | Beton xomashyo ombori | Beton ishlab chiqarishda xomashyo shu yerdan olinadi |
 | | Tayyor beton ombori | Ishlab chiqarilgan beton shu yerga kiradi |
 | | Yoqilg'i / moy ombori | Yoqilg'i Hisobi (Ombordan) shu yerdan chiqaradi |
-| | Asosiy to'lov turi | Karer Sotuv'da standart kassa |
+| | Asosiy to'lov turi | Sotuv'da standart kassa |
 | | Firmalararo narx varaqasi | Firmalararo Sotuv uchun narxlar (Price List) |
 | SMS | SMS yuborish, provayder | **Frappe SMS Settings** yoki **Eskiz.uz** |
 | | SMS shablon | Masalan: `{customer}: {item} {qty} {uom} = {amount} {currency}` |
@@ -205,36 +205,25 @@ Barchasi **Karer** bo'limida (`/desk/karer`).
 **Submit** → `Stock Entry (Material Receipt)`, **tan narx 0** (o'zimiz qazdik, sotib olmadik).
 Cancel → Stock Entry ham bekor qilinadi.
 
-### 5.2 Karer Sotuv
-**Vazifasi:** karer postida mijozga sotish (tarozi → hisob → to'lov).
+### 5.2 Sotuv (sotuv posti, AppSheet "Ввод продажи")
+**Vazifasi:** postda mijozga sotish. Bitta post ikkala zavodga xizmat qiladi: **Тип = Karer** bo'lsa
+Karer firmasi nomidan, **Тип = Beton** bo'lsa Beton Zavod nomidan sotiladi (firmalar: Karer Sozlamalari ->
+Sotuv posti). Karer xodimi faqat Karer, beton xodimi faqat Beton tipini ko'radi.
 
-| Maydon | Izoh |
+| Qism | Izoh |
 |---|---|
-| Firma, Ombor | Tovar tanlanganda ombor **o'zi qo'yiladi**: Beton → Beton ombori, qum/shag'al → Karer ombori |
-| Mijoz, telefon | Telefon bo'lsa SMS ketadi |
-| Mashina raqami, haydovchi | Mijoz mashinasi |
-| O'z texnikamiz | Agar biz yetkazib bersak |
-| Tovar, o'lchov birligi | Birlik tovarning *sales UOM* idan olinadi (Tonne) |
-| Brutto / Tara | Yuk bilan / bo'sh mashina. **Miqdor = Brutto − Tara** (o'zi hisoblanadi) |
-| Valyuta, kurs | UZS yoki USD. Kurs **Currency Exchange** dan olinadi |
-| Narx | 1 birlik narxi → Jami summa |
-| To'lov turi, hozir to'lanayotgan summa | Darhol to'langan qism (0 ham bo'lishi mumkin) |
+| Дата, Тип, Валюта, Доставка | Valyuta UZS yoki USD, kurs Currency Exchange dan |
+| Клиент, Номер машины | Mijoz va mashina raqami |
+| Товары | Tovar, miqdor, narx -> summa. Ombor **o'zi qo'yiladi** |
+| Услуги | Погрузчик, Доставка kabi xizmatlar (ombor tovari emas) |
+| Оплаты | Kassa (to'lov turi), valyuta, kurs, kim to'ladi, izoh |
+| Итог / Услуг / Общий / Долг | Avtomatik hisoblanadi |
 
-**Yakunlash (Submit)** →
-1. **Sales Invoice** (`update_stock=1`): tovar ombordan chiqadi, mijozga qarz yoziladi
-2. **Payment Entry** (to'lov bo'lsa): kassaga kirim, qarz kamayadi
-3. **SMS** mijozga (sozlamada yoqilgan bo'lsa)
-4. **Holat**: To'lanmagan / Qisman to'langan / To'langan
+**Завершить (Submit)** -> **Sales Invoice** (tovar ombordan chiqadi, mijozga qarz) + har bir to'lov qatori uchun
+**Payment Entry** (kassaga kirim). Keyin **Оплата** tugmasi bilan qolgan qarz to'lanadi (boshqa valyutada ham).
 
-**Keyingi to'lovlar:** forma ustidagi **"To'lov qabul qilish"** tugmasi → summa + kassa → yangi Payment Entry.
-Holat avtomatik yangilanadi (hooks.py → Payment Entry `on_submit` / `on_cancel`).
-
-**Misol:** 20 t shag'al × 50 000 = 1 000 000 so'm, 600 000 naqd to'landi:
-```
-Sales Invoice  → Ombor: Shag'al −20 000 kg | GL: Debitor +1 000 000, Daromad +1 000 000
-Payment Entry  → GL: Kassa +600 000, Debitor −600 000
-Holat          → Qisman to'langan, qarz 400 000
-```
+**Misol:** Qum 9 t × 100 000 + Shagal 5 t × 120 000 + Погрузчик 50 000 = 1 550 000; 500 000 naqd -> Долг 1 050 000;
+keyin 87.5 $ × 12 000 -> To'langan.
 
 ### 5.3 Beton Ishlab Chiqarish
 6.2 ga qarang.
@@ -258,19 +247,27 @@ Holat          → Qisman to'langan, qarz 400 000
 **Sarf (litr / 100 km)** avtomatik hisoblanadi. Birinchi yozuvda oldingi ko'rsatkich sifatida Vehicle'dagi Odometer olinadi.
 
 ### 5.5 Firmalararo Sotuv
-**Vazifasi:** o'zimizning ikki firmamiz o'rtasida oldi-sotdi (masalan, karer firmasi beton zavodiga qum sotadi).
+**Vazifasi:** ikki firmamiz o'rtasida oldi-sotdi (masalan, Beton Zavod karerdan qum/shag'al oladi).
+Hujjat **ikkala firmaga ham ko'rinadi** (sotuvchi ham, xaridor ham). Firma xodimi yaratganda xaridor = o'z firmasi.
 
 | Maydon | Izoh |
 |---|---|
-| Sotuvchi firma, ombori | Tovar shu yerdan chiqadi |
-| Xaridor firma, ombori | Tovar shu yerga kiradi |
-| Tovarlar jadvali | Tovar, miqdor, narx (Firmalararo narx varaqasidan) |
+| Sotuvchi firma, chiqish ombori | Tovar shu yerdan chiqadi (ombor o'zi qo'yiladi) |
+| Xaridor firma, kirish ombori | Tovar shu yerga kiradi (beton zavodda -> Beton xomashyo) |
+| Tovarlar jadvali | Tovar, miqdor, narx |
 
-**Submit** →
-- sotuvchida **Sales Invoice** (ichki mijozga, `update_stock=1`)
-- xaridorda **Purchase Invoice** (ichki yetkazib beruvchidan, `update_stock=1`)
+**Submit** -> sotuvchida **Sales Invoice** (ichki mijozga), xaridorda **Purchase Invoice** (ichki yetkazib beruvchidan).
+Ichki mijoz/yetkazib beruvchi kerak bo'lsa o'zi yaratiladi. **Draft holatda qarz ham, tovar ham yozilmaydi!**
 
-Oldindan kerak: Customer va Supplier **"Is Internal Customer / Supplier"** belgisi bilan, ikkala firmaga bog'langan bo'lishi kerak.
+### 5.5.1 Firmalararo To'lov
+Bir firma ikkinchisiga qarzini to'laydi: to'lovchi firma + kassa, oluvchi firma + kassa, summa. Formada joriy qarz ko'rinadi.
+**Submit** -> to'lovchida Payment Entry (Pay), oluvchida Payment Entry (Receive). To'lov eng eski to'lanmagan
+firmalararo hisob-fakturalarga taqsimlanadi.
+
+### 5.5.2 Firmalararo Qarzlar (hisobot)
+Har bir firma o'z kitobini ko'radi: **"Beton Zavod bizdan X qarz"** yoki **"Biz Carieerdan X qarzmiz"**, ostida
+batafsil: sana, hujjat, nima olingan (tovar × narx), to'lovlar, qoldiq. Ikkala firma kitobi mos kelmasa yoki
+tasdiqlanmagan (Draft) hujjat bo'lsa ogohlantiradi.
 
 ### 5.6 GPS Malumot
 Qo'lda kiritilmaydi, telefon yoki trekker **o'zi yuboradi** (7-bo'lim). Ro'yxatda har bir nuqta ko'rinadi:
@@ -377,7 +374,7 @@ Aks holda ekran o'chganda GPS to'xtaydi.
 > URL `https://domen/...` bo'ladi va barcha haydovchilar oddiy internet orqali yuboradi.
 
 ### 7.4 Xarita sahifasi
-**Qayerda:** Karer → **Texnikalar xaritasi** (`/desk/karer-xarita`)
+**Qayerda:** Karer → **Texnikalar xaritasi** (`/desk/texnika-xarita`)
 - Chap ro'yxat: barcha texnikalar, oxirgi vaqt, tezlik, batareya. 🟢 onlayn / ⚪ eski
 - Texnikani bosing → xaritada o'sha joy + **bugungi yurgan yo'li**
 - Sana tanlab **boshqa kun yo'lini** ko'rish mumkin
@@ -454,7 +451,7 @@ Boshlang'ich qoldiq
 
 | Rol | Kim | Nima qila oladi |
 |---|---|---|
-| **Karer Operator** | Tarozichi, post operatori | Karer Sotuv, Qazib Olish, Yoqilg'i Hisobi; to'lov qabul qilish; xaritani ko'rish |
+| **Karer Operator** | Tarozichi, post operatori | Sotuv, Qazib Olish, Yoqilg'i Hisobi; to'lov qabul qilish; xaritani ko'rish |
 | **Karer Kassir** | Kassir | To'lovlar (Payment Entry), mijozlar, DDS hisobot |
 | **Karer Menejer** | Menejer | Hammasi: sotuv, xarid, ishlab chiqarish, BOM, texnika, hisobotlar, xarita |
 | **System Manager** | Admin | Sozlamalar, foydalanuvchilar |
@@ -492,7 +489,7 @@ apps/carieer/carieer/
 ### Controller hodisalari (Django signals o'rniga)
 | Metod | Qachon | Misol |
 |---|---|---|
-| `validate()` | Har Save | Karer Sotuv: netto, summa; Beton: xomashyolar jadvali |
+| `validate()` | Har Save | Sotuv: netto, summa; Beton: xomashyolar jadvali |
 | `before_submit()` | Submit'dan oldin | Beton: xomashyo yetarlimi |
 | `on_submit()` | Submit'dan keyin | Sales Invoice / Stock Entry / Payment Entry yaratish |
 | `on_cancel()` | Cancel | Bog'langan hujjatlarni bekor qilish |
@@ -538,10 +535,31 @@ apps/carieer/carieer/
 | "Xomashyo yetarli emas" | Beton xomashyo omborida kam | Xarid qiling yoki Material Transfer bilan o'tkazing |
 | "BOM faol va submit qilingan bo'lishi kerak" | BOM draft yoki Is Active ✗ | BOM'ni submit qiling, Is Active ✅ |
 | "... kursi topilmadi" | USD kursi yo'q | Accounting → Currency Exchange → kurs kiriting |
-| Karer Sotuv'da ombor noto'g'ri | Karer Sozlamalari'da firma omborlari to'ldirilmagan | 4.3 ni bajaring |
+| Sotuv'da ombor noto'g'ri | Karer Sozlamalari'da firma omborlari to'ldirilmagan | 4.3 ni bajaring |
 | Telefon xaritada ko'rinmaydi | URL/token noto'g'ri, telefon ruxsati yo'q, internet yo'q | Traccar'da status log'ini ko'ring. Token, ruxsat va batareya tejashni tekshiring |
 | Xaritada nom o'rniga raqam | Vehicle'da GPS IMEI yozilmagan | Vehicle → GPS qurilma IMEI |
 | Vehicle yaratishda Odometer / Fuel UOM so'raydi | Majburiy maydonlar | Odometer `0`, Fuel UOM `Litre` |
 | Manufacturing dashboard bo'sh | Work Order ishlatilmaydi | 6.4 ga qarang |
 | Kod o'zgardi, lekin ishlamayapti | Dev server eski kodni ishlatyapti | `bench start` qayta, brauzerda Ctrl+Shift+R |
 | Refresh qilganda logout bo'ladi | Brauzer cookie | Cookie'larni tozalang, bitta manzildan kiring (IP yoki domen) |
+
+---
+
+## Dostup: Karer va Beton zavod alohida
+
+| Zavod | Rollar (lavozim) | Firma roli | Ko'radi |
+|---|---|---|---|
+| Karer | Karer Operator / Karer Kassir / Karer Menejer | Karer xodimi | Karer workspace, Qazib Olish, Karer Sozlamalari, Sotuv (Karer) |
+| Beton | Beton Operator / Beton Kassir / Beton Menejer | Beton zavod xodimi | Beton Zavod workspace, Beton Ishlab Chiqarish, Sotuv (Beton) |
+
+- Umumiy hujjatlar (Sotuv, Kassa, Начисление, Приход ОС, Yoqilg'i, hisobotlar) ikkala zavodda bor, lekin
+  **User Permission -> Company** bilan har kim faqat o'z firmasi ma'lumotini ko'radi.
+- Beton xodimiga "Karer" nomli sahifa ko'rinmaydi (ilova va sidebar nomi ham "Beton Zavod"), karer xodimiga beton sahifalari ko'rinmaydi.
+- Firmalararo Sotuv / To'lov va Firmalararo Qarzlar ikkala firmaga ko'rinadi.
+- Xodim yaratish (System Manager):
+
+  ```
+  bench --site SITE execute carieer.install.setup_firma_user --kwargs "{'email': 'menejer@beton.uz', 'full_name': 'Ali Valiyev', 'company': 'Beton Zavod', 'role': 'Beton Menejer', 'password': '...'}"
+  ```
+
+  Firma roli va workspace roldan o'zi aniqlanadi, boshqa zavodning rollari olib tashlanadi.

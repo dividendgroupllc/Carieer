@@ -1,7 +1,7 @@
 {
  "app": "carieer",
  "charts": [],
- "content": "[{\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Karer</b></span>\", \"col\": 12}}, {\"id\": \"s0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Karer Sotuv\", \"col\": 3}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Qazib Olish\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Beton Ishlab Chiqarish\", \"col\": 3}}, {\"id\": \"s3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo Sotuv\", \"col\": 3}}, {\"id\": \"s4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Yoqilgi Hisobi\", \"col\": 3}}, {\"id\": \"sgps\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnikalar xaritasi\", \"col\": 3}}, {\"id\": \"r0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kontrol Hisobot\", \"col\": 3}}, {\"id\": \"r1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Material Hisobot\", \"col\": 3}}, {\"id\": \"r2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"DDS Hisobot\", \"col\": 3}}, {\"id\": \"r3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnika Xarajatlari\", \"col\": 3}}, {\"id\": \"c1\", \"type\": \"card\", \"data\": {\"card_name\": \"Sozlamalar\", \"col\": 4}}]",
+ "content": "[{\"id\": \"h0\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Sotuv va kassa</b></span>\", \"col\": 12}}, {\"id\": \"yaZnBCAgHo\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kassa va Qarzlar\", \"col\": 3}}, {\"id\": \"s0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sotuv\", \"col\": 3}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kassa kirim-chiqim\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"To'lovlar\", \"col\": 3}}, {\"id\": \"s3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Mijozlar\", \"col\": 3}}, {\"id\": \"h4\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Ombor va ishlab chiqarish</b></span>\", \"col\": 12}}, {\"id\": \"s4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Qazib Olish\", \"col\": 3}}, {\"id\": \"s6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo Sotuv\", \"col\": 3}}, {\"id\": \"s7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tovarlar\", \"col\": 3}}, {\"id\": \"s8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Omborlar\", \"col\": 3}}, {\"id\": \"s9\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kirim-chiqim (Stock Entry)\", \"col\": 3}}, {\"id\": \"h10\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Texnika</b></span>\", \"col\": 12}}, {\"id\": \"s10\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnika va mashinalar\", \"col\": 3}}, {\"id\": \"s11\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Yoqilg'i hisobi\", \"col\": 3}}, {\"id\": \"s12\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"GPS ma'lumotlar\", \"col\": 3}}, {\"id\": \"h13\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Hisobotlar</b></span>\", \"col\": 12}}, {\"id\": \"s13\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kontrol Hisobot\", \"col\": 3}}, {\"id\": \"s14\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Material Hisobot\", \"col\": 3}}, {\"id\": \"s15\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"DDS Hisobot\", \"col\": 3}}, {\"id\": \"s16\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnika Xarajatlari\", \"col\": 3}}, {\"id\": \"h17\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Sozlamalar</b></span>\", \"col\": 12}}, {\"id\": \"s17\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Karer Sozlamalari\", \"col\": 3}}, {\"id\": \"sfq\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo Qarzlar\", \"col\": 3}}, {\"id\": \"JRWZMoeCXX\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo To'lov\", \"col\": 3}}]",
  "creation": "2026-09-28 10:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -12,84 +12,8 @@
  "idx": 0,
  "is_hidden": 0,
  "label": "Karer",
- "links": [
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Sozlamalar",
-   "link_count": 6,
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Karer Sozlamalari",
-   "link_count": 0,
-   "link_to": "Karer Sozlamalari",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link",
-   "dependencies": ""
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Customer",
-   "link_count": 0,
-   "link_to": "Customer",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link",
-   "dependencies": ""
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Item",
-   "link_count": 0,
-   "link_to": "Item",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link",
-   "dependencies": ""
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "BOM",
-   "link_count": 0,
-   "link_to": "BOM",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link",
-   "dependencies": ""
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Warehouse",
-   "link_count": 0,
-   "link_to": "Warehouse",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link",
-   "dependencies": ""
-  },
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Mode of Payment",
-   "link_count": 0,
-   "link_to": "Mode of Payment",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link",
-   "dependencies": ""
-  }
- ],
- "modified": "2026-09-29 16:00:00.000000",
+ "links": [],
+ "modified": "2026-10-03 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Karer",
@@ -99,81 +23,169 @@
  "public": 1,
  "quick_lists": [],
  "restrict_to_domain": "",
- "roles": [],
+ "roles": [
+  {
+   "role": "Karer xodimi"
+  },
+  {
+   "role": "Karer Operator"
+  },
+  {
+   "role": "Karer Kassir"
+  },
+  {
+   "role": "Karer Menejer"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
  "sequence_id": 50.0,
  "shortcuts": [
   {
-   "label": "Karer Sotuv",
-   "link_to": "Karer Sotuv",
+   "label": "Kassa va Qarzlar",
+   "type": "Report",
+   "link_to": "Kassa va Qarzlar",
+   "doc_view": "",
+   "report_ref_doctype": "Sotuv",
+   "color": "Green"
+  },
+  {
+   "label": "Sotuv",
    "type": "DocType",
+   "link_to": "Sotuv",
+   "color": "Orange",
+   "doc_view": "List"
+  },
+  {
+   "label": "Kassa kirim-chiqim",
+   "type": "DocType",
+   "link_to": "Kassa Operatsiya",
+   "color": "Red",
+   "doc_view": "List"
+  },
+  {
+   "label": "To'lovlar",
+   "type": "DocType",
+   "link_to": "Payment Entry",
+   "color": "Green",
+   "doc_view": "List"
+  },
+  {
+   "label": "Mijozlar",
+   "type": "DocType",
+   "link_to": "Customer",
    "color": "Grey",
    "doc_view": "List"
   },
   {
    "label": "Qazib Olish",
+   "type": "DocType",
    "link_to": "Qazib Olish",
-   "type": "DocType",
-   "color": "Grey",
-   "doc_view": "List"
-  },
-  {
-   "label": "Beton Ishlab Chiqarish",
-   "link_to": "Beton Ishlab Chiqarish",
-   "type": "DocType",
-   "color": "Grey",
+   "color": "Green",
    "doc_view": "List"
   },
   {
    "label": "Firmalararo Sotuv",
+   "type": "DocType",
    "link_to": "Firmalararo Sotuv",
+   "color": "Blue",
+   "doc_view": "List"
+  },
+  {
+   "label": "Tovarlar",
    "type": "DocType",
+   "link_to": "Item",
    "color": "Grey",
    "doc_view": "List"
   },
   {
-   "label": "Yoqilgi Hisobi",
+   "label": "Omborlar",
+   "type": "DocType",
+   "link_to": "Warehouse",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Kirim-chiqim (Stock Entry)",
+   "type": "DocType",
+   "link_to": "Stock Entry",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Texnika va mashinalar",
+   "type": "DocType",
+   "link_to": "Vehicle",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Yoqilg'i hisobi",
+   "type": "DocType",
    "link_to": "Yoqilgi Hisobi",
-   "type": "DocType",
-   "color": "Grey",
+   "color": "Orange",
    "doc_view": "List"
   },
   {
-   "label": "Texnikalar xaritasi",
-   "link_to": "karer-xarita",
-   "type": "Page",
-   "color": "Grey"
+   "label": "GPS ma'lumotlar",
+   "type": "DocType",
+   "link_to": "GPS Malumot",
+   "color": "Grey",
+   "doc_view": "List"
   },
   {
    "label": "Kontrol Hisobot",
-   "link_to": "Kontrol Hisobot",
    "type": "Report",
-   "report_ref_doctype": "Karer Sotuv",
-   "color": "Blue",
-   "doc_view": ""
+   "link_to": "Kontrol Hisobot",
+   "color": "Purple",
+   "doc_view": "",
+   "report_ref_doctype": "Sotuv"
   },
   {
    "label": "Material Hisobot",
-   "link_to": "Material Hisobot",
    "type": "Report",
-   "report_ref_doctype": "Stock Ledger Entry",
-   "color": "Blue",
-   "doc_view": ""
+   "link_to": "Material Hisobot",
+   "color": "Purple",
+   "doc_view": "",
+   "report_ref_doctype": "Stock Ledger Entry"
   },
   {
    "label": "DDS Hisobot",
+   "type": "Report",
    "link_to": "DDS Hisobot",
+   "color": "Purple",
+   "doc_view": "",
+   "report_ref_doctype": "GL Entry"
+  },
+  {
+   "label": "Texnika Xarajatlari",
+   "type": "Report",
+   "link_to": "Texnika Xarajatlari",
+   "color": "Purple",
+   "doc_view": "",
+   "report_ref_doctype": "Yoqilgi Hisobi"
+  },
+  {
+   "label": "Karer Sozlamalari",
+   "type": "DocType",
+   "link_to": "Karer Sozlamalari",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Firmalararo Qarzlar",
+   "link_to": "Firmalararo Qarzlar",
    "type": "Report",
    "report_ref_doctype": "GL Entry",
    "color": "Blue",
    "doc_view": ""
   },
   {
-   "label": "Texnika Xarajatlari",
-   "link_to": "Texnika Xarajatlari",
-   "type": "Report",
-   "report_ref_doctype": "Yoqilgi Hisobi",
-   "color": "Blue",
-   "doc_view": ""
+   "label": "Firmalararo To'lov",
+   "type": "DocType",
+   "link_to": "Firmalararo Tolov",
+   "doc_view": "List"
   }
  ],
  "title": "Karer",

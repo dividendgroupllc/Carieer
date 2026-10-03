@@ -1,0 +1,124 @@
+{
+ "app": "carieer",
+ "charts": [],
+ "content": "[{\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Omborchi</b></span>\", \"col\": 12}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kirim (xarid)\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ko'chirish / kirim-chiqim\", \"col\": 3}}, {\"id\": \"s3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Inventarizatsiya\", \"col\": 3}}, {\"id\": \"s5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Material Hisobot\", \"col\": 3}}, {\"id\": \"c1\", \"type\": \"card\", \"data\": {\"card_name\": \"Sozlamalar\", \"col\": 4}}]",
+ "creation": "2026-10-03 12:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "package",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Omborchi",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Sozlamalar",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Item",
+   "link_count": 0,
+   "link_to": "Item",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": ""
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Warehouse",
+   "link_count": 0,
+   "link_to": "Warehouse",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": ""
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "UOM",
+   "link_count": 0,
+   "link_to": "UOM",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link",
+   "dependencies": ""
+  }
+ ],
+ "modified": "2026-10-03 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Omborchi",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "Karer Menejer"
+  },
+  {
+   "role": "Karer Operator"
+  },
+  {
+   "role": "Beton Menejer"
+  },
+  {
+   "role": "Beton Operator"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "sequence_id": 54.0,
+ "shortcuts": [
+  {
+   "label": "Kirim (xarid)",
+   "link_to": "Purchase Receipt",
+   "type": "DocType",
+   "color": "Orange",
+   "doc_view": "List",
+   "stats_filter": "[[\"Purchase Receipt\", \"docstatus\", \"=\", 0, false]]",
+   "format": "{} Draft"
+  },
+  {
+   "label": "Ko'chirish / kirim-chiqim",
+   "link_to": "Stock Entry",
+   "type": "DocType",
+   "color": "Orange",
+   "doc_view": "List",
+   "stats_filter": "[[\"Stock Entry\", \"docstatus\", \"=\", 0, false]]",
+   "format": "{} Draft"
+  },
+  {
+   "label": "Inventarizatsiya",
+   "link_to": "Stock Reconciliation",
+   "type": "DocType",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "label": "Material Hisobot",
+   "link_to": "Material Hisobot",
+   "type": "Report",
+   "color": "Blue",
+   "report_ref_doctype": "Stock Ledger Entry",
+   "doc_view": ""
+  }
+ ],
+ "title": "Omborchi",
+ "type": "Workspace"
+}

@@ -7,11 +7,14 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt
 
-from carieer.utils import get_company_currency, validate_warehouse_company
+from carieer.utils import as_admin, get_allowed_companies, get_company_currency, get_firma_sozlama, validate_warehouse_company
 
 
 class FirmalararoSotuv(Document):
 	def validate(self):
+		allowed = get_allowed_companies()
+		if allowed and self.sotuvchi_firma not in allowed and self.xaridor_firma not in allowed:
+			frappe.throw(_("Sotuvchi yoki xaridor sizning firmangiz bo'lishi kerak"), frappe.PermissionError)
 		if self.sotuvchi_firma == self.xaridor_firma:
 			frappe.throw(_("Sotuvchi va xaridor firma bir xil bo'lishi mumkin emas"))
 		if get_company_currency(self.sotuvchi_firma) != get_company_currency(self.xaridor_firma):
@@ -25,6 +28,10 @@ class FirmalararoSotuv(Document):
 		self.total_amount = sum(flt(r.amount) for r in self.items)
 
 	def on_submit(self):
+		with as_admin():
+			self.make_documents()
+
+	def make_documents(self):
 		customer, supplier = ensure_inter_company_parties(self.sotuvchi_firma, self.xaridor_firma)
 		price_list = get_inter_company_price_list(get_company_currency(self.sotuvchi_firma))
 
@@ -79,9 +86,42 @@ class FirmalararoSotuv(Document):
 		pi.submit()
 
 		self.db_set({"sales_invoice": si.name, "purchase_invoice": pi.name})
+		self.make_tolov()
+
+	def make_tolov(self):
+		"""Darhol to'lov: xaridor kassasidan chiqim, sotuvchi kassasiga kirim (Firmalararo To'lov orqali)."""
+		if flt(self.tolov_summa) <= 0:
+			return
+		ft = frappe.get_doc(
+			{
+				"doctype": "Firmalararo Tolov",
+				"tolovchi_firma": self.xaridor_firma,
+				"tolovchi_kassa": self.xaridor_kassa,
+				"oluvchi_firma": self.sotuvchi_firma,
+				"oluvchi_kassa": self.sotuvchi_kassa,
+				"posting_date": self.posting_date,
+				"valyuta": self.tolov_valyuta or get_company_currency(self.xaridor_firma),
+				"kurs": self.tolov_kurs,
+				"summa": self.tolov_summa,
+				"izoh": _("Firmalararo sotuv {0} uchun").format(self.name),
+				"firmalararo_sotuv": self.name,
+			}
+		)
+		ft.flags.ignore_permissions = True
+		ft.insert()
+		ft.submit()
+		self.db_set("firmalararo_tolov", ft.name)
 
 	def on_cancel(self):
-		self.ignore_linked_doctypes = ("GL Entry", "Stock Ledger Entry", "Payment Ledger Entry")
+		with as_admin():
+			self.cancel_documents()
+
+	def cancel_documents(self):
+		self.ignore_linked_doctypes = ("GL Entry", "Stock Ledger Entry", "Payment Ledger Entry", "Firmalararo Tolov")
+		if self.firmalararo_tolov and frappe.db.get_value("Firmalararo Tolov", self.firmalararo_tolov, "docstatus") == 1:
+			ft = frappe.get_doc("Firmalararo Tolov", self.firmalararo_tolov)
+			ft.flags.ignore_permissions = True
+			ft.cancel()
 		for dt, name in (("Purchase Invoice", self.purchase_invoice), ("Sales Invoice", self.sales_invoice)):
 			if name and frappe.db.get_value(dt, name, "docstatus") == 1:
 				doc = frappe.get_doc(dt, name)
@@ -151,3 +191,40 @@ def get_inter_company_price_list(currency: str) -> str:
 		pl.flags.ignore_permissions = True
 		pl.insert()
 	return name
+
+
+# ------------------------------------------------------------------ Ruxsat: ikkala firma ham ko'radi
+# Hujjat 2 firmaga tegishli: sotuvchi ham, xaridor ham ko'rishi kerak (qarz ikkala tomonda ham bor).
+# Firma maydonlarida User Permission o'chirilgan (ignore_user_permissions), cheklov shu yerda.
+def get_permission_query_conditions(user=None):
+	allowed = get_allowed_companies()
+	if not allowed:
+		return ""
+	values = ", ".join(frappe.db.escape(c) for c in allowed)
+	return (
+		f"(`tabFirmalararo Sotuv`.sotuvchi_firma in ({values}) or `tabFirmalararo Sotuv`.xaridor_firma in ({values}))"
+	)
+
+
+def has_permission(doc, ptype=None, user=None):
+	allowed = get_allowed_companies()
+	if not allowed or not (doc.sotuvchi_firma or doc.xaridor_firma):
+		return True
+	return doc.sotuvchi_firma in allowed or doc.xaridor_firma in allowed
+
+
+@frappe.whitelist()
+def get_omborlar(sotuvchi_firma: str | None = None, xaridor_firma: str | None = None) -> dict:
+	"""Standart omborlar (Karer Sozlamalari -> Firmalar): beton zavod sotsa - Beton omboridan, olsa - Beton
+	xomashyo omboriga; karer esa Karer omboridan / omboriga."""
+	beton = frappe.db.get_single_value("Karer Sozlamalari", "beton_firma")
+
+	def ombor(company, chiqish):
+		if not company:
+			return None
+		row = get_firma_sozlama(company)
+		if company == beton:
+			return row.get("beton_ombori" if chiqish else "beton_xomashyo_ombori") or row.get("beton_ombori")
+		return row.get("sotuv_ombori") or row.get("qazish_ombori")
+
+	return {"chiqish_ombori": ombor(sotuvchi_firma, True), "kirish_ombori": ombor(xaridor_firma, False)}
