@@ -8,7 +8,13 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt
 
-from carieer.utils import get_company_currency, get_kategoriya_account, get_rate, validate_not_internal
+from carieer.utils import (
+	get_company_currency,
+	get_kategoriya_account,
+	get_rate,
+	hide_foreign_balance,
+	validate_not_internal,
+)
 
 PARTY_TYPES = ("Customer", "Supplier", "Employee", "Shareholder")
 # Kontragentsiz turlar: kassa <-> hisob (Journal Entry). Qaysi turdagi hisob tanlanishi mumkin:
@@ -246,5 +252,5 @@ def get_kassa_info(mode_of_payment: str | None, company: str | None) -> dict:
 	return {
 		"account": account,
 		"currency": frappe.get_cached_value("Account", account, "account_currency"),
-		"balance": flt(balance),
+		"balance": 0 if hide_foreign_balance(company) else flt(balance),
 	}

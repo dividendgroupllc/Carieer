@@ -310,6 +310,15 @@ def delete_gps_points(gps_imei: str | None = None, to_date: str | None = None) -
 	filters = {}
 	if gps_imei:
 		filters["gps_imei"] = gps_imei
+	# Firmaga bog'langan menejer faqat o'z firmasi texnikalarining nuqtalarini o'chira oladi
+	allowed = allowed_imeis()
+	if allowed is not None:
+		if gps_imei and gps_imei not in allowed:
+			frappe.throw(_("Bu texnika sizning firmangizga tegishli emas"), frappe.PermissionError)
+		if not gps_imei:
+			if not allowed:
+				return 0
+			filters["gps_imei"] = ("in", list(allowed))
 	if to_date:
 		filters["vaqt"] = ("<", add_days(getdate(to_date), 1))
 	count = frappe.db.count("GPS Malumot", filters)

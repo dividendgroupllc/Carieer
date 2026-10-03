@@ -8,21 +8,33 @@ frappe.query_reports["Balans"] = {
 		carieer_moliya_formatter(value, row, column, data, default_formatter),
 };
 
-// Oyma-oy moliyaviy hisobotlar uchun umumiy ko'rinish: daraxt chekinishi, qalin yig'ma qatorlar,
-// foiz qatorlari va manfiy summalar qizil rangda
+// Oyma-oy moliyaviy hisobotlar uchun umumiy ko'rinish (Google Sheets'dagi jadval kabi):
+// summalar valyuta belgisisiz, minglik ajratgich bilan; nol katakchalar bo'sh; manfiy summalar qizil;
+// bo'lim sarlavhalari (АКТИВЫ, ПАССИВЫ) rangli; yig'ma qatorlar qalin; "Разница" 0 bo'lsa yashil, aks holda qizil.
 function carieer_moliya_formatter(value, row, column, data, default_formatter) {
 	if (!data) return default_formatter(value, row, column, data);
 	if (column.fieldname === "label") {
-		value = frappe.utils.escape_html(data.label || "");
-		if (data.indent) value = `<span style="padding-left:${data.indent * 18}px">${value}</span>`;
-	} else if (data.is_percent) {
-		value = value === null || value === undefined || value === "" ? "" : `${format_number(value, null, 1)} %`;
-		value = `<div style="text-align:right">${value}</div>`;
-	} else {
-		const raw = flt(value);
-		value = data.is_header ? "" : default_formatter(value, row, column, data);
-		if (raw < 0) value = `<span style="color:var(--red-600)">${value}</span>`;
+		let label = frappe.utils.escape_html(data.label || "");
+		if (data.is_header) {
+			return `<span style="font-weight:700;letter-spacing:.04em;color:var(--primary)">${label}</span>`;
+		}
+		if (data.indent) label = `<span style="padding-left:${data.indent * 18}px">${label}</span>`;
+		return data.bold || data.total_row ? `<b>${label}</b>` : label;
 	}
-	if (data.bold || data.total_row) value = `<b>${value}</b>`;
-	return value;
+	if (data.is_header) return "";
+	if (data.is_percent) {
+		if (value === null || value === undefined || value === "") return "";
+		return `<div style="text-align:right;color:var(--text-muted)"><i>${format_number(value, null, 1)} %</i></div>`;
+	}
+	const raw = flt(value);
+	if (Math.abs(raw) < 0.005) {
+		const zero = data.is_check ? `<span style="color:var(--green-600)">0</span>` : data.total_row ? "0" : "";
+		return `<div style="text-align:right">${zero}</div>`;
+	}
+	let color = raw < 0 ? "var(--red-600)" : "";
+	if (data.is_check) color = "var(--red-600)";
+	let html = format_number(raw, null, 0);
+	if (color) html = `<span style="color:${color}">${html}</span>`;
+	if (data.bold || data.total_row) html = `<b>${html}</b>`;
+	return `<div style="text-align:right">${html}</div>`;
 }

@@ -1,7 +1,7 @@
 {
  "app": "carieer",
  "charts": [],
- "content": "[{\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Sotuv operator</b></span>\", \"col\": 12}}, {\"id\": \"s0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sotuv\", \"col\": 3}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo Sotuv\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Mijozlar\", \"col\": 3}}, {\"id\": \"s3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kontrol Hisobot\", \"col\": 3}}, {\"id\": \"s4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ombor qoldig'i\", \"col\": 3}}, {\"id\": \"c1\", \"type\": \"card\", \"data\": {\"card_name\": \"Sozlamalar\", \"col\": 4}}]",
+ "content": "[{\"id\": \"dash_h\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Ko'rsatkichlar</b></span>\", \"col\": 12}}, {\"id\": \"dash_n0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Karer Bugungi Sotuv\", \"col\": 4}}, {\"id\": \"dash_n1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Beton Bugungi Sotuv\", \"col\": 4}}, {\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Sotuv operator</b></span>\", \"col\": 12}}, {\"id\": \"s0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sotuv\", \"col\": 3}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo Sotuv\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Mijozlar\", \"col\": 3}}, {\"id\": \"s3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kontrol Hisobot\", \"col\": 3}}, {\"id\": \"s4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ombor qoldig'i\", \"col\": 3}}, {\"id\": \"c1\", \"type\": \"card\", \"data\": {\"card_name\": \"Sozlamalar\", \"col\": 4}}]",
  "creation": "2026-10-03 12:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -45,11 +45,20 @@
    "dependencies": ""
   }
  ],
- "modified": "2026-10-03 19:00:00.000000",
+ "modified": "2026-10-03 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Sotuv operator",
- "number_cards": [],
+ "number_cards": [
+  {
+   "number_card_name": "Karer Bugungi Sotuv",
+   "label": "Karer: bugungi sotuv"
+  },
+  {
+   "number_card_name": "Beton Bugungi Sotuv",
+   "label": "Beton: bugungi sotuv"
+  }
+ ],
  "owner": "Administrator",
  "parent_page": "",
  "public": 1,
@@ -57,13 +66,7 @@
  "restrict_to_domain": "",
  "roles": [
   {
-   "role": "Karer Menejer"
-  },
-  {
    "role": "Karer Operator"
-  },
-  {
-   "role": "Beton Menejer"
   },
   {
    "role": "Beton Operator"

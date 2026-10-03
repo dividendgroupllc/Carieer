@@ -13,7 +13,7 @@
  "is_hidden": 0,
  "label": "Kassa",
  "links": [],
- "modified": "2026-10-03 20:00:00.000000",
+ "modified": "2026-10-03 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Kassa",
@@ -25,13 +25,7 @@
  "restrict_to_domain": "",
  "roles": [
   {
-   "role": "Karer Menejer"
-  },
-  {
    "role": "Karer Kassir"
-  },
-  {
-   "role": "Beton Menejer"
   },
   {
    "role": "Beton Kassir"

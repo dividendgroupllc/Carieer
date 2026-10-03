@@ -1,7 +1,16 @@
 {
  "app": "carieer",
- "charts": [],
- "content": "[{\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Beton Zavod</b></span>\", \"col\": 12}}, {\"id\": \"hnCkdrRjFO\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kassa va Qarzlar\", \"col\": 3}}, {\"id\": \"s0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Beton Ishlab Chiqarish\", \"col\": 3}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Beton Sotuv\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Xarid (kirim)\", \"col\": 3}}, {\"id\": \"skassa\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kassa\", \"col\": 3}}, {\"id\": \"s3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Retsept (BOM)\", \"col\": 3}}, {\"id\": \"s4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo Sotuv\", \"col\": 3}}, {\"id\": \"s5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Yoqilgi Hisobi\", \"col\": 3}}, {\"id\": \"s6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnikalar xaritasi\", \"col\": 3}}, {\"id\": \"s7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kontrol Hisobot\", \"col\": 3}}, {\"id\": \"s8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Material Hisobot\", \"col\": 3}}, {\"id\": \"s9\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"DDS Hisobot\", \"col\": 3}}, {\"id\": \"s10\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnika Xarajatlari\", \"col\": 3}}, {\"id\": \"sfq\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo Qarzlar\", \"col\": 3}}, {\"id\": \"c1\", \"type\": \"card\", \"data\": {\"card_name\": \"Sozlamalar\", \"col\": 4}}, {\"id\": \"uubJqNSOLY\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo To'lov\", \"col\": 3}}]",
+ "charts": [
+  {
+   "chart_name": "Beton Kunlik Sotuv",
+   "label": "Kunlik sotuv (oxirgi oy)"
+  },
+  {
+   "chart_name": "Beton Yoqilgi Sarfi Grafik",
+   "label": "Yoqilg'i sarfi (haftalik)"
+  }
+ ],
+ "content": "[{\"id\": \"dash_h\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Ko'rsatkichlar</b></span>\", \"col\": 12}}, {\"id\": \"dash_n0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Beton Bugungi Sotuv\", \"col\": 4}}, {\"id\": \"dash_n1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Beton Oylik Sotuv\", \"col\": 4}}, {\"id\": \"dash_n2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Beton Kassa Qoldigi\", \"col\": 4}}, {\"id\": \"dash_n3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Beton Mijozlar Qarzi\", \"col\": 4}}, {\"id\": \"dash_n4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Beton Yoqilgi Sarfi\", \"col\": 4}}, {\"id\": \"dash_n5\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Beton Ishlab Chiqarilgan\", \"col\": 4}}, {\"id\": \"dash_c0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Beton Kunlik Sotuv\", \"col\": 6}}, {\"id\": \"dash_c1\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Beton Yoqilgi Sarfi Grafik\", \"col\": 6}}, {\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Beton Zavod</b></span>\", \"col\": 12}}, {\"id\": \"hnCkdrRjFO\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kassa va Qarzlar\", \"col\": 3}}, {\"id\": \"s0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Beton Ishlab Chiqarish\", \"col\": 3}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Beton Sotuv\", \"col\": 3}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Xarid (kirim)\", \"col\": 3}}, {\"id\": \"skassa\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kassa\", \"col\": 3}}, {\"id\": \"s3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Retsept (BOM)\", \"col\": 3}}, {\"id\": \"s4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo Sotuv\", \"col\": 3}}, {\"id\": \"s5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Yoqilgi Hisobi\", \"col\": 3}}, {\"id\": \"s6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnikalar xaritasi\", \"col\": 3}}, {\"id\": \"s7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kontrol Hisobot\", \"col\": 3}}, {\"id\": \"s8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Material Hisobot\", \"col\": 3}}, {\"id\": \"s9\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"DDS Hisobot\", \"col\": 3}}, {\"id\": \"s10\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Texnika Xarajatlari\", \"col\": 3}}, {\"id\": \"sfq\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo Qarzlar\", \"col\": 3}}, {\"id\": \"c1\", \"type\": \"card\", \"data\": {\"card_name\": \"Sozlamalar\", \"col\": 4}}, {\"id\": \"uubJqNSOLY\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firmalararo To'lov\", \"col\": 3}}]",
  "creation": "2026-10-02 12:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -89,11 +98,36 @@
    "dependencies": ""
   }
  ],
- "modified": "2026-10-03 20:00:00.000000",
+ "modified": "2026-10-03 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Beton Zavod",
- "number_cards": [],
+ "number_cards": [
+  {
+   "number_card_name": "Beton Bugungi Sotuv",
+   "label": "Bugungi sotuv"
+  },
+  {
+   "number_card_name": "Beton Oylik Sotuv",
+   "label": "Shu oy sotuv"
+  },
+  {
+   "number_card_name": "Beton Kassa Qoldigi",
+   "label": "Kassada pul"
+  },
+  {
+   "number_card_name": "Beton Mijozlar Qarzi",
+   "label": "Mijozlar qarzi"
+  },
+  {
+   "number_card_name": "Beton Yoqilgi Sarfi",
+   "label": "Yoqilg'i va moy sarfi (shu oy, litr)"
+  },
+  {
+   "number_card_name": "Beton Ishlab Chiqarilgan",
+   "label": "Ishlab chiqarilgan beton (shu oy)"
+  }
+ ],
  "owner": "Administrator",
  "parent_page": "",
  "public": 1,

@@ -32,11 +32,14 @@ def get_kassa_info(mode_of_payment: str, company: str, date: str | None = None) 
 	"""Forma uchun: kassa hisobi, valyutasi va qoldig'i."""
 	from erpnext.accounts.utils import get_balance_on
 
+	from carieer.utils import hide_foreign_balance
+
 	account = get_kassa_account(mode_of_payment, company)
+	balance = get_balance_on(account, date, in_account_currency=True, ignore_account_permission=True)
 	return {
 		"account": account,
 		"currency": frappe.get_cached_value("Account", account, "account_currency"),
-		"balance": flt(get_balance_on(account, date, in_account_currency=True, ignore_account_permission=True)),
+		"balance": 0 if hide_foreign_balance(company) else flt(balance),
 	}
 
 

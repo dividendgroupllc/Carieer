@@ -1,0 +1,23 @@
+{
+ "color": "#FF5858",
+ "creation": "2026-10-03 21:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "GL Entry",
+ "dynamic_filters_json": "",
+ "filters_json": "{\"tip\": \"Karer\"}",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Karer Mijozlar Qarzi",
+ "method": "carieer.carieer.dashboard.mijozlar_qarzi",
+ "modified": "2026-10-03 21:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Karer Mijozlar Qarzi",
+ "owner": "Administrator",
+ "show_full_number": 0,
+ "show_percentage_stats": 0,
+ "stats_time_interval": "Daily",
+ "type": "Custom"
+}

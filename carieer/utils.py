@@ -204,6 +204,15 @@ def check_report_company(filters: frappe._dict):
 		frappe.throw(_("{0} firmasi ma'lumotlarini ko'rishga ruxsatingiz yo'q").format(filters.company), frappe.PermissionError)
 
 
+def hide_foreign_balance(company: str | None) -> bool:
+	"""Kassa qoldig'i brauzerdan to'g'ridan-to'g'ri so'ralganda (get_kassa_info) faqat o'z firmasiniki ko'rsatiladi.
+	Ichki chaqiruvlar (Firmalararo To'lov, Sotuv) ikkinchi firma kassasi bilan ishlaydi - ularga ta'sir qilmaydi."""
+	allowed = get_allowed_companies()
+	if not allowed or company in allowed:
+		return False
+	return str(frappe.form_dict.get("cmd") or "").endswith("get_kassa_info")
+
+
 KARER_ROLES = {"Karer Operator", "Karer Kassir", "Karer Menejer", "Karer xodimi"}
 BETON_ROLES = {"Beton Operator", "Beton Kassir", "Beton Menejer", "Beton zavod xodimi"}
 
@@ -235,6 +244,14 @@ def boot_session(bootinfo):
 	(ilova va modul nomi "Carieer" bo'lsa ham)."""
 	firma = get_user_firma()
 	bootinfo.carieer_firma = firma
+	# Dashboard kartochka va grafiklari firma bo'yicha filtrlanadi (dynamic_filters_json shu qiymatni o'qiydi)
+	bootinfo.carieer_firmalar = {
+		"Karer": frappe.db.get_single_value("Karer Sozlamalari", "karer_firma") or "",
+		"Beton": frappe.db.get_single_value("Karer Sozlamalari", "beton_firma") or "",
+	}
+	# Post operatori ikkala firmaga sotadi (Karer Operator + Beton Operator): bosh sahifa -> Sotuv operator
+	roles = set(frappe.get_roles())
+	bootinfo.carieer_post = not firma and {"Karer Operator", "Beton Operator"} <= roles and "System Manager" not in roles
 	if not firma:
 		return
 	title, logo = FIRMA_KORINISHI[firma]

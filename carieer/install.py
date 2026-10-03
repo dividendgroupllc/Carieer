@@ -11,6 +11,9 @@ Qo'lda (bir marta), asosiy ma'lumotlarni yaratish:
 "Эко Карьер" jadvalidagi tovarlar, tovar guruhlari va kontragent guruhlarini ham yaratish:
   bench --site SITE execute carieer.install.setup_eko_karer --kwargs "{'company': 'Carieer'}"
 
+Sotuv posti xodimi (ikkala firma nomidan sotadi):
+  bench --site SITE execute carieer.install.setup_post_user --kwargs "{'email': 'post@karer.uz', 'full_name': 'Post Operator', 'password': '...'}"
+
 Qo'shimcha kassa (jadvaldagi "Наличные2", "Биржа счёт" kabi):
   bench --site SITE execute carieer.install.setup_kassa --kwargs "{'company': 'Carieer', 'kassa': 'Наличные2'}"
 """
@@ -694,6 +697,68 @@ def setup_firma_user(
 				"for_value": company,
 				"apply_to_all_doctypes": 1,
 				"is_default": 1,
+			}
+		).insert(ignore_permissions=True)
+	return user.name
+
+
+@frappe.whitelist()
+def setup_post_user(email: str, full_name: str, password: str | None = None, default_company: str | None = None):
+	"""Sotuv posti xodimi: ikkala firma nomidan sotadi (Sotuv'da Tip = Karer / Beton).
+	Karer Operator + Beton Operator rollari, ikkala firmaga User Permission, standart workspace "Sotuv operator".
+	Firma rollari (Karer xodimi / Beton zavod xodimi) berilmaydi: post faqat sotuv qiladi, Qazib Olish va
+	boshqa bo'limlar unga kerak emas."""
+	frappe.only_for("System Manager")
+	companies = [
+		c
+		for c in (
+			frappe.db.get_single_value("Karer Sozlamalari", "karer_firma"),
+			frappe.db.get_single_value("Karer Sozlamalari", "beton_firma"),
+		)
+		if c
+	]
+	if len(companies) < 2:
+		frappe.throw(_("Karer Sozlamalari -> Sotuv posti: Karer va Beton firmalarini ko'rsating"))
+	default_company = default_company or companies[0]
+
+	user = frappe.get_doc("User", email) if frappe.db.exists("User", email) else frappe.new_doc("User")
+	if user.is_new():
+		user.email = email
+		user.send_welcome_email = 0
+	first, _sep, last = full_name.partition(" ")
+	user.update(
+		{
+			"first_name": first,
+			"last_name": last,
+			"enabled": 1,
+			"user_type": "System User",
+			"module_profile": "Karer xodim",
+			"default_workspace": "Sotuv operator",
+		}
+	)
+	user.set("roles", [d for d in user.roles if d.role not in ROLES + FIRMA_ROLES])
+	for r in ("Karer Operator", "Beton Operator"):
+		user.append("roles", {"role": r})
+	if password:
+		user.new_password = password
+	user.save(ignore_permissions=True)
+
+	for up in frappe.get_all("User Permission", {"user": email, "allow": "Company"}, ["name", "for_value"]):
+		if up.for_value not in companies:
+			frappe.delete_doc("User Permission", up.name, ignore_permissions=True)
+	for company in companies:
+		name = frappe.db.get_value("User Permission", {"user": email, "allow": "Company", "for_value": company})
+		if name:
+			frappe.db.set_value("User Permission", name, "is_default", int(company == default_company))
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "User Permission",
+				"user": email,
+				"allow": "Company",
+				"for_value": company,
+				"apply_to_all_doctypes": 1,
+				"is_default": int(company == default_company),
 			}
 		).insert(ignore_permissions=True)
 	return user.name
