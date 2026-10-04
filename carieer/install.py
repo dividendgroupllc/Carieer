@@ -45,6 +45,9 @@ def after_migrate():
 	hide_item_fields()
 	make_module_profile()
 	set_uzs_symbol()
+	from carieer.patches.sahifalarni_tozalash import execute as sahifalarni_tozalash
+
+	sahifalarni_tozalash()
 
 
 def set_uzs_symbol():

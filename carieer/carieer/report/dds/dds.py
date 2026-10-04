@@ -197,7 +197,7 @@ def resolve(r, pe, je_rows, accounts) -> dict:
 			return {"description": a.account_name, "category": "dividend", "remarks": a.user_remark}
 		return {"description": a.account_name, "category": "other", "remarks": a.user_remark}
 	if je_rows.get(r.voucher_no):
-		# Journal Entry'ning barcha qatorlari kassa hisoblari: kassalar orasida o'tkazma (Kassa Operatsiya)
+		# Journal Entry'ning barcha qatorlari kassa hisoblari: kassalar orasida o'tkazma
 		return {"description": "Перемещение", "category": "transfer", "remarks": je_rows[r.voucher_no][0].user_remark}
 	return {"description": r.against or r.voucher_no, "category": "other"}
 

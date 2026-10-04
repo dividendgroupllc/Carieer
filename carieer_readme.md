@@ -421,12 +421,12 @@ Boshlang'ich qoldiq
 - **Filtrlar:** firma, sana, ombor, tovar, nol qoldiqlarni ko'rsatish
 - **Kimga:** omborchi, menejer (qancha qazildi, qancha sotildi, qancha betonga ketdi)
 
-### 8.3 DDS Hisobot (движение денежных средств)
-**Vazifasi:** pul oqimi. Kassa va bank hisoblari bo'yicha.
-- Har bir hisob: **boshlang'ich qoldiq → kirim → chiqim → yakuniy qoldiq** (hisob valyutasida)
-- **Moddalar** belgisi bilan: mijozlardan tushum, yetkazib beruvchilarga to'lov, xodimlarga (oylik, avans) va hokazo
-- **Filtrlar:** firma, sana, hisob, moddalar, nol qatorlar
-- **Kimga:** rahbar, buxgalter
+### 8.3 DDS va Pul Oqimi (движение денежных средств)
+**DDS:** kassa va bank hisoblaridagi har bir kirim/chiqim qatori (sana, kassa, kontragent, kategoriya, summa),
+tepada boshlang'ich qoldiq → kategoriyalar → yakuniy qoldiq. Jadvaldagi «ДДС» varag'i.
+**Pul Oqimi:** xuddi shu ma'lumot oyma-oy ustunlarda, xarajatlar jadvaldagi guruhlar bo'yicha. «Cash Flow» varag'i.
+- **Filtrlar:** firma, sana, kassa (to'lov turi)
+- **Kimga:** rahbar, buxgalter, kassir
 
 ### 8.4 Texnika Xarajatlari
 **Vazifasi:** har bir texnika bo'yicha yoqilg'i va moy sarfi (Yoqilg'i Hisobi asosida).
@@ -456,8 +456,24 @@ Boshlang'ich qoldiq
 | **Karer Menejer** | Menejer | Hammasi: sotuv, xarid, ishlab chiqarish, BOM, texnika, hisobotlar, xarita |
 | **System Manager** | Admin | Sozlamalar, foydalanuvchilar |
 
-**Foydalanuvchi qo'shish:** Settings → User → New → email, ism → **Roles** dan kerakli Karer rolini belgilang.
-Faqat bitta firmani ko'rsin desangiz: **User Permission** → Allow: Company → Value: firma nomi.
+Beton zavod xodimlari uchun xuddi shunday **Beton Operator / Beton Kassir / Beton Menejer** rollari bor.
+
+### Kim qaysi bo'limni ko'radi
+| Bo'lim | Kim ko'radi | Nima bor |
+|---|---|---|
+| **Karer** | karer xodimlari (operator, kassir, menejer) | dashboard, sotuv, qazib olish, ombor, texnika, hisobotlar |
+| **Beton Zavod** | beton xodimlari | dashboard, ishlab chiqarish, retsept, sotuv, ombor, hisobotlar |
+| **Sotuv operator** | post xodimi (ikkala firma nomidan sotadi) | sotuv, mijozlar, bugungi sotuv |
+| **Kassa** | kassirlar | Kassa, Nachislenie, DDS, akt sverka, qarzlar |
+| **Buxgalter oynasi** | menejer, kassir | Balans, P&L, Cash Flow, DDS, akt sverka, Prixod OS |
+| **Texnika** | menejer, operator | xarita, yoqilg'i, texnikalar, GPS |
+
+**Foydalanuvchi qo'shish** (rol + faqat o'z firmasi + standart bo'lim bitta buyruqda):
+```bash
+bench --site SITE execute carieer.install.setup_firma_user --kwargs "{'email': 'kassir@firma.uz', 'full_name': 'Ism Familiya', 'company': 'Carieer', 'role': 'Karer Kassir', 'password': '...'}"
+# post xodimi (ikkala firma):
+bench --site SITE execute carieer.install.setup_post_user --kwargs "{'email': 'post@firma.uz', 'full_name': 'Ism Familiya', 'password': '...'}"
+```
 
 ---
 
@@ -481,7 +497,7 @@ apps/carieer/carieer/
     │   ├── yoqilgi_hisobi/
     │   ├── gps_malumot/
     │   └── karer_sozlamalari/ + karer_firma_sozlamasi/  (Single + child)
-    ├── report/            kontrol_hisobot, material_hisobot, dds_hisobot, texnika_xarajatlari
+    ├── report/            kontrol_hisobot, material_hisobot, dds, pul_oqimi, balans, foyda_zarar, texnika_xarajatlari ...
     ├── page/karer_xarita/ Leaflet xarita sahifasi (realtime)
     └── workspace/karer/   Karer workspace (yorliqlar)
 ```
