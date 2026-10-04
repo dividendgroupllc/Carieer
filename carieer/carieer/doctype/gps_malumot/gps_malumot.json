@@ -1,21 +1,20 @@
 {
  "actions": [],
- "allow_rename": 0,
  "autoname": "hash",
- "creation": "2026-09-28 10:00:00.000000",
+ "creation": "2026-10-05 12:00:00.000000",
+ "description": "GPS nuqtalar (telefon / trekker o'zi yuboradi). Ro'yxatda «Map» ko'rinishi - xarita",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "vehicle",
+  "company",
   "gps_imei",
   "texnika_turi",
-  "marka",
-  "model",
   "qurilma",
   "vaqt",
   "cb_1",
-  "lat",
-  "lon",
+  "latitude",
+  "longitude",
   "tezlik",
   "yonalish",
   "cb_2",
@@ -33,77 +32,65 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Mashina raqami",
-   "options": "Vehicle",
-   "search_index": 1,
-   "bold": 1
+   "options": "Vehicle"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Firma",
+   "options": "Company",
+   "read_only": 1
   },
   {
    "fieldname": "gps_imei",
    "fieldtype": "Data",
-   "label": "GPS IMEI",
-   "search_index": 1,
-   "in_standard_filter": 1
+   "in_standard_filter": 1,
+   "label": "GPS IMEI"
   },
   {
+   "fetch_from": "vehicle.texnika_turi",
    "fieldname": "texnika_turi",
    "fieldtype": "Data",
    "label": "Texnika turi",
-   "fetch_from": "vehicle.texnika_turi",
-   "read_only": 1
-  },
-  {
-   "fieldname": "marka",
-   "fieldtype": "Data",
-   "label": "Marka",
-   "fetch_from": "vehicle.make",
-   "read_only": 1
-  },
-  {
-   "fieldname": "model",
-   "fieldtype": "Data",
-   "label": "Model",
-   "fetch_from": "vehicle.model",
    "read_only": 1
   },
   {
    "fieldname": "qurilma",
    "fieldtype": "Data",
    "label": "Signal manbasi",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "description": "Qaysi qurilma/ilova yuborgan: Traccar Client (Android/iOS) yoki GPS trekker",
    "read_only": 1
   },
   {
    "fieldname": "vaqt",
    "fieldtype": "Datetime",
    "in_list_view": 1,
-   "label": "Vaqt",
-   "search_index": 1
+   "in_standard_filter": 1,
+   "label": "Vaqt"
   },
   {
    "fieldname": "cb_1",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "lat",
+   "fieldname": "latitude",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Latitude",
-   "precision": "7",
-   "in_list_view": 1
+   "precision": "7"
   },
   {
-   "fieldname": "lon",
+   "fieldname": "longitude",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Longitude",
-   "precision": "7",
-   "in_list_view": 1
+   "precision": "7"
   },
   {
    "fieldname": "tezlik",
    "fieldtype": "Float",
-   "label": "Tezlik (km/soat)",
-   "in_list_view": 1
+   "in_list_view": 1,
+   "label": "Tezlik (km/soat)"
   },
   {
    "fieldname": "yonalish",
@@ -142,17 +129,16 @@
   {
    "fieldname": "nuqta_kalit",
    "fieldtype": "Data",
-   "label": "Nuqta kaliti",
-   "description": "imei + vaqt + koordinata (takroriy nuqtalar saqlanmasligi uchun)",
-   "unique": 1,
    "hidden": 1,
+   "label": "Nuqta kaliti",
    "read_only": 1,
-   "no_copy": 1
+   "unique": 1
   }
  ],
+ "in_create": 1,
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-03 19:00:00.000000",
+ "modified": "2026-10-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "GPS Malumot",
@@ -171,34 +157,35 @@
    "write": 1
   },
   {
-   "create": 1,
    "delete": 1,
-   "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Karer Menejer",
-   "share": 1,
-   "write": 1
+   "role": "Karer Menejer"
   },
   {
-   "create": 1,
    "delete": 1,
-   "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Beton Menejer",
-   "share": 1,
-   "write": 1
+   "role": "Beton Menejer"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Karer Operator"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Beton Operator"
   }
  ],
  "sort_field": "vaqt",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 0,
  "title_field": "vehicle",
- "show_title_field_in_link": 0
+ "track_changes": 0
 }

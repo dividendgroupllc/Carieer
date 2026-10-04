@@ -1,25 +1,31 @@
 {
  "app": "carieer",
- "creation": "2026-10-02 12:00:00.000000",
+ "creation": "2026-10-05 12:00:00.000000",
  "docstatus": 0,
  "doctype": "Desktop Icon",
  "hidden": 0,
  "icon": "factory",
  "icon_type": "Link",
- "idx": 0,
+ "idx": 2,
  "label": "Beton Zavod",
  "link_to": "Beton Zavod",
  "link_type": "Workspace Sidebar",
  "logo_url": "",
- "modified": "2026-10-03 19:00:00.000000",
+ "modified": "2026-10-05 12:00:00.000000",
  "modified_by": "Administrator",
  "name": "Beton Zavod",
  "owner": "Administrator",
  "parent_icon": "",
- "restrict_removal": 0,
+ "restrict_removal": 1,
  "roles": [
   {
-   "role": "Beton zavod xodimi"
+   "role": "Beton Operator"
+  },
+  {
+   "role": "Beton Kassir"
+  },
+  {
+   "role": "Beton Menejer"
   },
   {
    "role": "System Manager"

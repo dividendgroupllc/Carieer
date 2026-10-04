@@ -1,7 +1,9 @@
-# Nachislenie ("Начисление карьер"): xizmatlar bo'yicha hisoblash, pul harakatisiz.
-# Продажа услуга: biz xizmat ko'rsatdik (masalan, yetkazib berish) -> mijoz qarzdor:  Dt Debitor(mijoz) / Kt Daromad
-# Закуп услуга:   bizga xizmat ko'rsatildi (masalan, samosval ijarasi) -> biz qarzdormiz: Dt Xarajat / Kt Kreditor(ta'minotchi)
-# Submit -> Journal Entry. Pul keyin Kassa orqali to'lanadi/olinadi; Akt sverka'da "Начисления" qatorida chiqadi.
+# Nachislenie ("Начисление карьер"): xizmat bo'yicha qarz, pul harakatisiz.
+#   Закуп услуга:   bizga xizmat ko'rsatildi (samosval, ekskavator ...) -> biz qarzdormiz:
+#                   Dt Xarajat (modda) / Kt Kreditor (ta'minotchi)
+#   Продажа услуга: biz xizmat ko'rsatdik (dostavka, pogruzchik ...) -> mijoz qarzdor:
+#                   Dt Debitor (mijoz) / Kt Daromad
+# Submit -> Journal Entry. Pul keyin Kassa orqali to'lanadi / olinadi; Akt sverka va P&L da modda bo'yicha chiqadi.
 
 import frappe
 from frappe import _
@@ -17,27 +19,31 @@ XIZMAT_DAROMAD_HISOBI = "Выручка от реализации услуг"
 
 class Nachislenie(Document):
 	def validate(self):
-		validate_not_internal(self.party_type, self.party, _("Firmalararo Sotuv"))
+		expected = "Customer" if self.turi == "Продажа услуга" else "Supplier"
+		if self.party_type != expected:
+			frappe.throw(_("«{0}» uchun kontragent turi {1} bo'lishi kerak").format(self.turi, expected))
+		validate_not_internal(self.party_type, self.party, _("Sotuv (ichki firma)"))
 		company_currency = get_company_currency(self.company)
 		self.currency = self.currency or company_currency
 		if self.currency == company_currency:
 			self.kurs = 1
-		elif flt(self.kurs) <= 1:
+		elif flt(self.kurs) <= 0 or flt(self.kurs) == 1:
 			self.kurs = get_rate(self.currency, company_currency, self.sana)
 		if flt(self.qty) <= 0 or flt(self.rate) <= 0:
 			frappe.throw(_("Miqdor va narx 0 dan katta bo'lishi kerak"))
 		self.amount = flt(flt(self.qty) * flt(self.rate), 2)
 		self.base_amount = flt(self.amount * flt(self.kurs), 2)
-		expected = "Customer" if self.turi == "Продажа услуга" else "Supplier"
-		if self.party_type != expected:
-			frappe.throw(_("{0} uchun kontragent turi {1} bo'lishi kerak").format(self.turi, expected))
-		self.party_name = frappe.db.get_value(self.party_type, self.party, PARTY_NAME_FIELD[self.party_type]) or self.party
+		self.party_name = (
+			frappe.db.get_value(self.party_type, self.party, PARTY_NAME_FIELD[self.party_type]) or self.party
+		)
 		need = "Income" if self.turi == "Продажа услуга" else "Expense"
 		if not self.hisob:
 			self.hisob = get_default_account(self.company, self.turi, self.kategoriya)
 		if not self.hisob:
 			frappe.throw(_("Daromad / xarajat hisobini tanlang"))
-		root = frappe.get_cached_value("Account", self.hisob, ["root_type", "company", "is_group"], as_dict=True)
+		root = frappe.get_cached_value(
+			"Account", self.hisob, ["root_type", "company", "is_group"], as_dict=True
+		)
 		if not root or root.company != self.company:
 			frappe.throw(_("{0} hisobi {1} firmasiga tegishli emas").format(self.hisob, self.company))
 		if root.is_group:
@@ -53,7 +59,9 @@ class Nachislenie(Document):
 		party_account = get_party_account(self.party_type, self.party, self.company)
 		party_currency = frappe.get_cached_value("Account", party_account, "account_currency")
 		company_currency = get_company_currency(self.company)
-		party_rate = 1 if party_currency == company_currency else get_rate(party_currency, company_currency, self.sana)
+		party_rate = (
+			1 if party_currency == company_currency else get_rate(party_currency, company_currency, self.sana)
+		)
 		party_amount = flt(self.base_amount / party_rate, 2)
 
 		sale = self.turi == "Продажа услуга"
@@ -102,7 +110,6 @@ class Nachislenie(Document):
 		self.db_set("status", "Bekor qilingan")
 
 
-@frappe.whitelist()
 def get_default_account(company: str, turi: str, kategoriya: str | None = None) -> str | None:
 	"""Kategoriya tanlangan bo'lsa - shu kategoriya hisobi (masalan "Самосвал услуга" -> shu nomli xarajat moddasi,
 	P&L da alohida qator bo'lib chiqadi). Bo'lmasa: Продажа -> xizmatlardan tushum hisobi yoki firmaning standart
@@ -111,7 +118,9 @@ def get_default_account(company: str, turi: str, kategoriya: str | None = None) 
 	account = get_kategoriya_account(kategoriya, company, "Income" if sale else "Expense")
 	if not account and sale:
 		account = frappe.db.get_value(
-			"Account", {"company": company, "account_name": XIZMAT_DAROMAD_HISOBI, "is_group": 0, "disabled": 0}, "name"
+			"Account",
+			{"company": company, "account_name": XIZMAT_DAROMAD_HISOBI, "is_group": 0, "disabled": 0},
+			"name",
 		)
 	return account or frappe.get_cached_value(
 		"Company", company, "default_income_account" if sale else "default_expense_account"

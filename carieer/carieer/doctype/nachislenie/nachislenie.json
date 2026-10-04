@@ -1,10 +1,12 @@
 {
  "actions": [],
- "allow_rename": 0,
- "creation": "2026-10-03 11:00:00.000000",
+ "autoname": "naming_series:",
+ "creation": "2026-10-05 12:00:00.000000",
+ "description": "Начисление: pul harakatisiz qarz (xizmat sotildi / sotib olindi)",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "asosiy_section",
   "naming_series",
   "company",
   "sana",
@@ -35,67 +37,69 @@
  ],
  "fields": [
   {
+   "fieldname": "asosiy_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "NCH-.YYYY.-",
    "fieldname": "naming_series",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Seriya",
    "options": "NCH-.YYYY.-",
-   "default": "NCH-.YYYY.-",
-   "reqd": 1,
-   "print_hide": 1
+   "reqd": 1
   },
   {
    "fieldname": "company",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Firma",
    "options": "Company",
-   "reqd": 1,
-   "in_standard_filter": 1,
-   "remember_last_selected_value": 1
+   "reqd": 1
   },
   {
+   "default": "Today",
    "fieldname": "sana",
    "fieldtype": "Date",
-   "label": "Sana",
-   "default": "Today",
-   "reqd": 1,
    "in_list_view": 1,
-   "in_standard_filter": 1
+   "in_standard_filter": 1,
+   "label": "Sana",
+   "reqd": 1
   },
   {
    "fieldname": "cb_1",
    "fieldtype": "Column Break"
   },
   {
+   "description": "Закуп услуга: bizga xizmat ko'rsatildi, biz qarzdormiz. Продажа услуга: biz xizmat ko'rsatdik, mijoz qarzdor",
    "fieldname": "turi",
    "fieldtype": "Select",
-   "label": "Turi",
-   "options": "Продажа услуга\nЗакуп услуга",
-   "reqd": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "description": "Продажа услуга: biz xizmat ko'rsatdik (mijoz qarzdor). Закуп услуга: bizga xizmat ko'rsatildi (biz qarzdormiz)"
+   "label": "Turi (Категория)",
+   "options": "Закуп услуга\nПродажа услуга",
+   "reqd": 1
   },
   {
    "fieldname": "kategoriya",
    "fieldtype": "Link",
-   "label": "Kategoriya",
-   "options": "Kassa Kategoriya",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "description": "Masalan: Доставка, Самосвал услуга"
+   "label": "Modda (kategoriya)",
+   "options": "Kassa Kategoriya"
   },
   {
    "fieldname": "cb_2",
    "fieldtype": "Column Break"
   },
   {
+   "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Holat",
+   "no_copy": 1,
    "options": "Draft\nTasdiqlangan\nBekor qilingan",
-   "default": "Draft",
-   "read_only": 1,
-   "no_copy": 1
+   "read_only": 1
   },
   {
    "fieldname": "kontragent_section",
@@ -103,43 +107,46 @@
    "label": "Kontragent"
   },
   {
+   "default": "Supplier",
+   "description": "Закуп услуга -> Supplier, Продажа услуга -> Customer",
    "fieldname": "party_type",
    "fieldtype": "Select",
    "label": "Kontragent turi",
-   "options": "Customer\nSupplier",
+   "options": "Supplier\nCustomer",
    "reqd": 1
   },
   {
    "fieldname": "party",
    "fieldtype": "Dynamic Link",
+   "in_standard_filter": 1,
    "label": "Kontragent",
    "options": "party_type",
-   "reqd": 1,
-   "in_standard_filter": 1
+   "reqd": 1
   },
   {
    "fieldname": "party_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Kontragent nomi",
-   "read_only": 1,
-   "in_list_view": 1
+   "read_only": 1
   },
   {
    "fieldname": "cb_3",
    "fieldtype": "Column Break"
   },
   {
+   "description": "Bo'sh qoldirilsa modda (kategoriya)dan o'zi topiladi",
    "fieldname": "hisob",
    "fieldtype": "Link",
    "label": "Daromad / xarajat hisobi",
-   "options": "Account",
-   "reqd": 1,
-   "description": "Продажа: daromad hisobi, Закуп: xarajat hisobi"
+   "link_filters": "[[\"Account\", \"company\", \"=\", \"eval:doc.company\"], [\"Account\", \"is_group\", \"=\", 0]]",
+   "options": "Account"
   },
   {
    "fieldname": "cost_center",
    "fieldtype": "Link",
    "label": "Xarajat markazi",
+   "link_filters": "[[\"Cost Center\", \"company\", \"=\", \"eval:doc.company\"], [\"Cost Center\", \"is_group\", \"=\", 0]]",
    "options": "Cost Center"
   },
   {
@@ -148,43 +155,45 @@
    "label": "Summa"
   },
   {
+   "default": "1",
    "fieldname": "qty",
    "fieldtype": "Float",
-   "label": "Kol-vo",
-   "default": "1",
+   "label": "Кол-во",
+   "non_negative": 1,
    "reqd": 1
   },
   {
    "fieldname": "rate",
    "fieldtype": "Currency",
-   "label": "Narx",
+   "label": "Цена",
    "options": "currency",
    "reqd": 1
   },
   {
    "fieldname": "amount",
    "fieldtype": "Currency",
-   "label": "Summa",
+   "in_list_view": 1,
+   "label": "Сумма",
    "options": "currency",
-   "read_only": 1,
-   "in_list_view": 1
+   "read_only": 1
   },
   {
    "fieldname": "cb_4",
    "fieldtype": "Column Break"
   },
   {
+   "default": "UZS",
    "fieldname": "currency",
    "fieldtype": "Link",
-   "label": "Valyuta",
+   "label": "Валюта",
    "options": "Currency",
    "reqd": 1
   },
   {
+   "description": "Bo'sh = Currency Exchange kursi",
    "fieldname": "kurs",
    "fieldtype": "Float",
-   "label": "Kurs (firma valyutasiga)",
-   "default": "1",
+   "label": "Курс (firma valyutasiga)",
    "precision": "4"
   },
   {
@@ -207,29 +216,32 @@
    "fieldname": "journal_entry",
    "fieldtype": "Link",
    "label": "Journal Entry",
+   "no_copy": 1,
    "options": "Journal Entry",
-   "read_only": 1,
-   "no_copy": 1
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
-   "options": "Nachislenie",
    "no_copy": 1,
+   "options": "Nachislenie",
    "print_hide": 1,
    "read_only": 1
   }
  ],
  "index_web_pages_for_search": 0,
+ "is_submittable": 1,
  "links": [],
- "modified": "2026-10-03 19:00:00.000000",
+ "modified": "2026-10-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Nachislenie",
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -237,14 +249,14 @@
    "print": 1,
    "read": 1,
    "report": 1,
+   "role": "System Manager",
    "share": 1,
-   "write": 1,
-   "amend": 1,
-   "cancel": 1,
    "submit": 1,
-   "role": "System Manager"
+   "write": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -252,25 +264,14 @@
    "print": 1,
    "read": 1,
    "report": 1,
+   "role": "Karer Menejer",
    "share": 1,
-   "write": 1,
-   "amend": 1,
-   "cancel": 1,
    "submit": 1,
-   "role": "Karer Menejer"
+   "write": 1
   },
   {
-   "create": 1,
-   "read": 1,
-   "write": 1,
-   "print": 1,
-   "report": 1,
    "amend": 1,
    "cancel": 1,
-   "submit": 1,
-   "role": "Karer Kassir"
-  },
-  {
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -278,30 +279,49 @@
    "print": 1,
    "read": 1,
    "report": 1,
+   "role": "Beton Menejer",
    "share": 1,
-   "write": 1,
-   "amend": 1,
-   "cancel": 1,
    "submit": 1,
-   "role": "Beton Menejer"
+   "write": 1
   },
   {
-   "create": 1,
-   "read": 1,
-   "write": 1,
-   "print": 1,
-   "report": 1,
    "amend": 1,
    "cancel": 1,
+   "create": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Kassir",
    "submit": 1,
-   "role": "Beton Kassir"
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Beton Kassir",
+   "submit": 1,
+   "write": 1
   }
  ],
+ "search_fields": "party_name,kategoriya",
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": [],
- "track_changes": 1,
- "autoname": "naming_series:",
- "is_submittable": 1,
- "title_field": "party_name"
+ "states": [
+  {
+   "color": "Green",
+   "title": "Tasdiqlangan"
+  },
+  {
+   "color": "Gray",
+   "title": "Bekor qilingan"
+  }
+ ],
+ "title_field": "party_name",
+ "track_changes": 1
 }

@@ -1,0 +1,148 @@
+{
+ "actions": [],
+ "autoname": "field:zavod",
+ "creation": "2026-10-05 12:00:00.000000",
+ "description": "Ikki zavod (Karer, Beton) va ularning firmasi, omborlari, kassasi",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "zavod",
+  "company",
+  "cb_1",
+  "kassa",
+  "ombor_section",
+  "asosiy_ombor",
+  "xomashyo_ombori",
+  "cb_2",
+  "yoqilgi_ombori"
+ ],
+ "fields": [
+  {
+   "description": "Karer yoki Beton. Sotuv'dagi «Тип» shu ro'yxatdan tanlanadi",
+   "fieldname": "zavod",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Zavod",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Firma (Company)",
+   "options": "Company",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Sotuv / Kassa'da standart kassa",
+   "fieldname": "kassa",
+   "fieldtype": "Link",
+   "label": "Asosiy kassa (to'lov turi)",
+   "options": "Mode of Payment"
+  },
+  {
+   "fieldname": "ombor_section",
+   "fieldtype": "Section Break",
+   "label": "Omborlar"
+  },
+  {
+   "description": "Karer: qazib olingan va sotiladigan tovar. Beton: tayyor beton",
+   "fieldname": "asosiy_ombor",
+   "fieldtype": "Link",
+   "label": "Asosiy ombor",
+   "link_filters": "[[\"Warehouse\", \"company\", \"=\", \"eval:doc.company\"], [\"Warehouse\", \"is_group\", \"=\", 0]]",
+   "options": "Warehouse",
+   "reqd": 1
+  },
+  {
+   "description": "Firmalararo xarid shu yerga kiradi, beton ishlab chiqarish xomashyosi shu yerdan olinadi",
+   "fieldname": "xomashyo_ombori",
+   "fieldtype": "Link",
+   "label": "Xomashyo ombori",
+   "link_filters": "[[\"Warehouse\", \"company\", \"=\", \"eval:doc.company\"], [\"Warehouse\", \"is_group\", \"=\", 0]]",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "yoqilgi_ombori",
+   "fieldtype": "Link",
+   "label": "Yoqilg'i / moy ombori",
+   "link_filters": "[[\"Warehouse\", \"company\", \"=\", \"eval:doc.company\"], [\"Warehouse\", \"is_group\", \"=\", 0]]",
+   "options": "Warehouse"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-05 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Zavod",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Menejer",
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Beton Menejer",
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Kassir"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Beton Kassir"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Operator"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Beton Operator"
+  }
+ ],
+ "sort_field": "zavod",
+ "sort_order": "ASC",
+ "states": [],
+ "title_field": "zavod",
+ "track_changes": 1
+}

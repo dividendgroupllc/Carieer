@@ -1,11 +1,12 @@
 {
  "actions": [],
- "allow_rename": 0,
  "autoname": "naming_series:",
- "creation": "2026-10-03 15:00:00.000000",
+ "creation": "2026-10-05 12:00:00.000000",
+ "description": "Приход ОС: asosiy vosita kirimi",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "asosiy_section",
   "naming_series",
   "company",
   "sana",
@@ -34,32 +35,33 @@
  ],
  "fields": [
   {
+   "fieldname": "asosiy_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "POS-.YYYY.-",
    "fieldname": "naming_series",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Seriya",
    "options": "POS-.YYYY.-",
-   "default": "POS-.YYYY.-",
-   "reqd": 1,
-   "print_hide": 1,
-   "hidden": 1
+   "reqd": 1
   },
   {
    "fieldname": "company",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Firma",
    "options": "Company",
-   "reqd": 1,
-   "in_standard_filter": 1,
-   "remember_last_selected_value": 1
+   "reqd": 1
   },
   {
+   "default": "Today",
    "fieldname": "sana",
    "fieldtype": "Date",
-   "label": "Sana",
-   "default": "Today",
-   "reqd": 1,
    "in_list_view": 1,
-   "in_standard_filter": 1
+   "label": "Sana",
+   "reqd": 1
   },
   {
    "fieldname": "cb_1",
@@ -68,50 +70,49 @@
   {
    "fieldname": "nomi",
    "fieldtype": "Data",
-   "label": "Asosiy vosita nomi",
-   "reqd": 1,
    "in_list_view": 1,
-   "description": "Masalan: Самосвал HOHAN, Дробилка, Земля, Лицензия"
+   "label": "Asosiy vosita nomi (Наименование)",
+   "reqd": 1
   },
   {
+   "description": "Bo'sh = firmaning birinchi Fixed Asset hisobi",
    "fieldname": "hisob",
    "fieldtype": "Link",
    "label": "Asosiy vosita hisobi",
-   "options": "Account",
-   "reqd": 1,
-   "description": "Balansdagi \"Оборудование\" (Fixed Asset) hisobi"
+   "link_filters": "[[\"Account\", \"company\", \"=\", \"eval:doc.company\"], [\"Account\", \"is_group\", \"=\", 0], [\"Account\", \"root_type\", \"=\", \"Asset\"]]",
+   "options": "Account"
   },
   {
    "fieldname": "cb_2",
    "fieldtype": "Column Break"
   },
   {
+   "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Holat",
+   "no_copy": 1,
    "options": "Draft\nTasdiqlangan\nBekor qilingan",
-   "default": "Draft",
-   "read_only": 1,
-   "in_list_view": 1
+   "read_only": 1
   },
   {
    "fieldname": "manba_section",
    "fieldtype": "Section Break",
-   "label": "Kimdan / qaysi hisobdan"
+   "label": "Kimdan (Поставщик)"
   },
   {
+   "description": "Bo'sh qoldirilsa - ta'sischi kiritgan mulk (ustav kapitali)",
    "fieldname": "supplier",
    "fieldtype": "Link",
-   "label": "Yetkazib beruvchi (Поставщик)",
-   "options": "Supplier",
-   "in_standard_filter": 1,
-   "description": "Tanlansa - yetkazib beruvchi oldida qarz paydo bo'ladi (Akt sverka'da chiqadi), to'lov Kassa orqali"
+   "in_list_view": 1,
+   "label": "Yetkazib beruvchi",
+   "options": "Supplier"
   },
   {
+   "fetch_from": "supplier.supplier_name",
    "fieldname": "supplier_name",
    "fieldtype": "Data",
    "label": "Yetkazib beruvchi nomi",
-   "fetch_from": "supplier.supplier_name",
    "read_only": 1
   },
   {
@@ -119,13 +120,12 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:!doc.supplier",
    "fieldname": "kredit_hisob",
    "fieldtype": "Link",
    "label": "Manba hisobi (ustav kapitali)",
-   "options": "Account",
-   "depends_on": "eval:!doc.supplier",
-   "mandatory_depends_on": "eval:!doc.supplier",
-   "description": "Yetkazib beruvchi bo'lmasa: ta'sischi kiritgan mulk -> ustav kapitali (Equity) hisobi"
+   "link_filters": "[[\"Account\", \"company\", \"=\", \"eval:doc.company\"], [\"Account\", \"is_group\", \"=\", 0]]",
+   "options": "Account"
   },
   {
    "fieldname": "summa_section",
@@ -133,44 +133,45 @@
    "label": "Summa"
   },
   {
+   "default": "1",
    "fieldname": "qty",
    "fieldtype": "Float",
-   "label": "Kol-vo",
-   "default": "1",
+   "label": "Кол-во",
+   "non_negative": 1,
    "reqd": 1
   },
   {
    "fieldname": "rate",
-   "label": "Narx",
-   "reqd": 1,
    "fieldtype": "Currency",
-   "options": "currency"
+   "label": "Цена",
+   "options": "currency",
+   "reqd": 1
   },
   {
    "fieldname": "amount",
-   "label": "Summa",
-   "read_only": 1,
-   "in_list_view": 1,
    "fieldtype": "Currency",
-   "options": "currency"
+   "in_list_view": 1,
+   "label": "Сумма",
+   "options": "currency",
+   "read_only": 1
   },
   {
    "fieldname": "cb_4",
    "fieldtype": "Column Break"
   },
   {
+   "default": "UZS",
    "fieldname": "currency",
    "fieldtype": "Link",
-   "label": "Valyuta",
+   "label": "Валюта",
    "options": "Currency",
-   "reqd": 1,
-   "in_list_view": 1
+   "reqd": 1
   },
   {
+   "description": "Bo'sh = Currency Exchange kursi",
    "fieldname": "kurs",
    "fieldtype": "Float",
-   "label": "Kurs (firma valyutasiga)",
-   "default": "1",
+   "label": "Курс (firma valyutasiga)",
    "precision": "4"
   },
   {
@@ -178,8 +179,7 @@
    "fieldtype": "Currency",
    "label": "Summa (firma valyutasida)",
    "options": "Company:company:default_currency",
-   "read_only": 1,
-   "in_list_view": 1
+   "read_only": 1
   },
   {
    "fieldname": "izoh_section",
@@ -194,30 +194,32 @@
    "fieldname": "journal_entry",
    "fieldtype": "Link",
    "label": "Journal Entry",
+   "no_copy": 1,
    "options": "Journal Entry",
-   "read_only": 1,
-   "no_copy": 1
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
-   "options": "Prixod OS",
-   "read_only": 1,
    "no_copy": 1,
-   "print_hide": 1
+   "options": "Prixod OS",
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-03 19:00:00.000000",
+ "modified": "2026-10-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Prixod OS",
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -225,14 +227,14 @@
    "print": 1,
    "read": 1,
    "report": 1,
+   "role": "System Manager",
    "share": 1,
-   "write": 1,
-   "amend": 1,
-   "cancel": 1,
    "submit": 1,
-   "role": "System Manager"
+   "write": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -240,14 +242,14 @@
    "print": 1,
    "read": 1,
    "report": 1,
+   "role": "Karer Menejer",
    "share": 1,
-   "write": 1,
-   "amend": 1,
-   "cancel": 1,
    "submit": 1,
-   "role": "Karer Menejer"
+   "write": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -255,17 +257,24 @@
    "print": 1,
    "read": 1,
    "report": 1,
+   "role": "Beton Menejer",
    "share": 1,
-   "write": 1,
-   "amend": 1,
-   "cancel": 1,
    "submit": 1,
-   "role": "Beton Menejer"
+   "write": 1
   }
  ],
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": [],
+ "states": [
+  {
+   "color": "Green",
+   "title": "Tasdiqlangan"
+  },
+  {
+   "color": "Gray",
+   "title": "Bekor qilingan"
+  }
+ ],
  "title_field": "nomi",
  "track_changes": 1
 }

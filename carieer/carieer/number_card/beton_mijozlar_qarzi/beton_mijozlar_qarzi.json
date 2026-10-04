@@ -1,6 +1,6 @@
 {
- "color": "#FF5858",
- "creation": "2026-10-03 21:00:00.000000",
+ "color": "#ECAD4B",
+ "creation": "2026-10-05 12:00:00.000000",
  "docstatus": 0,
  "doctype": "Number Card",
  "document_type": "GL Entry",
@@ -11,12 +11,12 @@
  "is_standard": 1,
  "label": "Beton Mijozlar Qarzi",
  "method": "carieer.carieer.dashboard.mijozlar_qarzi",
- "modified": "2026-10-03 21:00:00.000000",
+ "modified": "2026-10-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Beton Mijozlar Qarzi",
  "owner": "Administrator",
- "show_full_number": 0,
+ "show_full_number": 1,
  "show_percentage_stats": 0,
  "stats_time_interval": "Daily",
  "type": "Custom"

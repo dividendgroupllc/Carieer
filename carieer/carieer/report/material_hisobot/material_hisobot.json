@@ -1,15 +1,63 @@
 {
  "add_total_row": 0,
+ "add_translate_data": 0,
  "columns": [],
- "creation": "2026-09-28 10:00:00.000000",
+ "creation": "2026-10-05 12:00:00.000000",
  "disabled": 0,
  "docstatus": 0,
  "doctype": "Report",
- "filters": [],
+ "filters": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Фирма (бўш = ўзингизники)",
+   "mandatory": 0,
+   "options": "Company",
+   "wildcard_filter": 0
+  },
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "Сана дан",
+   "mandatory": 0,
+   "wildcard_filter": 0
+  },
+  {
+   "default": "Today",
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "Сана гача",
+   "mandatory": 0,
+   "wildcard_filter": 0
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Омбор",
+   "mandatory": 0,
+   "options": "Warehouse",
+   "wildcard_filter": 0
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Товар",
+   "mandatory": 0,
+   "options": "Item",
+   "wildcard_filter": 0
+  },
+  {
+   "fieldname": "show_zero",
+   "fieldtype": "Check",
+   "label": "Нол қаторларни кўрсатиш",
+   "mandatory": 0,
+   "wildcard_filter": 0
+  }
+ ],
  "idx": 0,
  "is_standard": "Yes",
  "letterhead": null,
- "modified": "2026-10-03 19:00:00.000000",
+ "modified": "2026-10-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Material Hisobot",
@@ -26,19 +74,14 @@
    "role": "Karer Menejer"
   },
   {
-   "role": "Karer Operator"
-  },
-  {
-   "role": "Stock User"
-  },
-  {
-   "role": "Stock Manager"
-  },
-  {
    "role": "Beton Menejer"
+  },
+  {
+   "role": "Karer Operator"
   },
   {
    "role": "Beton Operator"
   }
- ]
+ ],
+ "timeout": 0
 }

@@ -19,7 +19,7 @@ class PrixodOS(Document):
 		self.currency = self.currency or company_currency
 		if self.currency == company_currency:
 			self.kurs = 1
-		elif flt(self.kurs) <= 1:
+		elif flt(self.kurs) <= 0 or flt(self.kurs) == 1:
 			self.kurs = get_rate(self.currency, company_currency, self.sana)
 		if flt(self.qty) <= 0 or flt(self.rate) <= 0:
 			frappe.throw(_("Miqdor va narx 0 dan katta bo'lishi kerak"))
@@ -47,7 +47,11 @@ class PrixodOS(Document):
 		if acc.is_group:
 			frappe.throw(_("{0} guruh hisob. Oxirgi darajadagi hisobni tanlang").format(account))
 		if acc.root_type not in root_types:
-			frappe.throw(_("{0} hisobi turi {1} bo'lishi kerak (hozir: {2})").format(account, " / ".join(root_types), acc.root_type))
+			frappe.throw(
+				_("{0} hisobi turi {1} bo'lishi kerak (hozir: {2})").format(
+					account, " / ".join(root_types), acc.root_type
+				)
+			)
 
 	def on_submit(self):
 		je = frappe.new_doc("Journal Entry")
@@ -72,7 +76,11 @@ class PrixodOS(Document):
 			company_currency = get_company_currency(self.company)
 			party_account = get_party_account("Supplier", self.supplier, self.company)
 			party_currency = frappe.get_cached_value("Account", party_account, "account_currency")
-			party_rate = 1 if party_currency == company_currency else get_rate(party_currency, company_currency, self.sana)
+			party_rate = (
+				1
+				if party_currency == company_currency
+				else get_rate(party_currency, company_currency, self.sana)
+			)
 			je.multi_currency = 1 if party_currency != company_currency else 0
 			je.append(
 				"accounts",
@@ -109,15 +117,29 @@ class PrixodOS(Document):
 		self.db_set("status", "Bekor qilingan")
 
 
-@frappe.whitelist()
 def get_default_accounts(company: str) -> dict:
-	"""Forma uchun standart hisoblar: birinchi Fixed Asset hisobi va ustav kapitali (Capital Stock) hisobi."""
-	hisob = frappe.db.get_value(
-		"Account", {"company": company, "account_type": "Fixed Asset", "is_group": 0, "disabled": 0}, "name", order_by="lft asc"
+	"""Standart hisoblar: «Оборудование» (Capital Equipment) yoki birinchi Fixed Asset hisobi va ustav kapitali."""
+	hisob = None
+	for account_name in ("Capital Equipment", "Plants and Machineries", "Оборудование"):
+		hisob = frappe.db.get_value(
+			"Account",
+			{"company": company, "account_name": account_name, "is_group": 0, "disabled": 0},
+			"name",
+		)
+		if hisob:
+			break
+	hisob = hisob or frappe.db.get_value(
+		"Account",
+		{"company": company, "account_type": "Fixed Asset", "is_group": 0, "disabled": 0},
+		"name",
+		order_by="lft asc",
 	)
 	kredit = frappe.db.get_value(
 		"Account", {"company": company, "account_name": "Capital Stock", "is_group": 0}, "name"
 	) or frappe.db.get_value(
-		"Account", {"company": company, "account_type": "Equity", "is_group": 0, "disabled": 0}, "name", order_by="lft asc"
+		"Account",
+		{"company": company, "account_type": "Equity", "is_group": 0, "disabled": 0},
+		"name",
+		order_by="lft asc",
 	)
 	return {"hisob": hisob, "kredit_hisob": kredit}

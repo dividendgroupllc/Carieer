@@ -1,55 +1,50 @@
 app_name = "carieer"
 app_title = "Carieer"
 app_publisher = "ismoil"
-app_description = "Karer, beton, texnika va hisobotlar (ERPNext ustida)"
+app_description = (
+	"Karer va beton zavod: sotuv posti, kassa, nachislenie, ombor, texnika va hisobotlar (ERPNext ustida)"
+)
 app_email = "devpy2869@gmail.com"
 app_license = "mit"
 
-required_apps = ["erpnext"]
+# ERPNext (buxgalteriya, ombor) va HRMS (xodimlar) ustida ishlaydi
+required_apps = ["erpnext", "hrms"]
 
-# Bosh sahifadagi "Karer" ikonkasi (Frappe bitta ilovaga bitta ikonka ko'rsatadi): carieer-home sahifasi
-# xodimni o'z firmasining bo'limiga yuboradi (Beton zavod xodimi -> Beton Zavod, qolganlar -> Karer)
-add_to_apps_screen = [
-	{
-		"name": "carieer",
-		"logo": "/assets/carieer/karer-logo.svg",
-		"title": "Karer",
-		"route": "/desk/carieer-home",
-		"has_permission": "carieer.utils.has_app_permission",
-	},
-]
+# Custom JS yo'q: barcha formalar, ro'yxatlar va hisobotlar Frappe / ERPNext'ning o'z UI'si bilan ishlaydi.
+# Bo'limlar (desktop ikonkasi + chap menyu): carieer/desktop_icon, carieer/workspace_sidebar, carieer/carieer/workspace
 
-# Beton xodimi ilovani "Beton Zavod", karer xodimi "Karer" nomi bilan ko'radi
-boot_session = "carieer.utils.boot_session"
+# Menyuni tozalash: Karer xodimi faqat «Karer», beton xodimi faqat «Beton Zavod» bo'limini ko'radi
+boot_session = "carieer.permissions.boot_session"
 
 # O'rnatish / migrate
 after_install = "carieer.install.after_install"
 after_migrate = "carieer.install.after_migrate"
 
-# Tashqaridan (masalan Payment Entry formasidan) kiritilgan to'lovlar ham Sotuv statusini yangilasin
 doc_events = {
+	# Tashqaridan (Kassa, Payment Entry) kiritilgan to'lovlar ham Sotuv'dagi qarz va holatni yangilasin
 	"Payment Entry": {
 		"on_submit": "carieer.carieer.doctype.sotuv.sotuv.on_payment_entry_change",
 		"on_cancel": "carieer.carieer.doctype.sotuv.sotuv.on_payment_entry_change",
 	},
+	# GPS IMEI yozilganda eski nuqtalarga ham mashina raqami qo'yiladi
 	"Vehicle": {
 		"on_update": "carieer.api.sync_vehicle_gps",
 	},
+	# Инвентаризация: karer tovari tan narxi 0 bo'lishi mumkin
+	"Stock Reconciliation": {
+		"before_validate": "carieer.events.stock_reconciliation_before_validate",
+	},
 }
 
-# Firmalararo Sotuv / To'lov ikkala firmaga (sotuvchi va xaridor) ko'rinadi
+# Firmalararo To'lov ikkala firmaga (to'lovchi va oluvchi) ko'rinadi
 permission_query_conditions = {
-	"Firmalararo Sotuv": "carieer.carieer.doctype.firmalararo_sotuv.firmalararo_sotuv.get_permission_query_conditions",
 	"Firmalararo Tolov": "carieer.carieer.doctype.firmalararo_tolov.firmalararo_tolov.get_permission_query_conditions",
 }
 has_permission = {
-	"Firmalararo Sotuv": "carieer.carieer.doctype.firmalararo_sotuv.firmalararo_sotuv.has_permission",
 	"Firmalararo Tolov": "carieer.carieer.doctype.firmalararo_tolov.firmalararo_tolov.has_permission",
 }
 
-# Vehicle ga qo'shilgan custom fieldlar install.py da yaratiladi (fixtures shart emas)
-
-# GPS Malumot jadvali cheksiz o'smasin: 90 kundan eski nuqtalar har kuni o'chiriladi
+# GPS Malumot jadvali cheksiz o'smasin: eski nuqtalar har kuni o'chiriladi
 scheduler_events = {
 	"daily": ["carieer.api.cleanup_gps"],
 }

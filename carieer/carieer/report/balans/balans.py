@@ -14,8 +14,16 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-from carieer.carieer.report.moliya import get_accounts, get_monthly_gl, get_months, line, month_columns, ru
-from carieer.utils import check_report_company
+from carieer.carieer.report.common import prepare
+from carieer.carieer.report.moliya import (
+	finalize,
+	get_accounts,
+	get_monthly_gl,
+	get_months,
+	line,
+	month_columns,
+	ru,
+)
 
 ICHKI_FIELD = {"Customer": "is_internal_customer", "Supplier": "is_internal_supplier"}
 
@@ -41,10 +49,9 @@ DETAIL = {"cash", "stock", "fixed", "other_asset", "tax", "other_liability", "eq
 
 
 def execute(filters=None):
-	filters = frappe._dict(filters or {})
-	check_report_company(filters)
+	filters = prepare(filters, period="year")
 	months = get_months(filters.from_date, filters.to_date)
-	return month_columns(months, _("Статья"), total=False, width=150), get_data(filters, months)
+	return month_columns(months, _("Статья"), total=False, width=150), finalize(get_data(filters, months))
 
 
 def get_data(filters, months):
@@ -56,7 +63,9 @@ def get_data(filters, months):
 	values = get_monthly_gl(company, ("Asset", "Liability", "Equity"), filters.to_date)
 	party_accounts = {a.name for a in accounts if a.account_type in ("Receivable", "Payable")}
 	kassa_nomi = dict(
-		frappe.db.sql("select default_account, parent from `tabMode of Payment Account` where company = %s", company)
+		frappe.db.sql(
+			"select default_account, parent from `tabMode of Payment Account` where company = %s", company
+		)
 	)
 
 	def cumulative(per_month):
@@ -184,7 +193,9 @@ def party_balances(company, accounts, to_date) -> list[tuple[str, dict]]:
 		party = (r.party_type or "", r.party or "")
 		if party not in ichki:
 			field = ICHKI_FIELD.get(r.party_type)
-			firma = field and frappe.db.get_value(r.party_type, r.party, ["represents_company", field], as_dict=True)
+			firma = field and frappe.db.get_value(
+				r.party_type, r.party, ["represents_company", field], as_dict=True
+			)
 			ichki[party] = firma.represents_company if firma and firma.get(field) else None
 		if ichki[party]:
 			key = ("internal", ichki[party])

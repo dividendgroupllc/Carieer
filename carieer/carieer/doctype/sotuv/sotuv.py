@@ -1,29 +1,35 @@
-# Sotuv: sotuv posti (AppSheet "Ввод продажи"). Post ikkala firmaga ishlaydi: Тип = Karer yoki Beton.
-# Draft -> tovarlar, xizmatlar (Погрузчик, Доставка...), to'lovlar kiritiladi.
-# Завершить (Submit) -> Sales Invoice (tovarlar ombordan chiqadi + xizmatlar) + har bir to'lov uchun Payment Entry + SMS.
-# Yakunlangandan keyin ham "Оплата" tugmasi bilan to'lov qo'shiladi (tolovlar jadvali allow_on_submit).
-# Qarz (Долг) va holat Sales Invoice qoldig'idan hisoblanadi.
+# Sotuv - sotuv posti. Post ikkala zavodga ishlaydi: «Тип» = Karer yoki Beton -> firma o'zi qo'yiladi.
+#
+#   Saqlash (Save)     -> summalar, ombor, kurs, qarz hisoblanadi (hammasi serverda, JS yo'q)
+#   Tasdiqlash (Submit) -> Sales Invoice (tovar ombordan chiqadi, mijozga qarz) + har bir to'lov qatori uchun
+#                         Payment Entry (kassaga kirim) + SMS
+#   Keyinroq to'lov    -> «Оплаты» jadvaliga qator qo'shib «Update» bosiladi -> yangi Payment Entry
+#
+# Mijoz o'zimizning ikkinchi firmamiz bo'lsa (ichki mijoz) bu - firmalararo sotuv / perexod:
+#   sotuvchida Sales Invoice, xaridor firmada avtomatik Purchase Invoice (tovar uning xomashyo omboriga kiradi).
+#   Bunday sotuvda pul «Firmalararo To'lov» orqali to'lanadi (ikkala kitobga yoziladi).
 
 import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, fmt_money, formatdate, nowdate
 
-from carieer.utils import get_company_currency, validate_not_internal, get_item_warehouse, get_rate, send_sms, validate_warehouse_company
+from carieer.utils import (
+	as_admin,
+	company_for_tip,
+	ensure_inter_company_parties,
+	get_company_currency,
+	get_internal_company,
+	get_item_warehouse,
+	get_kassa_info,
+	get_rate,
+	get_zavod,
+	make_inter_company_purchase_invoice,
+	send_sms,
+	validate_warehouse_company,
+)
 
-
-def company_for_tip(tip: str) -> str:
-	field = "beton_firma" if tip == "Beton" else "karer_firma"
-	company = frappe.db.get_single_value("Karer Sozlamalari", field)
-	if not company:
-		frappe.throw(_("Karer Sozlamalari -> Sotuv posti: {0} firmasini ko'rsating").format(tip))
-	return company
-
-
-@frappe.whitelist()
-def get_tip_company(tip: str) -> str:
-	"""JS uchun: Тип -> firma (Karer Sozlamalari beton xodimiga ochiq emas, shuning uchun server orqali)."""
-	return company_for_tip(tip)
+INTER_COMPANY_PRICE_LIST = "Firmalararo narx"
 
 
 class Sotuv(Document):
@@ -31,7 +37,9 @@ class Sotuv(Document):
 	def validate(self):
 		if self.docstatus == 0:
 			self.company = company_for_tip(self.tip)
-			validate_not_internal("Customer", self.customer, _("Firmalararo Sotuv"))
+			self.ichki_firma = get_internal_company("Customer", self.customer)
+			if self.ichki_firma == self.company:
+				frappe.throw(_("Firma o'ziga o'zi sotolmaydi"))
 		self.set_rate()
 		self.set_items()
 		self.set_xizmatlar()
@@ -42,10 +50,13 @@ class Sotuv(Document):
 
 	def set_rate(self):
 		company_currency = get_company_currency(self.company)
+		if self.ichki_firma:
+			# ERPNext talabi: firmalararo hujjat firma valyutasida bo'ladi
+			self.currency = company_currency
 		self.currency = self.currency or company_currency
 		if self.currency == company_currency:
 			self.conversion_rate = 1
-		elif flt(self.conversion_rate) <= 1:
+		elif self.docstatus == 0 or not flt(self.conversion_rate):
 			self.conversion_rate = get_rate(self.currency, company_currency, self.posting_date)
 
 	def set_items(self):
@@ -54,59 +65,91 @@ class Sotuv(Document):
 		if not self.items:
 			frappe.throw(_("Kamida bitta tovar kiriting"))
 		for row in self.items:
-			stock_uom, is_stock = frappe.get_cached_value("Item", row.item_code, ["stock_uom", "is_stock_item"])
+			stock_uom, sales_uom, is_stock = frappe.get_cached_value(
+				"Item", row.item_code, ["stock_uom", "sales_uom", "is_stock_item"]
+			)
 			if not is_stock:
-				frappe.throw(_("{0}-qator: {1} ombor tovari emas. Xizmatlarni Услуги jadvaliga kiriting").format(row.idx, row.item_code))
+				frappe.throw(
+					_(
+						"Товары {0}-qator: {1} ombor tovari emas. Xizmatlarni «Услуги» jadvaliga kiriting"
+					).format(row.idx, row.item_code)
+				)
 			if flt(row.qty) <= 0 or flt(row.rate) < 0:
-				frappe.throw(_("{0}-qator: miqdor va narxni tekshiring").format(row.idx))
-			row.uom = row.uom or frappe.get_cached_value("Item", row.item_code, "sales_uom") or stock_uom
+				frappe.throw(_("Товары {0}-qator: miqdor va narxni tekshiring").format(row.idx))
+			row.uom = row.uom or sales_uom or stock_uom
 			cf = flt(get_conversion_factor(row.item_code, row.uom).get("conversion_factor"))
 			if not cf:
-				frappe.throw(_("{0}: {1} -> {2} koeffitsiyenti yo'q (Item > UOM Conversion)").format(row.item_code, row.uom, stock_uom))
+				frappe.throw(
+					_("{0}: {1} -> {2} koeffitsiyenti yo'q (Item -> UOM Conversion)").format(
+						row.item_code, row.uom, stock_uom
+					)
+				)
 			row.conversion_factor = cf
 			row.stock_qty = flt(row.qty) * cf
 			row.amount = flt(flt(row.qty) * flt(row.rate), 2)
 			row.currency = self.currency
-			if not row.warehouse or frappe.get_cached_value("Warehouse", row.warehouse, "company") != self.company:
+			if (
+				not row.warehouse
+				or frappe.get_cached_value("Warehouse", row.warehouse, "company") != self.company
+			):
 				row.warehouse = get_item_warehouse(row.item_code, self.company)
 			if not row.warehouse:
-				frappe.throw(_("{0}-qator: {1} uchun ombor topilmadi").format(row.idx, row.item_code))
+				frappe.throw(
+					_("Товары {0}-qator: {1} uchun ombor topilmadi (Zavod -> Asosiy ombor)").format(
+						row.idx, row.item_code
+					)
+				)
 			validate_warehouse_company(row.warehouse, self.company)
 
 	def set_xizmatlar(self):
 		for row in self.xizmatlar:
 			if frappe.get_cached_value("Item", row.xizmat, "is_stock_item"):
-				frappe.throw(_("Услуги {0}-qator: {1} ombor tovari, uni Товары jadvaliga kiriting").format(row.idx, row.xizmat))
+				frappe.throw(
+					_("Услуги {0}-qator: {1} ombor tovari, uni «Товары» jadvaliga kiriting").format(
+						row.idx, row.xizmat
+					)
+				)
+			row.qty = flt(row.qty) or 1
 			row.amount = flt(flt(row.qty) * flt(row.rate), 2)
 			row.currency = self.currency
 
 	def set_tolovlar(self):
-		from carieer.carieer.doctype.kassa.kassa import get_kassa_info
-
+		if self.ichki_firma and self.tolovlar:
+			frappe.throw(
+				_("Ichki firmaga sotuvda to'lov shu yerda olinmaydi: «Firmalararo To'lov» orqali kiriting"),
+				title=_("Firmalararo sotuv"),
+			)
 		for row in self.tolovlar:
+			if row.payment_entry:
+				continue  # o'tkazilgan qator o'zgarmaydi
 			info = get_kassa_info(row.mode_of_payment, self.company)
-			if not info["account"]:
-				frappe.throw(_("{0} to'lov turida {1} firmasi uchun kassa hisobi yo'q").format(row.mode_of_payment, self.company))
-			row.valyuta = info["currency"]
+			if not info.account:
+				frappe.throw(
+					_(
+						"Оплаты {0}-qator: {1} kassasida {2} firmasi uchun hisob yo'q (Mode of Payment -> Accounts)"
+					).format(row.idx, row.mode_of_payment, self.company)
+				)
+			row.valyuta = info.currency
+			row.sana = row.sana or nowdate()
 			if row.valyuta == self.currency:
 				row.kurs = 1
-			elif flt(row.kurs) <= 0 or (flt(row.kurs) == 1 and not row.payment_entry):
-				row.kurs = get_rate(row.valyuta, self.currency, row.sana or self.posting_date)
+			elif flt(row.kurs) <= 0 or flt(row.kurs) == 1:
+				base = get_company_currency(self.company)
+				row.kurs = get_rate(row.valyuta, base, row.sana) / get_rate(self.currency, base, row.sana)
 			if flt(row.summa) <= 0:
-				frappe.throw(_("Оплата {0}-qator: summa 0 dan katta bo'lishi kerak").format(row.idx))
+				frappe.throw(_("Оплаты {0}-qator: summa 0 dan katta bo'lishi kerak").format(row.idx))
 			row.sotuv_summa = flt(flt(row.summa) * flt(row.kurs), 2)
 			row.currency = self.currency
-			row.sana = row.sana or self.posting_date
 
 	def set_totals(self):
-		self.itog = sum(flt(r.amount) for r in self.items)
-		self.xizmat_jami = sum(flt(r.amount) for r in self.xizmatlar)
+		self.itog = flt(sum(flt(r.amount) for r in self.items), 2)
+		self.xizmat_jami = flt(sum(flt(r.amount) for r in self.xizmatlar), 2)
 		self.amount = flt(self.itog + self.xizmat_jami, 2)
-		self.base_amount = flt(self.amount * flt(self.conversion_rate), 2)
-		paid = sum(flt(r.sotuv_summa) for r in self.tolovlar)
-		if paid > self.amount + 0.01:
-			frappe.throw(_("To'lovlar ({0}) jami summadan ({1}) katta").format(paid, self.amount))
+		self.base_amount = flt(self.amount * flt(self.conversion_rate or 1), 2)
 		if self.docstatus == 0:
+			paid = flt(sum(flt(r.sotuv_summa) for r in self.tolovlar), 2)
+			if paid > self.amount + 0.01:
+				frappe.throw(_("To'lovlar ({0}) jami summadan ({1}) katta").format(paid, self.amount))
 			self.total_paid = paid
 			self.outstanding_amount = flt(self.amount - paid, 2)
 
@@ -124,53 +167,90 @@ class Sotuv(Document):
 			need[(r.item_code, r.warehouse)] = need.get((r.item_code, r.warehouse), 0) + flt(r.stock_qty)
 		for (item, wh), qty in need.items():
 			available = flt(get_stock_balance(item, wh, self.posting_date, self.posting_time))
-			if available < qty:
+			if available + 1e-6 < qty:
 				frappe.throw(
 					_("{0} omborida {1} yetarli emas. Bor: {2}, kerak: {3}").format(wh, item, available, qty),
 					title=_("Qoldiq yetarli emas"),
 				)
 
 	def on_submit(self):
-		si = self.make_sales_invoice()
-		self.db_set("sales_invoice", si.name)
-		self.make_payments()
+		if self.ichki_firma:
+			with as_admin():
+				ensure_inter_company_parties(self.company, self.ichki_firma)
+				si = self.make_sales_invoice()
+				pi = self.make_purchase_invoice(si)
+			self.db_set({"sales_invoice": si.name, "purchase_invoice": pi.name})
+		else:
+			si = self.make_sales_invoice()
+			self.db_set("sales_invoice", si.name)
+			self.make_payments()
 		self.update_payment_status()
 		self.send_notification()
-
-	def on_update_after_submit(self):
-		# "Оплата" tugmasi yoki formada qo'shilgan yangi to'lov qatorlari
-		self.make_payments()
-		self.update_payment_status()
 
 	def before_update_after_submit(self):
 		self.set_tolovlar()
 		old = {r.name: r for r in (self.get_doc_before_save() or frappe._dict(tolovlar=[])).tolovlar}
 		for row in self.tolovlar:
 			before = old.get(row.name)
-			if before and before.payment_entry and (flt(before.summa) != flt(row.summa) or before.mode_of_payment != row.mode_of_payment):
-				frappe.throw(_("Оплата {0}-qator allaqachon o'tkazilgan, uni o'zgartirib bo'lmaydi").format(row.idx))
-		removed = [r for name, r in old.items() if r.payment_entry and name not in {x.name for x in self.tolovlar}]
+			if (
+				before
+				and before.payment_entry
+				and (flt(before.summa) != flt(row.summa) or before.mode_of_payment != row.mode_of_payment)
+			):
+				frappe.throw(
+					_("Оплаты {0}-qator allaqachon o'tkazilgan, uni o'zgartirib bo'lmaydi").format(row.idx)
+				)
+		current = {r.name for r in self.tolovlar}
+		removed = [r for name, r in old.items() if r.payment_entry and name not in current]
 		if removed:
-			frappe.throw(_("O'tkazilgan to'lovni o'chirib bo'lmaydi. Payment Entry'ni bekor qiling: {0}").format(removed[0].payment_entry))
+			frappe.throw(
+				_(
+					"O'tkazilgan to'lovni o'chirib bo'lmaydi. Kerak bo'lsa Payment Entry'ni bekor qiling: {0}"
+				).format(removed[0].payment_entry)
+			)
 		outstanding = flt(frappe.db.get_value("Sotuv", self.name, "outstanding_amount"))
 		new_sum = sum(flt(r.sotuv_summa) for r in self.tolovlar if not r.payment_entry)
 		if new_sum > outstanding + 0.01:
-			frappe.throw(_("To'lov ({0}) qarzdan ({1}) katta").format(new_sum, outstanding))
+			frappe.throw(_("Yangi to'lov ({0}) qarzdan ({1}) katta").format(new_sum, outstanding))
+
+	def on_update_after_submit(self):
+		self.make_payments()
+		self.update_payment_status()
 
 	def on_cancel(self):
-		self.ignore_linked_doctypes = ("GL Entry", "Stock Ledger Entry", "Payment Ledger Entry", "Payment Entry")
-		if self.sales_invoice:
-			for pe in get_payment_entries(self.sales_invoice):
-				pe_doc = frappe.get_doc("Payment Entry", pe)
+		self.ignore_linked_doctypes = (
+			"GL Entry",
+			"Stock Ledger Entry",
+			"Payment Ledger Entry",
+			"Payment Entry",
+		)
+		with as_admin():
+			if (
+				self.purchase_invoice
+				and frappe.db.get_value("Purchase Invoice", self.purchase_invoice, "docstatus") == 1
+			):
+				pi = frappe.get_doc("Purchase Invoice", self.purchase_invoice)
+				pi.flags.ignore_permissions = True
+				pi.cancel()
+		# Faqat shu Sotuv'ning o'z to'lovlari bekor qilinadi. Kassa orqali kiritilgan to'lovlar bekor qilinmaydi -
+		# Sales Invoice bekor bo'lganda ulardan uziladi va mijozning avansi bo'lib qoladi
+		# (Accounts Settings -> Unlink Payment on Cancellation of Invoice, setup_karer yoqadi).
+		for row in self.tolovlar:
+			if (
+				row.payment_entry
+				and frappe.db.get_value("Payment Entry", row.payment_entry, "docstatus") == 1
+			):
+				pe_doc = frappe.get_doc("Payment Entry", row.payment_entry)
 				pe_doc.flags.ignore_permissions = True
 				pe_doc.cancel()
+		if self.sales_invoice:
 			si = frappe.get_doc("Sales Invoice", self.sales_invoice)
 			if si.docstatus == 1:
 				si.flags.ignore_permissions = True
 				si.cancel()
 		self.db_set("status", "Cancelled")
 
-	# ------------------------------------------------------------ helpers
+	# ------------------------------------------------------------ hujjatlar
 	def make_sales_invoice(self):
 		si = frappe.new_doc("Sales Invoice")
 		si.update(
@@ -189,6 +269,8 @@ class Sotuv(Document):
 				"remarks": _("Sotuv {0}. Mashina: {1}").format(self.name, self.mashina_raqami or "-"),
 			}
 		)
+		if self.ichki_firma:
+			si.selling_price_list = get_inter_company_price_list(self.currency)
 		for r in self.items:
 			si.append(
 				"items",
@@ -206,7 +288,7 @@ class Sotuv(Document):
 			si.append("items", {"item_code": r.xizmat, "qty": r.qty, "rate": r.rate})
 		si.flags.ignore_permissions = True
 		si.set_missing_values()
-		# set_missing_values narxni price list'dan qayta qo'yishi mumkin -> o'zimiznikini qaytaramiz
+		# set_missing_values narxni Price List'dan qayta qo'yishi mumkin -> sotuv narxi qaytariladi
 		rates = [r.rate for r in self.items] + [r.rate for r in self.xizmatlar]
 		for row, rate in zip(si.items, rates, strict=True):
 			row.rate = rate
@@ -218,6 +300,34 @@ class Sotuv(Document):
 		si.submit()
 		return si
 
+	def make_purchase_invoice(self, si):
+		"""Firmalararo: xaridor firmada Purchase Invoice (update_stock) -> tovar uning xomashyo omboriga kiradi."""
+		buyer = get_zavod(self.ichki_firma)
+		warehouse = buyer.get("xomashyo_ombori") or buyer.get("asosiy_ombor")
+		if not warehouse:
+			frappe.throw(
+				_("{0} firmasi uchun Zavod'da xomashyo ombori ko'rsatilmagan").format(self.ichki_firma)
+			)
+		pi = make_inter_company_purchase_invoice(si.name)
+		pi.posting_date = self.posting_date
+		pi.posting_time = self.posting_time
+		pi.set_posting_time = 1
+		pi.bill_no = si.name
+		pi.bill_date = self.posting_date
+		pi.due_date = self.posting_date
+		pi.update_stock = 1
+		pi.set_warehouse = warehouse
+		pi.disable_rounded_total = 1
+		pi.remarks = _("Firmalararo xarid: {0} ({1})").format(self.name, self.company)
+		for row in pi.items:
+			row.warehouse = (
+				warehouse if frappe.get_cached_value("Item", row.item_code, "is_stock_item") else None
+			)
+		pi.flags.ignore_permissions = True
+		pi.insert()
+		pi.submit()
+		return pi
+
 	def make_payments(self):
 		for row in self.tolovlar:
 			if row.payment_entry:
@@ -226,56 +336,74 @@ class Sotuv(Document):
 			row.db_set("payment_entry", pe.name)
 
 	def update_payment_status(self):
-		"""Sales Invoice qoldig'iga qarab to'lov holati va qarz."""
+		"""Sales Invoice qoldig'iga qarab to'lov holati va qarz (tashqaridan kiritilgan to'lovlar ham hisobga olinadi)."""
 		if not self.sales_invoice:
 			return
 		si = frappe.db.get_value(
 			"Sales Invoice",
 			self.sales_invoice,
-			["outstanding_amount", "grand_total", "currency", "party_account_currency", "conversion_rate", "docstatus"],
+			[
+				"outstanding_amount",
+				"grand_total",
+				"currency",
+				"party_account_currency",
+				"conversion_rate",
+				"docstatus",
+			],
 			as_dict=True,
 		)
-		if si.docstatus == 2:
+		if not si or si.docstatus != 1:
 			return
 		outstanding = flt(si.outstanding_amount)
 		if si.party_account_currency != si.currency:
 			outstanding = outstanding / flt(si.conversion_rate or 1)
 		outstanding = max(flt(outstanding, 2), 0)
 		total_paid = flt(flt(si.grand_total) - outstanding, 2)
-		status = "To'langan" if outstanding <= 0.01 else ("Qisman to'langan" if total_paid > 0 else "To'lanmagan")
+		status = (
+			"To'langan" if outstanding <= 0.01 else ("Qisman to'langan" if total_paid > 0 else "To'lanmagan")
+		)
 		self.db_set({"outstanding_amount": outstanding, "total_paid": total_paid, "status": status})
 
 	def send_notification(self):
 		settings = frappe.get_cached_doc("Karer Sozlamalari")
-		if not settings.sms_yoqilgan or not self.mobile_no:
+		if not settings.sms_yoqilgan or not self.mobile_no or self.ichki_firma:
 			return
 		self.reload()
 		first = self.items[0]
-		tpl = settings.sms_shablon or "{customer}: {item} {qty} {uom} = {amount} {currency}"
-		msg = tpl.format(
-			customer=self.customer_name or self.customer,
-			date=formatdate(self.posting_date),
-			item=", ".join(r.item_name or r.item_code for r in self.items),
-			qty=first.qty,
-			uom=first.uom,
-			amount=fmt_money(self.amount, currency=None),
-			currency=self.currency,
-			paid=fmt_money(self.total_paid, currency=None),
-			outstanding=fmt_money(self.outstanding_amount, currency=None),
-			vehicle=self.mashina_raqami,
-			name=self.name,
-		)
+		tpl = settings.sms_shablon or "{customer}: {item} = {amount} {currency}"
+		try:
+			msg = tpl.format(
+				customer=self.customer_name or self.customer,
+				date=formatdate(self.posting_date),
+				item=", ".join(f"{r.item_name or r.item_code} {r.qty} {r.uom}" for r in self.items),
+				qty=first.qty,
+				uom=first.uom,
+				amount=fmt_money(self.amount, currency=None),
+				currency=self.currency,
+				paid=fmt_money(self.total_paid, currency=None),
+				outstanding=fmt_money(self.outstanding_amount, currency=None),
+				vehicle=self.mashina_raqami or "",
+				name=self.name,
+			)
+		except (KeyError, IndexError, ValueError):
+			frappe.log_error(title="Karer SMS shabloni noto'g'ri")
+			return
 		frappe.enqueue(send_sms, numbers=[self.mobile_no], message=msg, enqueue_after_commit=True)
 
 
 # ---------------------------------------------------------------- module level
-def get_payment_entries(sales_invoice: str) -> list[str]:
-	return frappe.get_all(
-		"Payment Entry Reference",
-		filters={"reference_doctype": "Sales Invoice", "reference_name": sales_invoice, "docstatus": 1},
-		pluck="parent",
-		distinct=True,
-	)
+def get_inter_company_price_list(currency: str) -> str:
+	"""ERPNext firmalararo hujjat uchun buying + selling belgilangan narx varaqasini talab qiladi."""
+	if not frappe.db.exists("Price List", INTER_COMPANY_PRICE_LIST):
+		pl = frappe.new_doc("Price List")
+		pl.price_list_name = INTER_COMPANY_PRICE_LIST
+		pl.currency = currency
+		pl.buying = 1
+		pl.selling = 1
+		pl.enabled = 1
+		pl.flags.ignore_permissions = True
+		pl.insert()
+	return INTER_COMPANY_PRICE_LIST
 
 
 def make_payment_entry(doc: "Sotuv", row):
@@ -285,12 +413,17 @@ def make_payment_entry(doc: "Sotuv", row):
 	from erpnext.accounts.doctype.sales_invoice.sales_invoice import get_bank_cash_account
 
 	si = frappe.db.get_value(
-		"Sales Invoice", doc.sales_invoice, ["currency", "party_account_currency", "conversion_rate"], as_dict=True
+		"Sales Invoice",
+		doc.sales_invoice,
+		["currency", "party_account_currency", "conversion_rate"],
+		as_dict=True,
 	)
 	account = get_bank_cash_account(row.mode_of_payment, doc.company)["account"]
 	# debitor hisobi valyutasidagi summa
 	party_amount = (
-		flt(row.sotuv_summa) if si.party_account_currency == si.currency else flt(row.sotuv_summa) * flt(si.conversion_rate)
+		flt(row.sotuv_summa)
+		if si.party_account_currency == si.currency
+		else flt(row.sotuv_summa) * flt(si.conversion_rate)
 	)
 	pe = get_payment_entry(
 		"Sales Invoice",
@@ -310,22 +443,13 @@ def make_payment_entry(doc: "Sotuv", row):
 	return pe
 
 
-@frappe.whitelist()
-def tolov_qabul_qilish(name: str, amount: float, mode_of_payment: str, kim: str | None = None, izoh: str | None = None):
-	"""Yakunlangan sotuvga to'lov qo'shish ("Оплата" tugmasi). amount - kassa valyutasida."""
-	doc = frappe.get_doc("Sotuv", name)
-	doc.check_permission("submit")
-	if doc.docstatus != 1:
-		frappe.throw(_("Avval sotuvni yakunlang (Завершить)"))
-	doc.append("tolovlar", {"sana": nowdate(), "mode_of_payment": mode_of_payment, "summa": flt(amount), "kim": kim, "izoh": izoh})
-	doc.save()
-	return doc.tolovlar[-1].payment_entry
-
-
 def on_payment_entry_change(pe, method=None):
-	"""hooks.py -> Payment Entry on_submit/on_cancel: tashqaridan kiritilgan to'lovlar ham holatni yangilasin."""
+	"""hooks.py: Payment Entry on_submit / on_cancel - tashqaridan (Kassa yoki Payment Entry formasidan)
+	kiritilgan to'lovlar ham Sotuv holati va qarzini yangilasin."""
 	for ref in pe.references:
 		if ref.reference_doctype != "Sales Invoice":
 			continue
-		for name in frappe.get_all("Sotuv", filters={"sales_invoice": ref.reference_name, "docstatus": 1}, pluck="name"):
+		for name in frappe.get_all(
+			"Sotuv", filters={"sales_invoice": ref.reference_name, "docstatus": 1}, pluck="name"
+		):
 			frappe.get_doc("Sotuv", name).update_payment_status()

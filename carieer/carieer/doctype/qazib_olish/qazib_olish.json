@@ -1,8 +1,8 @@
 {
  "actions": [],
- "allow_rename": 0,
  "autoname": "naming_series:",
- "creation": "2026-09-28 10:00:00.000000",
+ "creation": "2026-10-05 12:00:00.000000",
+ "description": "Karerdan qazib olingan tovar omborga tan narxi 0 bilan kirim qilinadi",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -33,7 +33,6 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Seriya",
-   "no_copy": 1,
    "options": "QO-.YYYY.-",
    "reqd": 1
   },
@@ -43,16 +42,15 @@
    "in_standard_filter": 1,
    "label": "Firma",
    "options": "Company",
-   "remember_last_selected_value": 1,
    "reqd": 1
   },
   {
+   "description": "Bo'sh = Zavod'dagi asosiy ombor",
    "fieldname": "warehouse",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Qaysi omborga",
-   "options": "Warehouse",
-   "reqd": 1
+   "link_filters": "[[\"Warehouse\", \"company\", \"=\", \"eval:doc.company\"], [\"Warehouse\", \"is_group\", \"=\", 0]]",
+   "options": "Warehouse"
   },
   {
    "fieldname": "cb_1",
@@ -63,6 +61,7 @@
    "fieldname": "posting_date",
    "fieldtype": "Date",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Sana",
    "reqd": 1
   },
@@ -90,7 +89,7 @@
   {
    "fieldname": "items_section",
    "fieldtype": "Section Break",
-   "label": "Qazib olingan tovarlar"
+   "label": "Qazib olingan tovarlar (tan narxi 0)"
   },
   {
    "fieldname": "items",
@@ -121,14 +120,13 @@
    "no_copy": 1,
    "options": "Qazib Olish",
    "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-03 19:00:00.000000",
+ "modified": "2026-10-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Qazib Olish",
@@ -153,13 +151,23 @@
    "amend": 1,
    "cancel": 1,
    "create": 1,
+   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Karer xodimi",
+   "role": "Karer Menejer",
    "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Operator",
    "submit": 1,
    "write": 1
   }

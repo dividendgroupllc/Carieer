@@ -6,7 +6,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-from carieer.utils import check_report_company
+from carieer.carieer.report.common import prepare
 
 IN_COLS = [
 	("kirim_qazish", _("Qazib olindi")),
@@ -24,8 +24,7 @@ OUT_COLS = [
 
 
 def execute(filters=None):
-	filters = frappe._dict(filters or {})
-	check_report_company(filters)
+	filters = prepare(filters, period="month")
 	return get_columns(), get_data(filters)
 
 
@@ -33,7 +32,13 @@ def get_columns():
 	cols = [
 		{"fieldname": "item_code", "label": _("Tovar"), "fieldtype": "Link", "options": "Item", "width": 140},
 		{"fieldname": "item_name", "label": _("Nomi"), "fieldtype": "Data", "width": 140},
-		{"fieldname": "warehouse", "label": _("Ombor"), "fieldtype": "Link", "options": "Warehouse", "width": 150},
+		{
+			"fieldname": "warehouse",
+			"label": _("Ombor"),
+			"fieldtype": "Link",
+			"options": "Warehouse",
+			"width": 150,
+		},
 		{"fieldname": "stock_uom", "label": _("Birlik"), "fieldtype": "Data", "width": 60},
 		{"fieldname": "opening_qty", "label": _("Boshlang'ich qoldiq"), "fieldtype": "Float", "width": 120},
 	]
@@ -54,7 +59,9 @@ def get_data(filters):
 		cond.append("sle.item_code = %(item_code)s")
 	if filters.get("warehouse"):
 		lft, rgt = frappe.db.get_value("Warehouse", filters.warehouse, ["lft", "rgt"])
-		cond.append(f"sle.warehouse in (select name from `tabWarehouse` where lft >= {int(lft)} and rgt <= {int(rgt)})")
+		cond.append(
+			f"sle.warehouse in (select name from `tabWarehouse` where lft >= {int(lft)} and rgt <= {int(rgt)})"
+		)
 
 	rows = frappe.db.sql(
 		f"""select sle.item_code, sle.warehouse, sle.posting_date, sle.actual_qty, sle.stock_value_difference,
@@ -71,7 +78,12 @@ def get_data(filters):
 	out = {}
 	for r in rows:
 		key = (r.item_code, r.warehouse)
-		d = out.setdefault(key, frappe._dict(item_code=r.item_code, warehouse=r.warehouse, opening_qty=0, closing_qty=0, closing_value=0))
+		d = out.setdefault(
+			key,
+			frappe._dict(
+				item_code=r.item_code, warehouse=r.warehouse, opening_qty=0, closing_qty=0, closing_value=0
+			),
+		)
 		qty = flt(r.actual_qty)
 		d.closing_qty += qty
 		d.closing_value += flt(r.stock_value_difference)
@@ -84,7 +96,9 @@ def get_data(filters):
 	items = {}
 	if out:
 		for it in frappe.get_all(
-			"Item", filters={"name": ["in", list({k[0] for k in out})]}, fields=["name", "item_name", "stock_uom"]
+			"Item",
+			filters={"name": ["in", list({k[0] for k in out})]},
+			fields=["name", "item_name", "stock_uom"],
 		):
 			items[it.name] = it
 

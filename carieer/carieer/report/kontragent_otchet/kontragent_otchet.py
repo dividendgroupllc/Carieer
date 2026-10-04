@@ -1,31 +1,61 @@
-# Kontragent Otchet ("Оборотка контрагентов") - Armada andozasi asosida.
-# Har bir kontragent bo'yicha: boshlang'ich qoldiq, davr oboroti (kredit/debet), yakuniy qoldiq.
-# Kredit qoldiq = biz qarzdormiz (masalan oldindan to'lov olingan), Debet qoldiq = kontragent bizdan qarzdor.
+# Kontragent Otchet ("Оборотка контрагентов"): har bir kontragent bo'yicha boshlang'ich qoldiq, davr oboroti
+# (kredit / debet), yakuniy qoldiq - har bir valyuta (сум, $) alohida qatorda.
+# Kredit qoldiq = biz qarzdormiz, Debet qoldiq = kontragent bizdan qarzdor. «Sof qoldiq» = Debet - Kredit.
+
+from urllib.parse import urlencode
 
 import frappe
 from frappe import _
 from frappe.utils import flt
 
-from carieer.utils import check_report_company
+from carieer.carieer.report.common import PARTY_LABELS, bold, prepare, resolve_party
 
-PARTY_NAME_FIELD = {"Customer": "customer_name", "Supplier": "supplier_name", "Employee": "employee_name", "Shareholder": "title"}
+PARTY_NAME_FIELD = {
+	"Customer": "customer_name",
+	"Supplier": "supplier_name",
+	"Employee": "employee_name",
+	"Shareholder": "title",
+}
 AMOUNT_FIELDS = (
-	"opening_credit", "opening_debit", "period_credit", "period_debit", "final_credit", "final_debit",
+	"opening_credit",
+	"opening_debit",
+	"period_credit",
+	"period_debit",
+	"final_credit",
+	"final_debit",
+	"sof_qoldiq",
 )
 
 
+PARTY_FIELD = {"Customer": "customer", "Supplier": "supplier", "Employee": "employee"}
+
+
 def execute(filters=None):
-	filters = frappe._dict(filters or {})
-	check_report_company(filters)
+	filters = prepare(filters, period="month")
+	resolve_party(filters)
 	return get_columns(), get_data(filters)
 
 
 def get_columns():
 	cur = {"fieldtype": "Currency", "options": "currency", "width": 135}
 	return [
-		{"label": _("Контрагент тури"), "fieldname": "party_type", "fieldtype": "Data", "width": 110},
-		{"label": _("Контрагент"), "fieldname": "party", "fieldtype": "Dynamic Link", "options": "party_type", "width": 200},
-		{"label": _("Валюта"), "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 70},
+		{"label": _("Тип"), "fieldname": "turi", "fieldtype": "Data", "width": 100},
+		{"label": "", "fieldname": "party_type", "fieldtype": "Data", "hidden": 1},
+		{
+			"label": _("Контрагент"),
+			"fieldname": "party",
+			"fieldtype": "Dynamic Link",
+			"options": "party_type",
+			"width": 200,
+		},
+		{"label": _("Номи"), "fieldname": "party_name", "fieldtype": "Data", "width": 180},
+		{
+			"label": _("Валюта"),
+			"fieldname": "currency",
+			"fieldtype": "Link",
+			"options": "Currency",
+			"width": 70,
+		},
 		{"label": _("Акт сверка"), "fieldname": "akt_sverka", "fieldtype": "Data", "width": 110},
 		{"label": _("Кредит (нач.)"), "fieldname": "opening_credit", **cur},
 		{"label": _("Дебет (нач.)"), "fieldname": "opening_debit", **cur},
@@ -33,12 +63,21 @@ def get_columns():
 		{"label": _("Дебет (оборот)"), "fieldname": "period_debit", **cur},
 		{"label": _("Кредит (кон.)"), "fieldname": "final_credit", **cur},
 		{"label": _("Дебет (кон.)"), "fieldname": "final_debit", **cur},
+		{"label": _("Соф қолдиқ (Д-К)"), "fieldname": "sof_qoldiq", **cur},
 	]
 
 
 def get_data(filters):
-	cond = ["company = %(company)s", "ifnull(party, '') != ''", "ifnull(party_type, '') != ''", "is_cancelled = 0"]
+	cond = [
+		"company = %(company)s",
+		"ifnull(party, '') != ''",
+		"ifnull(party_type, '') != ''",
+		"is_cancelled = 0",
+	]
 	if filters.get("party_type"):
+		cond.append("party_type = %(party_type)s")
+	elif filters.get("turi"):
+		filters.party_type = filters.turi
 		cond.append("party_type = %(party_type)s")
 	if filters.get("party"):
 		cond.append("party = %(party)s")
@@ -64,15 +103,21 @@ def get_data(filters):
 		row = {
 			"party_type": r.party_type,
 			"party": r.party,
-			"party_name": (PARTY_NAME_FIELD.get(r.party_type) and frappe.db.get_value(r.party_type, r.party, PARTY_NAME_FIELD[r.party_type])) or r.party,
+			"party_name": (
+				PARTY_NAME_FIELD.get(r.party_type)
+				and frappe.db.get_value(r.party_type, r.party, PARTY_NAME_FIELD[r.party_type])
+			)
+			or r.party,
 			"currency": r.currency,
-			"akt_sverka": _("Акт сверка"),
+			"turi": PARTY_LABELS.get(r.party_type, r.party_type),
+			"akt_sverka": akt_link(filters, r.party_type, r.party),
 			"opening_credit": max(opening, 0),
 			"opening_debit": abs(min(opening, 0)),
 			"period_credit": flt(r.period_credit),
 			"period_debit": flt(r.period_debit),
 			"final_credit": max(final, 0),
 			"final_debit": abs(min(final, 0)),
+			"sof_qoldiq": -final,
 		}
 		data.append(row)
 		t = totals.setdefault(r.currency, {f: 0 for f in AMOUNT_FIELDS})
@@ -80,5 +125,20 @@ def get_data(filters):
 			t[f] += row[f]
 	# Jami - har bir valyuta uchun alohida (so'm va dollarni qo'shib bo'lmaydi)
 	for currency, t in totals.items():
-		data.append({"party": _("ЖАМИ"), "currency": currency, "is_total_row": 1, **t})
+		data.append({"turi": bold(_("ЖАМИ")), "currency": currency, **t})
 	return data
+
+
+def akt_link(filters, party_type, party):
+	field = PARTY_FIELD.get(party_type)
+	if not field:
+		return ""
+	query = urlencode(
+		{
+			"company": filters.company,
+			field: party,
+			"from_date": str(filters.from_date),
+			"to_date": str(filters.to_date),
+		}
+	)
+	return f'<a href="/desk/query-report/Akt Sverka?{query}">{_("Акт сверка")}</a>'

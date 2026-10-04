@@ -7,7 +7,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-from carieer.utils import check_report_company
+from carieer.carieer.report.common import bold, prepare, resolve_party
 
 GROUPS = {
 	"Sales Invoice": "goods",
@@ -18,10 +18,9 @@ GROUPS = {
 
 
 def execute(filters=None):
-	filters = frappe._dict(filters or {})
-	if not filters.get("party_type") or not filters.get("party"):
-		return get_columns(), [], _("Контрагентни танланг")
-	check_report_company(filters)
+	filters = prepare(filters, period="year")
+	if not resolve_party(filters):
+		return get_columns(), [], _("Контрагентни танланг: Мижоз, Таъминотчи ёки Ходим")
 	data, summary = get_data(filters)
 	return get_columns(), data, get_summary_html(summary, filters)
 
@@ -31,7 +30,13 @@ def get_columns():
 	return [
 		{"label": _("Сана"), "fieldname": "posting_date", "fieldtype": "Date", "width": 90},
 		{"label": _("Ҳужжат"), "fieldname": "voucher_label", "fieldtype": "Data", "width": 110},
-		{"label": _("Ҳужжат №"), "fieldname": "voucher_no", "fieldtype": "Dynamic Link", "options": "voucher_type", "width": 150},
+		{
+			"label": _("Ҳужжат №"),
+			"fieldname": "voucher_no",
+			"fieldtype": "Dynamic Link",
+			"options": "voucher_type",
+			"width": 150,
+		},
 		{"label": _("Наименование"), "fieldname": "item_name", "fieldtype": "Data", "width": 170},
 		{"label": _("Кол-во"), "fieldname": "qty", "fieldtype": "Float", "precision": 2, "width": 80},
 		{"label": _("Ед.изм"), "fieldname": "uom", "fieldtype": "Data", "width": 70},
@@ -41,7 +46,13 @@ def get_columns():
 		{"label": _("Қолдиқ (Кред)"), "fieldname": "balance_credit", **cur},
 		{"label": _("Қолдиқ (Деб)"), "fieldname": "balance_debit", **cur},
 		{"label": _("Коммент"), "fieldname": "komment", "fieldtype": "Data", "width": 220},
-		{"label": _("Валюта"), "fieldname": "currency", "fieldtype": "Link", "options": "Currency", "width": 65},
+		{
+			"label": _("Валюта"),
+			"fieldname": "currency",
+			"fieldtype": "Link",
+			"options": "Currency",
+			"width": 65,
+		},
 		{"label": "", "fieldname": "voucher_type", "fieldtype": "Data", "hidden": 1},
 	]
 
@@ -79,7 +90,9 @@ def get_data(filters):
 		filters,
 		as_dict=True,
 	)
-	items = get_invoice_items([g.voucher_no for g in gl if g.voucher_type in ("Sales Invoice", "Purchase Invoice")])
+	items = get_invoice_items(
+		[g.voucher_no for g in gl if g.voucher_type in ("Sales Invoice", "Purchase Invoice")]
+	)
 	komment = get_komments(gl)
 
 	cur = filters.currency
@@ -87,10 +100,9 @@ def get_data(filters):
 	data = [
 		{
 			"posting_date": filters.from_date,
-			"voucher_label": _("Бошланғич қолдиқ"),
+			"voucher_label": bold(_("Бошланғич қолдиқ")),
 			"currency": cur,
 			**split_balance(opening),
-			"is_bold": 1,
 		}
 	]
 	balance = opening
@@ -127,18 +139,25 @@ def get_data(filters):
 					row.update(split_balance(balance))
 				data.append(row)
 		else:
-			data.append({**base, "item_name": item_label(g.voucher_type, credit, debit), "credit": credit, "debit": debit, **split_balance(balance)})
+			data.append(
+				{
+					**base,
+					"item_name": item_label(g.voucher_type, credit, debit),
+					"credit": credit,
+					"debit": debit,
+					**split_balance(balance),
+				}
+			)
 
 	summary["closing"] = balance
 	data.append(
 		{
 			"posting_date": filters.to_date,
-			"voucher_label": _("Жами"),
+			"voucher_label": bold(_("Жами")),
 			"currency": cur,
 			"credit": sum(summary[k][0] for k in ("goods", "money", "accruals", "other")),
 			"debit": sum(summary[k][1] for k in ("goods", "money", "accruals", "other")),
 			**split_balance(balance),
-			"is_bold": 1,
 		}
 	)
 	return data, summary
@@ -183,12 +202,18 @@ def get_komments(gl):
 	"""Izoh: Kassa izohi, Sotuv'dagi mashina raqami, Начисление izohi yoki hujjatning o'z izohi."""
 	names = [g.voucher_no for g in gl] or [""]
 	out = {}
-	for r in frappe.db.sql("select name, remarks from `tabPayment Entry` where name in %s", [names], as_dict=True):
+	for r in frappe.db.sql(
+		"select name, remarks from `tabPayment Entry` where name in %s", [names], as_dict=True
+	):
 		out[r.name] = r.remarks or ""
-	for r in frappe.db.sql("select name, user_remark from `tabJournal Entry` where name in %s", [names], as_dict=True):
+	for r in frappe.db.sql(
+		"select name, user_remark from `tabJournal Entry` where name in %s", [names], as_dict=True
+	):
 		out[r.name] = r.user_remark or ""
 	for r in frappe.db.sql(
-		"select linked_entry, izoh from `tabKassa` where linked_entry in %s and docstatus=1", [names], as_dict=True
+		"select linked_entry, izoh from `tabKassa` where linked_entry in %s and docstatus=1",
+		[names],
+		as_dict=True,
 	):
 		if r.izoh:
 			out[r.linked_entry] = r.izoh
@@ -226,7 +251,7 @@ def get_summary_html(s, filters):
 	who = frappe.utils.escape_html(filters.party)
 	return f"""<div style="margin:10px 0 16px">
 		<div style="margin-bottom:6px"><b>{_("Контрагент")}:</b> {who} · <b>{_("Валюта")}:</b> {filters.currency}
-		· {frappe.format(filters.from_date, 'Date')} – {frappe.format(filters.to_date, 'Date')}</div>
+		· {frappe.format(filters.from_date, "Date")} – {frappe.format(filters.to_date, "Date")}</div>
 		<table style="width:100%;border-collapse:collapse">
 			<thead><tr style="{head}"><th style="{td}width:40%"></th>
 			<th style="{td}text-align:right;color:#d32f2f">{_("Кредит")}</th>

@@ -1,7 +1,6 @@
 {
  "actions": [],
- "allow_rename": 0,
- "creation": "2026-09-28 10:00:00.000000",
+ "creation": "2026-10-05 12:00:00.000000",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -14,6 +13,7 @@
  ],
  "fields": [
   {
+   "columns": 3,
    "fieldname": "item_code",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -24,11 +24,11 @@
   {
    "fieldname": "item_name",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Nomi",
    "read_only": 1
   },
   {
+   "columns": 2,
    "fieldname": "required_qty",
    "fieldtype": "Float",
    "in_list_view": 1,
@@ -36,6 +36,7 @@
    "read_only": 1
   },
   {
+   "columns": 1,
    "fieldname": "uom",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -44,6 +45,7 @@
    "read_only": 1
   },
   {
+   "columns": 2,
    "fieldname": "available_qty",
    "fieldtype": "Float",
    "in_list_view": 1,
@@ -54,13 +56,14 @@
  "index_web_pages_for_search": 0,
  "istable": 1,
  "links": [],
- "modified": "2026-09-28 10:00:00.000000",
+ "modified": "2026-10-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Beton Xomashyo",
  "owner": "Administrator",
  "permissions": [],
  "sort_field": "creation",
- "sort_order": "DESC",
- "states": []
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 0
 }

@@ -1,19 +1,23 @@
-# Firmalararo To'lov: bir firma ikkinchisiga qarzini to'laydi (pul o'tkazmasi).
+# Firmalararo To'lov: bir firmamiz ikkinchisiga qarzini to'laydi (pul o'tkazmasi).
 # Bitta hujjat ikkala kitobga yoziladi:
 #   to'lovchi firmada  Payment Entry "Pay"     -> kassadan chiqim, oluvchi firmaga qarzimiz kamayadi
 #   oluvchi firmada    Payment Entry "Receive" -> kassaga kirim, to'lovchi firmaning qarzi kamayadi
-# To'lov boshqa valyutada bo'lishi mumkin: masalan 250 USD × kurs = so'm. Qarz so'mda kamayadi, kassadan esa
-# kassa valyutasida chiqadi (so'm kassa bo'lsa so'm, dollar kassa bo'lsa dollar).
-# To'lov eng eski to'lanmagan firmalararo hisob-fakturalarga avtomatik taqsimlanadi.
+# To'lov boshqa valyutada bo'lishi mumkin: 250 USD x kurs = so'm. Qarz so'mda kamayadi, kassadan esa
+# kassa valyutasida chiqadi. To'lov eng eski to'lanmagan firmalararo hisob-fakturalarga taqsimlanadi.
 
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, fmt_money, getdate
+from frappe.utils import flt, fmt_money
 
-from carieer.carieer.doctype.firmalararo_sotuv.firmalararo_sotuv import ensure_inter_company_parties
-from carieer.carieer.doctype.kassa.kassa import get_kassa_info
-from carieer.utils import as_admin, get_allowed_companies, get_company_currency, get_rate
+from carieer.permissions import check_company, get_allowed_companies
+from carieer.utils import (
+	as_admin,
+	ensure_inter_company_parties,
+	get_company_currency,
+	get_kassa_info,
+	get_rate,
+)
 
 
 class FirmalararoTolov(Document):
@@ -29,6 +33,26 @@ class FirmalararoTolov(Document):
 		if flt(self.summa) <= 0:
 			frappe.throw(_("Summa 0 dan katta bo'lishi kerak"))
 		self.set_amounts()
+		self.set_joriy_qarz()
+		self.status = {0: "Draft", 1: "Tasdiqlangan", 2: "Bekor qilingan"}[self.docstatus]
+
+	def set_joriy_qarz(self):
+		"""Formada ko'rsatish uchun: to'lovchi firma oluvchidan qancha qarz (oluvchi kitobi bo'yicha)."""
+		from carieer.carieer.report.firmalararo_qarzlar.firmalararo_qarzlar import balance
+
+		if self.docstatus != 0:
+			return
+		qarz = balance(self.oluvchi_firma, self.tolovchi_firma, self.posting_date)
+		if abs(qarz) < 0.5:
+			self.joriy_qarz = _("Qarz yo'q")
+		elif qarz > 0:
+			self.joriy_qarz = _("{0} {1} dan {2} qarz").format(
+				self.tolovchi_firma, self.oluvchi_firma, fmt_money(qarz, 0, self.currency)
+			)
+		else:
+			self.joriy_qarz = _("{0} {1} dan {2} qarz").format(
+				self.oluvchi_firma, self.tolovchi_firma, fmt_money(-qarz, 0, self.currency)
+			)
 
 	def set_amounts(self):
 		"""To'lov valyutasi -> so'm (qarzdan ayriladi) -> har bir kassaning valyutasi.
@@ -36,19 +60,28 @@ class FirmalararoTolov(Document):
 		self.valyuta = self.valyuta or self.currency
 		if self.valyuta == self.currency:
 			self.kurs = 1
-		elif flt(self.kurs) <= 1:
+		elif flt(self.kurs) <= 0 or flt(self.kurs) == 1:
 			self.kurs = get_rate(self.valyuta, self.currency, self.posting_date)
 		self.base_summa = flt(flt(self.summa) * flt(self.kurs), 2)
 		for side in ("tolovchi", "oluvchi"):
 			firma, kassa = self.get(f"{side}_firma"), self.get(f"{side}_kassa")
 			info = get_kassa_info(kassa, firma)
 			if not info["account"]:
-				frappe.throw(_("{0} kassasi uchun {1} firmasida hisob ko'rsatilmagan (Mode of Payment)").format(kassa, firma))
+				frappe.throw(
+					_("{0} kassasi uchun {1} firmasida hisob ko'rsatilmagan (Mode of Payment)").format(
+						kassa, firma
+					)
+				)
 			self.set(f"{side}_valyuta", info["currency"])
 			self.set(f"{side}_kassa_summa", self.kassa_amount(info["currency"]))
 			if side == "tolovchi":
-				self.tolovchi_qoldiq = info["balance"]
-		if self.docstatus == 0 and flt(self.tolovchi_kassa_summa) > flt(self.tolovchi_qoldiq):
+				# boshqa firmaning kassa qoldig'i ko'rsatilmaydi
+				self.tolovchi_qoldiq = info["balance"] if check_company(firma, throw=False) else 0
+		if (
+			self.docstatus == 0
+			and check_company(self.tolovchi_firma, throw=False)
+			and flt(self.tolovchi_kassa_summa) > flt(self.tolovchi_qoldiq)
+		):
 			frappe.msgprint(
 				_("Diqqat: {0} kassasida {1} bor, {2} chiqarilmoqda").format(
 					self.tolovchi_kassa,
@@ -75,15 +108,20 @@ class FirmalararoTolov(Document):
 		# oluvchi = "sotuvchi" (unda to'lovchi firma ichki mijoz), to'lovchi = "xaridor" (unda oluvchi ichki yetkazib beruvchi)
 		customer, supplier = ensure_inter_company_parties(self.oluvchi_firma, self.tolovchi_firma)
 		pay = self.make_payment_entry("Pay", self.tolovchi_firma, self.tolovchi_kassa, "Supplier", supplier)
-		receive = self.make_payment_entry("Receive", self.oluvchi_firma, self.oluvchi_kassa, "Customer", customer)
-		self.db_set({"tolovchi_payment_entry": pay, "oluvchi_payment_entry": receive})
+		receive = self.make_payment_entry(
+			"Receive", self.oluvchi_firma, self.oluvchi_kassa, "Customer", customer
+		)
+		self.db_set(
+			{"tolovchi_payment_entry": pay, "oluvchi_payment_entry": receive, "status": "Tasdiqlangan"}
+		)
 
 	def on_cancel(self):
 		with as_admin():
 			self.cancel_documents()
 
 	def cancel_documents(self):
-		self.ignore_linked_doctypes = ("GL Entry", "Payment Ledger Entry")
+		self.ignore_linked_doctypes = ("GL Entry", "Payment Ledger Entry", "Payment Entry")
+		self.db_set("status", "Bekor qilingan")
 		for name in (self.oluvchi_payment_entry, self.tolovchi_payment_entry):
 			if name and frappe.db.get_value("Payment Entry", name, "docstatus") == 1:
 				pe = frappe.get_doc("Payment Entry", name)
@@ -119,7 +157,11 @@ class FirmalararoTolov(Document):
 				"reference_no": self.name,
 				"reference_date": self.posting_date,
 				"remarks": _("Firmalararo to'lov {0}: {1} → {2}, {3}. {4}").format(
-					self.name, self.tolovchi_firma, self.oluvchi_firma, fmt_money(self.summa, 2, self.valyuta), self.izoh or ""
+					self.name,
+					self.tolovchi_firma,
+					self.oluvchi_firma,
+					fmt_money(self.summa, 2, self.valyuta),
+					self.izoh or "",
 				),
 			}
 		)
@@ -160,64 +202,10 @@ def allocate(pe, voucher_type, party_type, party, company, amount):
 		left -= alloc
 
 
-@frappe.whitelist()
-def get_qarz(tolovchi_firma: str | None = None, oluvchi_firma: str | None = None) -> dict:
-	"""Formada ko'rsatish uchun: to'lovchi firma oluvchidan qancha qarz (oluvchi kitobi bo'yicha)."""
-	from carieer.carieer.report.firmalararo_qarzlar.firmalararo_qarzlar import balance
-
-	if not tolovchi_firma or not oluvchi_firma or tolovchi_firma == oluvchi_firma:
-		return {}
-	allowed = get_allowed_companies()
-	if allowed and tolovchi_firma not in allowed and oluvchi_firma not in allowed:
-		frappe.throw(_("Ruxsat yo'q"), frappe.PermissionError)
-	qarz = balance(oluvchi_firma, tolovchi_firma, getdate())
-	currency = get_company_currency(oluvchi_firma)
-	return {"qarz": qarz, "currency": currency, "text": fmt_money(abs(qarz), 0, currency)}
-
-
-@frappe.whitelist()
-def get_summalar(
-	tolovchi_firma: str, tolovchi_kassa: str, oluvchi_firma: str, oluvchi_kassa: str,
-	valyuta: str, summa: float, kurs: float | None = None, posting_date: str | None = None,
-) -> dict:
-	"""Formada jonli ko'rsatish: qarzdan qancha ayriladi, kassadan qancha chiqadi / kiradi."""
-	doc = frappe.get_doc(
-		{
-			"doctype": "Firmalararo Tolov",
-			"tolovchi_firma": tolovchi_firma,
-			"tolovchi_kassa": tolovchi_kassa,
-			"oluvchi_firma": oluvchi_firma,
-			"oluvchi_kassa": oluvchi_kassa,
-			"valyuta": valyuta,
-			"summa": summa,
-			"kurs": kurs,
-			"posting_date": posting_date or getdate(),
-		}
-	)
-	doc.currency = get_company_currency(tolovchi_firma)
-	doc.set_amounts()
-	return {
-		f: doc.get(f)
-		for f in ("kurs", "base_summa", "tolovchi_valyuta", "tolovchi_kassa_summa", "oluvchi_valyuta", "oluvchi_kassa_summa", "tolovchi_qoldiq")
-	}
-
-
-@frappe.whitelist()
-@frappe.validate_and_sanitize_search_inputs
-def kassa_query(doctype, txt, searchfield, start, page_len, filters):
-	"""Faqat tanlangan firmada hisobi bor to'lov turlari (kassalar)."""
-	return frappe.db.sql(
-		"""select mop.name from `tabMode of Payment` mop
-		join `tabMode of Payment Account` a on a.parent = mop.name
-		where mop.enabled = 1 and a.company = %(company)s and a.default_account is not null and mop.name like %(txt)s
-		order by mop.name limit %(start)s, %(page_len)s""",
-		{"company": (filters or {}).get("company"), "txt": f"%{txt}%", "start": start, "page_len": page_len},
-	)
-
-
 # ------------------------------------------------------------------ Ruxsat: ikkala firma ham ko'radi
+# Firma maydonlarida User Permission o'chirilgan (ignore_user_permissions), cheklov shu yerda.
 def get_permission_query_conditions(user=None):
-	allowed = get_allowed_companies()
+	allowed = get_allowed_companies(user)
 	if not allowed:
 		return ""
 	values = ", ".join(frappe.db.escape(c) for c in allowed)
@@ -225,7 +213,7 @@ def get_permission_query_conditions(user=None):
 
 
 def has_permission(doc, ptype=None, user=None):
-	allowed = get_allowed_companies()
+	allowed = get_allowed_companies(user)
 	if not allowed or not (doc.tolovchi_firma or doc.oluvchi_firma):
 		return True
 	return doc.tolovchi_firma in allowed or doc.oluvchi_firma in allowed

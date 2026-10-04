@@ -1,40 +1,39 @@
 {
  "actions": [],
- "allow_rename": 0,
  "autoname": "naming_series:",
- "creation": "2026-10-03 18:00:00.000000",
+ "creation": "2026-10-05 12:00:00.000000",
+ "description": "Bir firmamiz ikkinchisiga qarzini to'laydi: ikkala firma kitobiga Payment Entry yoziladi",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "asosiy_section",
   "naming_series",
+  "posting_date",
+  "cb_1",
+  "status",
+  "tolovchi_section",
   "tolovchi_firma",
   "tolovchi_kassa",
-  "tolovchi_qoldiq",
   "tolovchi_valyuta",
-  "cb_1",
+  "tolovchi_kassa_summa",
+  "tolovchi_qoldiq",
+  "cb_2",
   "oluvchi_firma",
   "oluvchi_kassa",
   "oluvchi_valyuta",
-  "cb_2",
-  "posting_date",
-  "izoh",
-  "summa_section",
-  "valyuta",
-  "summa",
-  "kurs",
-  "cb_4",
-  "base_summa",
-  "tolovchi_kassa_summa",
   "oluvchi_kassa_summa",
-  "currency",
-  "qarz_section",
-  "qarz_html",
-  "hujjat_section",
-  "tolovchi_payment_entry",
+  "summa_section",
+  "summa",
+  "valyuta",
+  "kurs",
   "cb_3",
+  "currency",
+  "base_summa",
+  "joriy_qarz",
+  "izoh_section",
+  "izoh",
+  "tolovchi_payment_entry",
   "oluvchi_payment_entry",
-  "firmalararo_sotuv",
   "amended_from"
  ],
  "fields": [
@@ -43,140 +42,107 @@
    "fieldtype": "Section Break"
   },
   {
+   "default": "FT-.YYYY.-",
    "fieldname": "naming_series",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Seriya",
    "options": "FT-.YYYY.-",
-   "default": "FT-.YYYY.-",
-   "reqd": 1,
-   "hidden": 1
+   "reqd": 1
   },
   {
-   "fieldname": "tolovchi_firma",
-   "fieldtype": "Link",
-   "label": "Kim to'laydi (firma)",
-   "options": "Company",
-   "reqd": 1,
-   "ignore_user_permissions": 1,
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
    "in_list_view": 1,
-   "in_standard_filter": 1
-  },
-  {
-   "fieldname": "tolovchi_kassa",
-   "fieldtype": "Link",
-   "label": "Qaysi kassadan",
-   "options": "Mode of Payment",
-   "reqd": 1,
-   "ignore_user_permissions": 1
-  },
-  {
-   "fieldname": "tolovchi_qoldiq",
-   "fieldtype": "Currency",
-   "label": "Kassada bor",
-   "options": "tolovchi_valyuta",
-   "read_only": 1
-  },
-  {
-   "fieldname": "tolovchi_valyuta",
-   "fieldtype": "Link",
-   "label": "Kassa valyutasi",
-   "options": "Currency",
-   "read_only": 1,
-   "hidden": 1
+   "label": "Sana",
+   "reqd": 1
   },
   {
    "fieldname": "cb_1",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "oluvchi_firma",
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Holat",
+   "no_copy": 1,
+   "options": "Draft\nTasdiqlangan\nBekor qilingan",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tolovchi_section",
+   "fieldtype": "Section Break",
+   "label": "To'lovchi (pul chiqadi)"
+  },
+  {
+   "fieldname": "tolovchi_firma",
    "fieldtype": "Link",
-   "label": "Kimga to'lanadi (firma)",
-   "options": "Company",
-   "reqd": 1,
    "ignore_user_permissions": 1,
    "in_list_view": 1,
-   "in_standard_filter": 1
+   "in_standard_filter": 1,
+   "label": "To'lovchi firma",
+   "options": "Company",
+   "reqd": 1
   },
   {
-   "fieldname": "oluvchi_kassa",
+   "fieldname": "tolovchi_kassa",
    "fieldtype": "Link",
-   "label": "Qaysi kassaga",
+   "label": "To'lovchi kassa",
+   "link_filters": "[[\"Mode of Payment\", \"enabled\", \"=\", 1]]",
    "options": "Mode of Payment",
-   "reqd": 1,
-   "ignore_user_permissions": 1
+   "reqd": 1
   },
   {
-   "fieldname": "oluvchi_valyuta",
+   "fieldname": "tolovchi_valyuta",
    "fieldtype": "Link",
    "label": "Kassa valyutasi",
    "options": "Currency",
-   "read_only": 1,
-   "hidden": 1
-  },
-  {
-   "fieldname": "cb_2",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "posting_date",
-   "fieldtype": "Date",
-   "label": "Sana",
-   "default": "Today",
-   "reqd": 1,
-   "in_list_view": 1
-  },
-  {
-   "fieldname": "izoh",
-   "fieldtype": "Small Text",
-   "label": "Izoh"
-  },
-  {
-   "fieldname": "summa_section",
-   "fieldtype": "Section Break",
-   "label": "Summa"
-  },
-  {
-   "fieldname": "valyuta",
-   "fieldtype": "Link",
-   "label": "To'lov valyutasi",
-   "options": "Currency",
-   "reqd": 1,
-   "description": "Masalan USD: 250$ kurs bo'yicha so'mga aylantirilib so'm kassadan ayriladi"
-  },
-  {
-   "fieldname": "summa",
-   "fieldtype": "Currency",
-   "label": "Summa",
-   "options": "valyuta",
-   "reqd": 1,
-   "in_list_view": 1
-  },
-  {
-   "fieldname": "kurs",
-   "fieldtype": "Float",
-   "label": "Kurs (1 valyuta = ? so'm)",
-   "precision": "2",
-   "default": "1",
-   "depends_on": "eval:doc.valyuta && doc.valyuta != doc.currency"
-  },
-  {
-   "fieldname": "cb_4",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "base_summa",
-   "fieldtype": "Currency",
-   "label": "Qarzdan ayriladi",
-   "options": "currency",
-   "read_only": 1,
-   "bold": 1
+   "read_only": 1
   },
   {
    "fieldname": "tolovchi_kassa_summa",
    "fieldtype": "Currency",
    "label": "Kassadan chiqadi",
    "options": "tolovchi_valyuta",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tolovchi_qoldiq",
+   "fieldtype": "Currency",
+   "label": "Kassadagi qoldiq",
+   "no_copy": 1,
+   "options": "tolovchi_valyuta",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "oluvchi_firma",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Oluvchi firma",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "oluvchi_kassa",
+   "fieldtype": "Link",
+   "label": "Oluvchi kassa",
+   "link_filters": "[[\"Mode of Payment\", \"enabled\", \"=\", 1]]",
+   "options": "Mode of Payment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "oluvchi_valyuta",
+   "fieldtype": "Link",
+   "label": "Kassa valyutasi",
+   "options": "Currency",
    "read_only": 1
   },
   {
@@ -187,155 +153,185 @@
    "read_only": 1
   },
   {
-   "fieldname": "currency",
+   "fieldname": "summa_section",
+   "fieldtype": "Section Break",
+   "label": "Summa"
+  },
+  {
+   "fieldname": "summa",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Summa",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "default": "UZS",
+   "fieldname": "valyuta",
    "fieldtype": "Link",
-   "label": "Firma valyutasi",
+   "label": "Valyuta",
    "options": "Currency",
-   "read_only": 1,
-   "hidden": 1
+   "reqd": 1
   },
   {
-   "fieldname": "qarz_section",
-   "fieldtype": "Section Break",
-   "label": "Qarz holati"
-  },
-  {
-   "fieldname": "qarz_html",
-   "fieldtype": "HTML",
-   "label": "Qarz"
-  },
-  {
-   "fieldname": "hujjat_section",
-   "fieldtype": "Section Break",
-   "label": "Yaratilgan hujjatlar",
-   "collapsible": 1
-  },
-  {
-   "fieldname": "tolovchi_payment_entry",
-   "fieldtype": "Link",
-   "label": "To'lovchi: Payment Entry",
-   "options": "Payment Entry",
-   "read_only": 1,
-   "no_copy": 1
+   "description": "Bo'sh = Currency Exchange kursi",
+   "fieldname": "kurs",
+   "fieldtype": "Float",
+   "label": "Kurs (firma valyutasiga)",
+   "precision": "4"
   },
   {
    "fieldname": "cb_3",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "oluvchi_payment_entry",
+   "fieldname": "currency",
    "fieldtype": "Link",
-   "label": "Oluvchi: Payment Entry",
-   "options": "Payment Entry",
-   "read_only": 1,
-   "no_copy": 1
+   "label": "Firma valyutasi",
+   "options": "Currency",
+   "read_only": 1
   },
   {
-   "fieldname": "firmalararo_sotuv",
+   "fieldname": "base_summa",
+   "fieldtype": "Currency",
+   "label": "Summa (firma valyutasida)",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "joriy_qarz",
+   "fieldtype": "Data",
+   "label": "Joriy qarz (saqlangan paytda)",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "izoh_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "izoh",
+   "fieldtype": "Small Text",
+   "label": "Izoh"
+  },
+  {
+   "fieldname": "tolovchi_payment_entry",
    "fieldtype": "Link",
-   "label": "Firmalararo Sotuv",
-   "options": "Firmalararo Sotuv",
-   "read_only": 1,
-   "no_copy": 1
+   "ignore_user_permissions": 1,
+   "label": "To'lovchi Payment Entry",
+   "no_copy": 1,
+   "options": "Payment Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "oluvchi_payment_entry",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Oluvchi Payment Entry",
+   "no_copy": 1,
+   "options": "Payment Entry",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
-   "options": "Firmalararo Tolov",
-   "read_only": 1,
    "no_copy": 1,
-   "print_hide": 1
+   "options": "Firmalararo Tolov",
+   "print_hide": 1,
+   "read_only": 1
   }
  ],
+ "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-03 20:00:00.000000",
+ "modified": "2026-10-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Firmalararo Tolov",
- "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
    "role": "System Manager",
-   "read": 1,
-   "write": 1,
-   "create": 1,
+   "share": 1,
    "submit": 1,
-   "cancel": 1,
-   "amend": 1,
-   "delete": 1,
-   "print": 1,
-   "email": 1,
-   "export": 1,
-   "report": 1,
-   "share": 1
+   "write": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
    "role": "Karer Menejer",
-   "read": 1,
-   "write": 1,
-   "create": 1,
+   "share": 1,
    "submit": 1,
-   "cancel": 1,
-   "amend": 1,
-   "delete": 1,
-   "print": 1,
-   "email": 1,
-   "export": 1,
-   "report": 1,
-   "share": 1
+   "write": 1
   },
   {
-   "role": "Karer Kassir",
-   "read": 1,
-   "write": 1,
-   "create": 1,
-   "submit": 1,
-   "cancel": 1,
    "amend": 1,
+   "cancel": 1,
+   "create": 1,
    "delete": 1,
-   "print": 1,
    "email": 1,
    "export": 1,
+   "print": 1,
+   "read": 1,
    "report": 1,
-   "share": 1
-  },
-  {
    "role": "Beton Menejer",
-   "read": 1,
-   "write": 1,
-   "create": 1,
+   "share": 1,
    "submit": 1,
-   "cancel": 1,
-   "amend": 1,
-   "delete": 1,
-   "print": 1,
-   "email": 1,
-   "export": 1,
-   "report": 1,
-   "share": 1
+   "write": 1
   },
   {
-   "role": "Beton Kassir",
-   "read": 1,
-   "write": 1,
-   "create": 1,
-   "submit": 1,
-   "cancel": 1,
    "amend": 1,
-   "delete": 1,
-   "print": 1,
-   "email": 1,
+   "cancel": 1,
+   "create": 1,
    "export": 1,
+   "print": 1,
+   "read": 1,
    "report": 1,
-   "share": 1
+   "role": "Karer Kassir",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Beton Kassir",
+   "submit": 1,
+   "write": 1
   }
  ],
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": [],
- "track_changes": 1,
- "title_field": "oluvchi_firma"
+ "states": [
+  {
+   "color": "Green",
+   "title": "Tasdiqlangan"
+  },
+  {
+   "color": "Gray",
+   "title": "Bekor qilingan"
+  }
+ ],
+ "track_changes": 1
 }

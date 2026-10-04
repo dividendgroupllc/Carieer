@@ -5,7 +5,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import add_months, flt, get_first_day, get_last_day, getdate
+from frappe.utils import add_months, escape_html, flt, get_first_day, get_last_day, getdate
 
 MAX_OY = 36
 
@@ -138,19 +138,65 @@ def get_months(from_date, to_date) -> list[frappe._dict]:
 
 
 def month_columns(months, first_label, total=True, width=140):
-	cols = [{"fieldname": "label", "label": first_label, "fieldtype": "Data", "width": 320}]
+	"""Jadvaldagi kabi: summalar valyuta belgisisiz, butun son (Float, precision 0)."""
+	cols = [{"fieldname": "label", "label": first_label, "fieldtype": "Data", "width": 340}]
 	for m in months:
-		cols.append({"fieldname": m.fieldname, "label": m.label, "fieldtype": "Currency", "width": width})
+		cols.append(
+			{
+				"fieldname": m.fieldname,
+				"label": m.label,
+				"fieldtype": "Float",
+				"precision": "0",
+				"width": width,
+			}
+		)
 	if total:
-		cols.append({"fieldname": "total", "label": _("Жами"), "fieldtype": "Currency", "width": width + 10})
+		cols.append(
+			{
+				"fieldname": "total",
+				"label": _("Жами"),
+				"fieldtype": "Float",
+				"precision": "0",
+				"width": width + 10,
+			}
+		)
 	return cols
+
+
+def finalize(rows: list[dict]) -> list[dict]:
+	"""JS formatter o'rniga: sarlavha / yig'ma qatorlar nomi qalin (HTML), foiz qatorlariga «%» belgisi.
+	«indent» bo'lgani uchun Frappe hisobotni daraxt (tree) ko'rinishida chiqaradi."""
+	numeric = {k for r in rows for k in r if k.startswith("m_") or k == "total"}
+	for r in rows:
+		if not r.get("is_check"):
+			for k in numeric:
+				v = r.get(k)
+				if v is None or abs(flt(v)) < 0.005:
+					r[k] = None
+		label = escape_html(str(r.get("label") or ""))
+		if r.get("is_percent"):
+			label = f"<i>{label}</i>"
+		elif r.get("is_header") or r.get("bold") or r.get("total_row"):
+			label = f"<b>{label}</b>"
+		r["label"] = label
+		r.setdefault("indent", 0)
+	return rows
 
 
 def get_accounts(company: str, root_types) -> list[frappe._dict]:
 	return frappe.get_all(
 		"Account",
 		filters={"company": company, "root_type": ["in", list(root_types)]},
-		fields=["name", "account_name", "parent_account", "is_group", "root_type", "account_type", "lft", "rgt"],
+		fields=[
+			"name",
+			"account_name",
+			"parent_account",
+			"is_group",
+			"root_type",
+			"account_type",
+			"lft",
+			"rgt",
+		],
 		order_by="lft",
 	)
 
@@ -178,7 +224,9 @@ def get_monthly_gl(company: str, root_types, to_date, from_date=None, skip_closi
 	return out
 
 
-def tree_rows(accounts, values: dict, months, sign=1, skip=None, cumulative=False, base_indent=0) -> tuple[list, dict]:
+def tree_rows(
+	accounts, values: dict, months, sign=1, skip=None, cumulative=False, base_indent=0
+) -> tuple[list, dict]:
 	"""Hisoblar daraxtini hisobot qatorlariga aylantiradi (guruh = bolalari yig'indisi, nol qatorlar tashlanadi).
 
 	values     - get_monthly_gl natijasi

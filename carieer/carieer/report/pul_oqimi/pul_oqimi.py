@@ -15,10 +15,10 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate
 
+from carieer.carieer.report.common import prepare
 from carieer.carieer.report.dds.dds import get_data as get_dds_data
-from carieer.carieer.report.moliya import get_months, line, month_columns, ru
+from carieer.carieer.report.moliya import finalize, get_months, line, month_columns, ru
 from carieer.install import XARAJAT_KATEGORIYALARI
-from carieer.utils import check_report_company
 
 # Jadvaldagi "Категория 1 типа" tartibi
 GURUH_TARTIBI = list(dict.fromkeys(g1 for _k, g1, _g2, _t in XARAJAT_KATEGORIYALARI))
@@ -42,10 +42,9 @@ PEREMESHENIE = "Перемещение между кассами"
 
 
 def execute(filters=None):
-	filters = frappe._dict(filters or {})
-	check_report_company(filters)
+	filters = prepare(filters, period="year")
 	months = get_months(filters.from_date, filters.to_date)
-	return month_columns(months, _("Статья")), get_data(filters, months)
+	return month_columns(months, _("Статья")), finalize(get_data(filters, months))
 
 
 def get_data(filters, months):

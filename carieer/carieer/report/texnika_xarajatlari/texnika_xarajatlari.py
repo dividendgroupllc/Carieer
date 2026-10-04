@@ -4,12 +4,11 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-from carieer.utils import check_report_company
+from carieer.carieer.report.common import prepare
 
 
 def execute(filters=None):
-	filters = frappe._dict(filters or {})
-	check_report_company(filters)
+	filters = prepare(filters, period="month")
 	cond = ["y.docstatus = 1", "y.posting_date between %(from_date)s and %(to_date)s"]
 	if filters.get("company"):
 		cond.append("y.company = %(company)s")
@@ -26,10 +25,20 @@ def execute(filters=None):
 		as_dict=True,
 	)
 	for r in rows:
-		r.sarf_100 = flt(flt(r.qty) * 100 / r.km, 2) if flt(r.km) and r.turi in ("Dizel", "Benzin", "Gaz (metan/propan)") else None
+		r.sarf_100 = (
+			flt(flt(r.qty) * 100 / r.km, 2)
+			if flt(r.km) and r.turi in ("Dizel (солярка)", "Benzin", "Gaz (metan/propan)")
+			else None
+		)
 		r.sarf_soat = flt(flt(r.qty) / r.moto, 2) if flt(r.moto) else None
 	columns = [
-		{"fieldname": "vehicle", "label": _("Texnika"), "fieldtype": "Link", "options": "Vehicle", "width": 130},
+		{
+			"fieldname": "vehicle",
+			"label": _("Texnika"),
+			"fieldtype": "Link",
+			"options": "Vehicle",
+			"width": 130,
+		},
 		{"fieldname": "texnika_turi", "label": _("Turi"), "fieldtype": "Data", "width": 140},
 		{"fieldname": "model", "label": _("Model"), "fieldtype": "Data", "width": 110},
 		{"fieldname": "turi", "label": _("Yoqilg'i/moy"), "fieldtype": "Data", "width": 120},

@@ -1,12 +1,14 @@
-# DDS (движение денежных средств) - Armada loyihasidagi DDS andozasi asosida.
-# Kassa hisoblaridagi har bir GL yozuv: sana, kassa, kirim/chiqim, kategoriya, summa, izoh, hujjat.
-# Tepada yig'ma jadval: boshlang'ich qoldiq -> kategoriyalar bo'yicha kirim/chiqim -> yakuniy qoldiq.
+# DDS (движение денежных средств) - jadvaldagi «ДДС» varag'i kabi:
+#   qatorlar - kategoriyalar (Kassa'dagi «Kategoriya»; bo'lmasa Клиент / Поставщик / Сотрудник / Перемещение ...),
+#   ustunlar - har bir valyuta bo'yicha kirim va chiqim (сўм, $),
+#   tepada - har bir valyuta bo'yicha boshlang'ich qoldiq, davr oboroti, yakuniy qoldiq.
+# «Batafsil» belgilansa - har bir pul harakati alohida qatorda.
 
 import frappe
 from frappe import _
 from frappe.utils import flt
 
-from carieer.utils import check_report_company
+from carieer.carieer.report.common import blank_zeros, bold, prepare, resolve_party
 
 CATEGORY_MAP = {
 	"Покупатели": "customer",
@@ -20,29 +22,166 @@ CATEGORY_MAP = {
 	"Прочие": "other",
 }
 CATEGORY_LABELS = {v: k for k, v in CATEGORY_MAP.items()}
-PARTY_CATEGORY = {"Customer": "customer", "Supplier": "supplier", "Employee": "employee", "Shareholder": "shareholder"}
-PARTY_NAME_FIELD = {"Customer": "customer_name", "Supplier": "supplier_name", "Employee": "employee_name", "Shareholder": "title"}
+# Kassa'da kategoriya ko'rsatilmagan pul harakati qaysi qatorga tushadi (jadvaldagi nomlar)
+CATEGORY_DEFAULT = {
+	"customer": "Клиент",
+	"supplier": "Поставщик",
+	"employee": "Сотрудник",
+	"shareholder": "Дивиденд",
+	"dividend": "Дивиденд",
+	"transfer": "Перемещение",
+	"other": "Прочие",
+}
+PARTY_CATEGORY = {
+	"Customer": "customer",
+	"Supplier": "supplier",
+	"Employee": "employee",
+	"Shareholder": "shareholder",
+}
+PARTY_NAME_FIELD = {
+	"Customer": "customer_name",
+	"Supplier": "supplier_name",
+	"Employee": "employee_name",
+	"Shareholder": "title",
+}
 
 
 def execute(filters=None):
-	filters = frappe._dict(filters or {})
-	check_report_company(filters)
-	data, expense_summaries, opening, closing = get_data(filters)
-	return get_columns(), data, get_summary_html(data, expense_summaries, opening, closing)
+	filters = prepare(filters, period="month")
+	resolve_party(filters)
+	data, _expense, _opening, _closing = get_data(filters)
+	if filters.get("kategoriya"):
+		data = [d for d in data if d["dds_kategoriya"] == filters.kategoriya]
+	balances = get_balances(filters)
+	message = get_summary_html(balances)
+	if filters.get("batafsil"):
+		return get_detail_columns(), data, message
+	return summary(data, filters, balances)
 
 
-def get_columns():
+def summary(data, filters, balances):
+	"""Kategoriya x valyuta: kirim / chiqim."""
+	company_currency = frappe.get_cached_value("Company", filters.company, "default_currency")
+	currencies = sorted(
+		{d["acc_currency"] for d in data} | set(balances), key=lambda c: (c != company_currency, c)
+	)
+	columns = [{"fieldname": "kategoriya", "label": _("Категория"), "fieldtype": "Data", "width": 260}]
+	for cur in currencies:
+		f = frappe.scrub(cur)
+		columns += [
+			{
+				"fieldname": f"kirim_{f}",
+				"label": _("Кирим ({0})").format(cur),
+				"fieldtype": "Currency",
+				"options": cur,
+				"width": 150,
+			},
+			{
+				"fieldname": f"chiqim_{f}",
+				"label": _("Чиқим ({0})").format(cur),
+				"fieldtype": "Currency",
+				"options": cur,
+				"width": 150,
+			},
+		]
+	groups = {}
+	for d in data:
+		g = groups.setdefault(d["dds_kategoriya"], {"kategoriya": d["dds_kategoriya"]})
+		f = frappe.scrub(d["acc_currency"])
+		g[f"kirim_{f}"] = flt(g.get(f"kirim_{f}")) + d["kirim_acc"]
+		g[f"chiqim_{f}"] = flt(g.get(f"chiqim_{f}")) + d["chiqim_acc"]
+	rows = sorted(groups.values(), key=lambda g: g["kategoriya"])
+	total = {"kategoriya": bold(_("Жами оборот"))}
+	for cur in currencies:
+		f = frappe.scrub(cur)
+		total[f"kirim_{f}"] = sum(flt(r.get(f"kirim_{f}")) for r in rows)
+		total[f"chiqim_{f}"] = sum(flt(r.get(f"chiqim_{f}")) for r in rows)
+	start = {"kategoriya": bold(_("Остаток на начало периода"))}
+	end = {"kategoriya": bold(_("Остаток на конец периода"))}
+	for cur, b in balances.items():
+		f = frappe.scrub(cur)
+		start[f"kirim_{f}"] = b["opening"]
+		end[f"kirim_{f}"] = b["closing"]
+	fields = [c["fieldname"] for c in columns[1:]]
+	return columns, blank_zeros([start, *rows, total, end], fields), get_summary_html(balances)
+
+
+def get_balances(filters) -> dict:
+	"""Har bir valyuta bo'yicha: boshlang'ich qoldiq, kirim, chiqim, yakuniy qoldiq (kassa valyutasida)."""
+	accounts = get_cash_accounts(filters)
+	if not accounts:
+		return {}
+	out = {}
+	for r in frappe.db.sql(
+		"""select account_currency cur,
+			sum(if(posting_date < %(from_date)s, debit_in_account_currency - credit_in_account_currency, 0)) opening,
+			sum(if(posting_date >= %(from_date)s, debit_in_account_currency, 0)) kirim,
+			sum(if(posting_date >= %(from_date)s, credit_in_account_currency, 0)) chiqim
+		from `tabGL Entry`
+		where account in %(acc)s and posting_date <= %(to_date)s and is_cancelled = 0
+		group by account_currency""",
+		{"acc": accounts, "from_date": filters.from_date, "to_date": filters.to_date},
+		as_dict=True,
+	):
+		out[r.cur] = {
+			"opening": flt(r.opening, 2),
+			"kirim": flt(r.kirim, 2),
+			"chiqim": flt(r.chiqim, 2),
+			"closing": flt(flt(r.opening) + flt(r.kirim) - flt(r.chiqim), 2),
+		}
+	return out
+
+
+def get_summary_html(balances) -> str:
+	if not balances:
+		return ""
+
+	def fmt(v):
+		return f"{flt(v):,.2f}".replace(",", " ")
+
+	td = "padding:6px 10px;border:1px solid var(--border-color);text-align:right"
+	rows = "".join(
+		f"<tr><td style='{td};text-align:left'><b>{frappe.utils.escape_html(cur)}</b></td><td style='{td}'>{fmt(b['opening'])}</td>"
+		f"<td style='{td}'>{fmt(b['kirim'])}</td><td style='{td}'>{fmt(b['chiqim'])}</td><td style='{td}'><b>{fmt(b['closing'])}</b></td></tr>"
+		for cur, b in balances.items()
+	)
+	head = "".join(
+		f"<th style='{td}'>{h}</th>"
+		for h in (_("Валюта"), _("Остаток на начало"), _("Кирим"), _("Чиқим"), _("Остаток на конец"))
+	)
+	return f"<table style='border-collapse:collapse;margin:8px 0 14px'><thead><tr>{head}</tr></thead><tbody>{rows}</tbody></table>"
+
+
+def get_detail_columns():
 	return [
 		{"fieldname": "posting_date", "label": _("Сана"), "fieldtype": "Date", "width": 95},
-		{"fieldname": "account", "label": _("Касса"), "fieldtype": "Link", "options": "Account", "width": 160},
+		{
+			"fieldname": "account",
+			"label": _("Касса"),
+			"fieldtype": "Link",
+			"options": "Account",
+			"width": 160,
+		},
 		{"fieldname": "direction", "label": _("Кирим/Чиқим"), "fieldtype": "Data", "width": 95},
 		{"fieldname": "description", "label": _("Контрагент / модда"), "fieldtype": "Data", "width": 230},
 		{"fieldname": "kategoriya", "label": _("Категория"), "fieldtype": "Data", "width": 140},
 		{"fieldname": "summa", "label": _("Сумма"), "fieldtype": "Float", "precision": 2, "width": 130},
-		{"fieldname": "currency", "label": _("Валюта"), "fieldtype": "Link", "options": "Currency", "width": 70},
+		{
+			"fieldname": "currency",
+			"label": _("Валюта"),
+			"fieldtype": "Link",
+			"options": "Currency",
+			"width": 70,
+		},
 		{"fieldname": "remarks", "label": _("Изоҳ"), "fieldtype": "Data", "width": 220},
 		{"fieldname": "voucher_type", "label": _("Тип"), "fieldtype": "Data", "hidden": 1},
-		{"fieldname": "voucher_no", "label": _("Документ"), "fieldtype": "Dynamic Link", "options": "voucher_type", "width": 160},
+		{
+			"fieldname": "voucher_no",
+			"label": _("Документ"),
+			"fieldtype": "Dynamic Link",
+			"options": "voucher_type",
+			"width": 160,
+		},
 	]
 
 
@@ -55,10 +194,11 @@ def get_cash_accounts(filters) -> list[str]:
 
 
 def get_data(filters):
+	"""Kassa hisoblaridagi GL yozuvlar. Har qatorda: kirim / chiqim (bitta kassa tanlansa - kassa valyutasida,
+	aks holda firma valyutasida), kirim_acc / chiqim_acc / acc_currency (har doim kassa valyutasida)."""
 	accounts = get_cash_accounts(filters)
 	if not accounts:
 		return [], {}, 0, 0
-	# Kassalar turli valyutada bo'lishi mumkin: bitta kassa tanlansa - o'z valyutasida, aks holda firma valyutasida
 	single = len(accounts) == 1
 	dr, cr = ("debit_in_account_currency", "credit_in_account_currency") if single else ("debit", "credit")
 	currency = (
@@ -75,8 +215,9 @@ def get_data(filters):
 		)[0][0]
 	)
 	rows = frappe.db.sql(
-		f"""select posting_date, account, voucher_type, voucher_no, party_type, party, against,
-			{dr} as kirim, {cr} as chiqim
+		f"""select posting_date, account, account_currency, voucher_type, voucher_no, party_type, party, against,
+			{dr} as kirim, {cr} as chiqim,
+			debit_in_account_currency as kirim_acc, credit_in_account_currency as chiqim_acc
 		from `tabGL Entry`
 		where account in %(acc)s and posting_date between %(from_date)s and %(to_date)s and is_cancelled = 0
 		order by posting_date, creation""",
@@ -114,15 +255,12 @@ def get_data(filters):
 	):
 		je_rows.setdefault(a.parent, []).append(a)
 
-	f_cat = CATEGORY_MAP.get(filters.get("category"))
 	data, expense_summaries = [], {}
 	balance = opening
 	for r in rows:
 		kirim, chiqim = flt(r.kirim), flt(r.chiqim)
 		balance += kirim - chiqim
 		info = resolve(r, pe, je_rows, accounts)
-		if f_cat and info["category"] != f_cat:
-			continue
 		if filters.get("party_type") and info.get("party_type") != filters.party_type:
 			continue
 		if filters.get("party") and info.get("party") != filters.party:
@@ -139,6 +277,9 @@ def get_data(filters):
 				"direction": "Кирим" if kirim else "Чиқим",
 				"description": info["description"],
 				"kategoriya": k.get("kategoriya") or "",
+				"dds_kategoriya": k.get("kategoriya")
+				or CATEGORY_DEFAULT.get(info["category"])
+				or info["description"],
 				"category": info["category"],
 				"summa": kirim or chiqim,
 				"currency": currency,
@@ -147,6 +288,9 @@ def get_data(filters):
 				"voucher_no": r.voucher_no,
 				"kirim": kirim,
 				"chiqim": chiqim,
+				"kirim_acc": flt(r.kirim_acc),
+				"chiqim_acc": flt(r.chiqim_acc),
+				"acc_currency": r.account_currency,
 			}
 		)
 	return data, expense_summaries, opening, balance
@@ -198,46 +342,9 @@ def resolve(r, pe, je_rows, accounts) -> dict:
 		return {"description": a.account_name, "category": "other", "remarks": a.user_remark}
 	if je_rows.get(r.voucher_no):
 		# Journal Entry'ning barcha qatorlari kassa hisoblari: kassalar orasida o'tkazma
-		return {"description": "Перемещение", "category": "transfer", "remarks": je_rows[r.voucher_no][0].user_remark}
+		return {
+			"description": "Перемещение",
+			"category": "transfer",
+			"remarks": je_rows[r.voucher_no][0].user_remark,
+		}
 	return {"description": r.against or r.voucher_no, "category": "other"}
-
-
-def get_summary_html(data, expense_summaries, opening, closing):
-	if not data and not opening:
-		return ""
-	totals = {c: [0, 0] for c in CATEGORY_LABELS}
-	for d in data:
-		t = totals.setdefault(d["category"], [0, 0])
-		t[0] += d["kirim"]
-		t[1] += d["chiqim"]
-
-	def fmt(v):
-		return "—" if not flt(v) else f"{flt(v):,.2f}".replace(",", " ")
-
-	td = "padding:8px 10px;border:1px solid var(--border-color);"
-	rows = ""
-	for cat, label in CATEGORY_LABELS.items():
-		k, c = totals.get(cat, [0, 0])
-		if cat == "expense" and expense_summaries:
-			rows += f"""<tr style="cursor:pointer" onclick="document.querySelectorAll('.dds-exp').forEach(e=>e.style.display=e.style.display==='none'?'table-row':'none')">
-				<td style="{td}">▸ {label}</td><td style="{td}text-align:right;color:#388e3c">{fmt(k)}</td>
-				<td style="{td}text-align:right;color:#d32f2f">{fmt(c)}</td></tr>"""
-			for name, s in sorted(expense_summaries.items()):
-				rows += f"""<tr class="dds-exp" style="display:none;background:var(--subtle-fg)">
-					<td style="{td}padding-left:28px;font-style:italic">{frappe.utils.escape_html(name)}</td>
-					<td style="{td}text-align:right;color:#388e3c">{fmt(s['kirim'])}</td>
-					<td style="{td}text-align:right;color:#d32f2f">{fmt(s['chiqim'])}</td></tr>"""
-			continue
-		rows += f"""<tr><td style="{td}">{label}</td><td style="{td}text-align:right;color:#388e3c">{fmt(k)}</td>
-			<td style="{td}text-align:right;color:#d32f2f">{fmt(c)}</td></tr>"""
-	head = "background:var(--subtle-accent);font-weight:600;"
-	return f"""<div style="margin:10px 0 16px">
-		<table style="width:100%;border-collapse:collapse">
-			<thead><tr style="{head}"><th style="{td}width:40%"></th>
-				<th style="{td}text-align:right;color:#388e3c">Кирим</th><th style="{td}text-align:right;color:#d32f2f">Чиқим</th></tr></thead>
-			<tbody>
-				<tr style="{head}"><td style="{td}">Начальный остаток</td><td style="{td}text-align:right" colspan="2">{fmt(opening) if opening else '0.00'}</td></tr>
-				{rows}
-				<tr style="{head}"><td style="{td}">Конечный остаток</td><td style="{td}text-align:right" colspan="2">{fmt(closing) if closing else '0.00'}</td></tr>
-			</tbody>
-		</table></div>"""

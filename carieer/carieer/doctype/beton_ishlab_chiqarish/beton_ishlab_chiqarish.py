@@ -8,20 +8,27 @@ from frappe.model.document import Document
 from frappe.utils import flt
 
 from carieer.carieer.doctype.qazib_olish.qazib_olish import cancel_stock_entry
-from carieer.utils import validate_warehouse_company
+from carieer.utils import get_zavod, validate_warehouse_company
 
 
 class BetonIshlabChiqarish(Document):
 	def validate(self):
 		if flt(self.qty) <= 0:
 			frappe.throw(_("Miqdor 0 dan katta bo'lishi kerak"))
-		bom = frappe.db.get_value("BOM", self.bom, ["item", "is_active", "docstatus", "company", "uom"], as_dict=True)
+		bom = frappe.db.get_value(
+			"BOM", self.bom, ["item", "is_active", "docstatus", "company", "uom"], as_dict=True
+		)
 		if not bom or bom.docstatus != 1 or not bom.is_active:
 			frappe.throw(_("BOM {0} faol va submit qilingan bo'lishi kerak").format(self.bom))
 		if bom.company != self.company:
 			frappe.throw(_("BOM {0} {1} firmasiga tegishli emas").format(self.bom, self.company))
 		self.item_code = bom.item
 		self.uom = bom.uom
+		zavod = get_zavod(self.company)
+		self.xomashyo_ombori = self.xomashyo_ombori or zavod.get("xomashyo_ombori")
+		self.tayyor_ombori = self.tayyor_ombori or zavod.get("asosiy_ombor")
+		if not self.xomashyo_ombori or not self.tayyor_ombori:
+			frappe.throw(_("Xomashyo va tayyor mahsulot omborini tanlang (yoki Zavod'da ko'rsating)"))
 		validate_warehouse_company(self.xomashyo_ombori, self.company, _("Xomashyo ombori"))
 		validate_warehouse_company(self.tayyor_ombori, self.company, _("Tayyor mahsulot ombori"))
 		self.set_xomashyolar()
@@ -35,7 +42,11 @@ class BetonIshlabChiqarish(Document):
 		jami = 0
 		for it in items.values():
 			balance = get_stock_balance(
-				it.item_code, self.xomashyo_ombori, self.posting_date, self.posting_time, with_valuation_rate=True
+				it.item_code,
+				self.xomashyo_ombori,
+				self.posting_date,
+				self.posting_time,
+				with_valuation_rate=True,
 			)
 			jami += flt(it.qty) * flt(balance[1])  # ombordagi tan narx bo'yicha
 			self.append(
@@ -84,14 +95,7 @@ class BetonIshlabChiqarish(Document):
 		se.get_items()
 		self.ensure_finished_good(se)
 		se.flags.ignore_permissions = True
-		try:
-			se.insert()
-		except Exception:
-			rows = "; ".join(
-				f"{d.item_code} qty={d.qty} s={d.s_warehouse} t={d.t_warehouse} fg={d.is_finished_item}" for d in se.items
-			)
-			frappe.log_error(title="Beton Stock Entry xatosi", message=rows)
-			raise
+		se.insert()
 		se.submit()
 
 		fg = [d for d in se.items if d.is_finished_item]
@@ -106,7 +110,9 @@ class BetonIshlabChiqarish(Document):
 
 	def ensure_finished_good(self, se):
 		"""ERPNext versiyalari orasida farq bo'lsa ham tayyor mahsulot qatori aniq bo'lsin."""
-		fg_rows = [d for d in se.items if d.item_code == self.item_code and d.t_warehouse and not d.s_warehouse]
+		fg_rows = [
+			d for d in se.items if d.item_code == self.item_code and d.t_warehouse and not d.s_warehouse
+		]
 		if not fg_rows:
 			se.append(
 				"items",

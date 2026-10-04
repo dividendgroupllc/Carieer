@@ -1,8 +1,8 @@
 {
  "actions": [],
- "allow_rename": 0,
  "autoname": "naming_series:",
- "creation": "2026-09-28 10:00:00.000000",
+ "creation": "2026-10-05 12:00:00.000000",
+ "description": "Qaysi texnikaga qancha yoqilg'i / moy ketdi",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -32,8 +32,10 @@
   "cb_4",
   "moto_soat",
   "sarf_100km",
-  "stock_entry",
+  "izoh_section",
   "izoh",
+  "stock_entry",
+  "journal_entry",
   "amended_from"
  ],
  "fields": [
@@ -47,7 +49,6 @@
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Seriya",
-   "no_copy": 1,
    "options": "YH-.YYYY.-",
    "reqd": 1
   },
@@ -57,7 +58,6 @@
    "in_standard_filter": 1,
    "label": "Firma",
    "options": "Company",
-   "remember_last_selected_value": 1,
    "reqd": 1
   },
   {
@@ -65,6 +65,7 @@
    "fieldname": "posting_date",
    "fieldtype": "Date",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Sana",
    "reqd": 1
   },
@@ -104,7 +105,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Turi",
-   "options": "Dizel\nBenzin\nGaz (metan/propan)\nMotor moyi\nGidravlik moy\nBoshqa",
+   "options": "Dizel (солярка)\nBenzin\nGaz (metan/propan)\nMotor moyi\nGidravlik moy\nBoshqa",
    "reqd": 1
   },
   {
@@ -125,17 +126,22 @@
    "fieldname": "item_code",
    "fieldtype": "Link",
    "label": "Tovar (yoqilg'i/moy)",
+   "link_filters": "[[\"Item\", \"disabled\", \"=\", 0], [\"Item\", \"is_stock_item\", \"=\", 1]]",
+   "mandatory_depends_on": "eval:doc.manba=='Ombordan'",
    "options": "Item"
   },
   {
    "depends_on": "eval:doc.manba=='Ombordan'",
+   "description": "Bo'sh = Zavod'dagi yoqilg'i ombori",
    "fieldname": "warehouse",
    "fieldtype": "Link",
    "label": "Ombor",
+   "link_filters": "[[\"Warehouse\", \"company\", \"=\", \"eval:doc.company\"], [\"Warehouse\", \"is_group\", \"=\", 0]]",
    "options": "Warehouse"
   },
   {
    "depends_on": "eval:doc.manba=='Zapravkadan'",
+   "description": "Ko'rsatilsa zapravkaga qarz yoziladi (Dt Топливо и ГСМ / Kt zapravka), pul Kassa orqali to'lanadi",
    "fieldname": "supplier",
    "fieldtype": "Link",
    "label": "Zapravka / yetkazib beruvchi",
@@ -150,9 +156,11 @@
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Miqdor (litr)",
+   "non_negative": 1,
    "reqd": 1
   },
   {
+   "description": "Ombordan bo'lsa tan narx o'zi qo'yiladi",
    "fieldname": "rate",
    "fieldtype": "Currency",
    "label": "1 litr narxi",
@@ -180,14 +188,12 @@
    "fieldname": "oldingi_odometr",
    "fieldtype": "Float",
    "label": "Oldingi spidometr",
-   "no_copy": 1,
    "read_only": 1
   },
   {
    "fieldname": "yurgan_km",
    "fieldtype": "Float",
    "label": "Yurgan masofa (km)",
-   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -203,8 +209,16 @@
    "fieldname": "sarf_100km",
    "fieldtype": "Float",
    "label": "Sarf (litr / 100 km)",
-   "no_copy": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "izoh_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "izoh",
+   "fieldtype": "Small Text",
+   "label": "Izoh"
   },
   {
    "fieldname": "stock_entry",
@@ -215,9 +229,12 @@
    "read_only": 1
   },
   {
-   "fieldname": "izoh",
-   "fieldtype": "Small Text",
-   "label": "Izoh"
+   "fieldname": "journal_entry",
+   "fieldtype": "Link",
+   "label": "Journal Entry (zapravka qarzi)",
+   "no_copy": 1,
+   "options": "Journal Entry",
+   "read_only": 1
   },
   {
    "fieldname": "amended_from",
@@ -226,14 +243,13 @@
    "no_copy": 1,
    "options": "Yoqilgi Hisobi",
    "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-03 19:00:00.000000",
+ "modified": "2026-10-05 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Yoqilgi Hisobi",
@@ -270,18 +286,6 @@
    "write": 1
   },
   {
-   "create": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Karer Operator",
-   "share": 1,
-   "submit": 1,
-   "write": 1
-  },
-  {
    "amend": 1,
    "cancel": 1,
    "create": 1,
@@ -298,13 +302,19 @@
   },
   {
    "create": 1,
-   "email": 1,
-   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Operator",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Beton Operator",
-   "share": 1,
    "submit": 1,
    "write": 1
   }

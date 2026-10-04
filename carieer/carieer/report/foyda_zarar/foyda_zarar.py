@@ -10,7 +10,9 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
+from carieer.carieer.report.common import prepare
 from carieer.carieer.report.moliya import (
+	finalize,
 	get_accounts,
 	get_monthly_gl,
 	get_months,
@@ -19,17 +21,15 @@ from carieer.carieer.report.moliya import (
 	percent_line,
 	tree_rows,
 )
-from carieer.utils import check_report_company
 
 COGS_TYPES = ("Cost of Goods Sold",)
 INVENTAR_TYPES = ("Stock Adjustment",)
 
 
 def execute(filters=None):
-	filters = frappe._dict(filters or {})
-	check_report_company(filters)
+	filters = prepare(filters, period="year")
 	months = get_months(filters.from_date, filters.to_date)
-	return month_columns(months, _("Модда")), get_data(filters, months)
+	return month_columns(months, _("Модда")), finalize(get_data(filters, months))
 
 
 def get_data(filters, months):
@@ -47,15 +47,26 @@ def get_data(filters, months):
 		return {f: flt(a.get(f)) - flt(b.get(f)) for f in fields}
 
 	income_rows, income_total = tree_rows(income, values, months, sign=-1, base_indent=1)
-	cogs_rows, cogs_total = tree_rows(expense, values, months, skip={a.name for a in expense} - cogs_parents(expense, cogs), base_indent=1)
-	inv_rows, inv_total = tree_rows(expense, values, months, skip={a.name for a in expense} - cogs_parents(expense, inventar), base_indent=1)
+	cogs_rows, cogs_total = tree_rows(
+		expense, values, months, skip={a.name for a in expense} - cogs_parents(expense, cogs), base_indent=1
+	)
+	inv_rows, inv_total = tree_rows(
+		expense,
+		values,
+		months,
+		skip={a.name for a in expense} - cogs_parents(expense, inventar),
+		base_indent=1,
+	)
 	other_rows, other_total = tree_rows(expense, values, months, skip=cogs | inventar)
 
 	margin = minus(income_total, cogs_total)
 	net = minus(minus(margin, inv_total), other_total)
 
 	data = [line(_("Выручка"), months, income_total, bold=1), *leaves_only(income_rows)]
-	data += [line(_("Себестоимость реализованной продукции"), months, cogs_total, bold=1), *leaves_only(cogs_rows)]
+	data += [
+		line(_("Себестоимость реализованной продукции"), months, cogs_total, bold=1),
+		*leaves_only(cogs_rows),
+	]
 	data += [
 		line(_("Маржинальная прибыль"), months, margin, bold=1, total_row=1),
 		percent_line(_("Рентабельность по маржинальному доходу, %"), months, margin, income_total),

@@ -8,7 +8,8 @@ import frappe
 from frappe import _
 from frappe.utils import add_days, flt, get_first_day, getdate, today
 
-from carieer.utils import check_report_company, get_allowed_companies
+from carieer.carieer.report.common import bold
+from carieer.permissions import check_report_company, get_allowed_companies
 
 
 def execute(filters=None):
@@ -17,7 +18,11 @@ def execute(filters=None):
 	filters.from_date = getdate(filters.get("from_date") or get_first_day(filters.to_date))
 	if get_allowed_companies() or filters.get("company"):
 		check_report_company(filters)
-	companies = [filters.company] if filters.get("company") else frappe.get_all("Company", pluck="name", order_by="name")
+	companies = (
+		[filters.company]
+		if filters.get("company")
+		else frappe.get_all("Company", pluck="name", order_by="name")
+	)
 
 	pairs = [
 		(company, other)
@@ -36,13 +41,37 @@ def get_columns():
 		{"fieldname": "posting_date", "label": _("Sana"), "fieldtype": "Date", "width": 100},
 		{"fieldname": "turi", "label": _("Operatsiya"), "fieldtype": "Data", "width": 125},
 		{"fieldname": "hujjat_turi", "label": _("Hujjat turi"), "fieldtype": "Data", "hidden": 1},
-		{"fieldname": "hujjat", "label": _("Hujjat"), "fieldtype": "Dynamic Link", "options": "hujjat_turi", "width": 135},
+		{
+			"fieldname": "hujjat",
+			"label": _("Hujjat"),
+			"fieldtype": "Dynamic Link",
+			"options": "hujjat_turi",
+			"width": 135,
+		},
 		{"fieldname": "tafsilot", "label": _("Tafsilot"), "fieldtype": "Data", "width": 330},
-		{"fieldname": "summa", "label": _("Summa"), "fieldtype": "Currency", "options": "currency", "width": 140},
-		{"fieldname": "qoldiq", "label": _("Qarz qoldig'i"), "fieldtype": "Currency", "options": "currency", "width": 145},
+		{
+			"fieldname": "summa",
+			"label": _("Summa"),
+			"fieldtype": "Currency",
+			"options": "currency",
+			"width": 140,
+		},
+		{
+			"fieldname": "qoldiq",
+			"label": _("Qarz qoldig'i"),
+			"fieldtype": "Currency",
+			"options": "currency",
+			"width": 145,
+		},
 		{"fieldname": "kim_qarz", "label": _("Kim kimdan qarz"), "fieldtype": "Data", "width": 220},
 		{"fieldname": "kind", "label": "kind", "fieldtype": "Data", "hidden": 1},
-		{"fieldname": "currency", "label": _("Valyuta"), "fieldtype": "Link", "options": "Currency", "hidden": 1},
+		{
+			"fieldname": "currency",
+			"label": _("Valyuta"),
+			"fieldtype": "Link",
+			"options": "Currency",
+			"hidden": 1,
+		},
 	]
 
 
@@ -56,8 +85,12 @@ def other_companies(company):
 
 def internal_parties(other):
 	"""Boshqa firmani bizning kitobda ifodalovchi kontragentlar: [(party_type, party)]."""
-	customers = frappe.get_all("Customer", {"is_internal_customer": 1, "represents_company": other}, pluck="name")
-	suppliers = frappe.get_all("Supplier", {"is_internal_supplier": 1, "represents_company": other}, pluck="name")
+	customers = frappe.get_all(
+		"Customer", {"is_internal_customer": 1, "represents_company": other}, pluck="name"
+	)
+	suppliers = frappe.get_all(
+		"Supplier", {"is_internal_supplier": 1, "represents_company": other}, pluck="name"
+	)
 	return [("Customer", c) for c in customers] + [("Supplier", s) for s in suppliers]
 
 
@@ -110,7 +143,7 @@ def get_pair(company, other, filters, with_header=False):
 	details = get_details(entries)
 	rows = []
 	if with_header:
-		rows.append({"turi": f"{company} ↔ {other}", "kind": "header", "currency": currency})
+		rows.append({"turi": bold(f"{company} ↔ {other}"), "kind": "header", "currency": currency})
 	if opening:
 		rows.append(
 			{
@@ -150,7 +183,7 @@ def get_pair(company, other, filters, with_header=False):
 		)
 	rows.append(
 		{
-			"turi": _("Yakuniy"),
+			"turi": bold(_("Yakuniy")),
 			"kind": "total",
 			"tafsilot": _("{0} sanasiga").format(frappe.format(filters.to_date, "Date")),
 			"qoldiq": abs(running),
@@ -177,12 +210,14 @@ def items_text(doctype, names):
 		{"names": names},
 		as_dict=True,
 	):
-		out.setdefault(i.parent, []).append(f"{i.item_name} {fmt_qty(i.qty)} {(i.uom or '').lower()} × {fmt_qty(i.rate)}")
+		out.setdefault(i.parent, []).append(
+			f"{i.item_name} {fmt_qty(i.qty)} {(i.uom or '').lower()} × {fmt_qty(i.rate)}"
+		)
 	return {k: ", ".join(v) for k, v in out.items()}
 
 
 def get_details(entries):
-	"""Har bir yozuv uchun asl hujjat (Firmalararo Sotuv / Sotuv / Firmalararo To'lov) va tushunarli izoh."""
+	"""Har bir yozuv uchun asl hujjat (Sotuv / Firmalararo To'lov) va tushunarli izoh."""
 	by_type = {}
 	for e in entries:
 		by_type.setdefault(e.voucher_type, []).append(e.voucher_no)
@@ -192,17 +227,6 @@ def get_details(entries):
 		texts = items_text(doctype, names)
 		for name in names:
 			out[name] = frappe._dict(text=texts.get(name, ""))
-	if by_type.get("Sales Invoice") or by_type.get("Purchase Invoice"):
-		invoices = (by_type.get("Sales Invoice") or []) + (by_type.get("Purchase Invoice") or [])
-		for fs in frappe.db.sql(
-			"""select name, sales_invoice, purchase_invoice from `tabFirmalararo Sotuv`
-			where docstatus=1 and (sales_invoice in %(v)s or purchase_invoice in %(v)s)""",
-			{"v": invoices},
-			as_dict=True,
-		):
-			for v in (fs.sales_invoice, fs.purchase_invoice):
-				if v in out:
-					out[v].update(doctype="Firmalararo Sotuv", name=fs.name)
 	if by_type.get("Sales Invoice"):
 		for s in frappe.db.sql(
 			"""select name, sales_invoice, mashina_raqami from `tabSotuv` where docstatus=1 and sales_invoice in %(v)s""",
@@ -213,13 +237,25 @@ def get_details(entries):
 			d.update(doctype="Sotuv", name=s.name)
 			if s.mashina_raqami:
 				d.text = f"{d.text} · {s.mashina_raqami}"
+	if by_type.get("Purchase Invoice"):
+		for s in frappe.db.sql(
+			"""select name, purchase_invoice, mashina_raqami from `tabSotuv` where docstatus=1 and purchase_invoice in %(v)s""",
+			{"v": by_type["Purchase Invoice"]},
+			as_dict=True,
+		):
+			d = out[s.purchase_invoice]
+			d.update(doctype="Sotuv", name=s.name)
+			if s.mashina_raqami:
+				d.text = f"{d.text} · {s.mashina_raqami}"
 	if by_type.get("Payment Entry"):
 		for pe in frappe.db.sql(
 			"""select name, mode_of_payment, reference_no from `tabPayment Entry` where name in %(v)s""",
 			{"v": by_type["Payment Entry"]},
 			as_dict=True,
 		):
-			d = frappe._dict(text=_("Kassa: {0}").format(pe.mode_of_payment) if pe.mode_of_payment else _("To'lov"))
+			d = frappe._dict(
+				text=_("Kassa: {0}").format(pe.mode_of_payment) if pe.mode_of_payment else _("To'lov")
+			)
 			if pe.reference_no and frappe.db.exists("Firmalararo Tolov", pe.reference_no):
 				d.update(doctype="Firmalararo Tolov", name=pe.reference_no)
 			out[pe.name] = d
