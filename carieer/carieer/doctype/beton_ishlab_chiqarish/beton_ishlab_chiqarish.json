@@ -1,18 +1,18 @@
 {
  "actions": [],
  "autoname": "naming_series:",
- "creation": "2026-10-05 12:00:00.000000",
+ "creation": "2026-10-05 18:00:00.000000",
  "description": "BOM (retsept) bo'yicha beton ishlab chiqarish: xomashyo chiqadi, beton kiradi",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "asosiy_section",
   "naming_series",
+  "bom",
   "company",
   "posting_date",
   "posting_time",
   "cb_1",
-  "bom",
   "item_code",
   "qty",
   "uom",
@@ -44,11 +44,22 @@
    "reqd": 1
   },
   {
+   "description": "Retsept Beton zavodi firmasida yaratilgan bo'lishi kerak",
+   "fieldname": "bom",
+   "fieldtype": "Link",
+   "label": "Retsept (BOM)",
+   "link_filters": "[[\"BOM\", \"is_active\", \"=\", 1], [\"BOM\", \"docstatus\", \"=\", 1]]",
+   "options": "BOM",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "bom.company",
    "fieldname": "company",
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Firma",
    "options": "Company",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -68,14 +79,6 @@
   {
    "fieldname": "cb_1",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "bom",
-   "fieldtype": "Link",
-   "label": "Retsept (BOM)",
-   "link_filters": "[[\"BOM\", \"company\", \"=\", \"eval:doc.company\"], [\"BOM\", \"is_active\", \"=\", 1], [\"BOM\", \"docstatus\", \"=\", 1]]",
-   "options": "BOM",
-   "reqd": 1
   },
   {
    "fetch_from": "bom.item",
@@ -123,6 +126,7 @@
    "options": "Warehouse"
   },
   {
+   "description": "«Omborda bor» «Kerakli»dan kam bo'lsa xomashyoni xomashyo omboriga kiriting: Xarid (Приход) -> Qabul (Receipt), Karer'dan Sotuv (mijoz = Beton firmasi) yoki Инвентаризация. Qoldiqni «Ombor qoldig'i (Stock Balance)» hisobotida ko'ring.",
    "fieldname": "xomashyo_section",
    "fieldtype": "Section Break",
    "label": "Sarflanadigan xomashyo (retsept bo'yicha, saqlaganda hisoblanadi)"
@@ -182,7 +186,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-05 12:00:00.000000",
+ "modified": "2026-10-05 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Beton Ishlab Chiqarish",

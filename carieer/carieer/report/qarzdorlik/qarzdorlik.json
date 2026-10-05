@@ -33,6 +33,13 @@
    "wildcard_filter": 0
   },
   {
+   "fieldname": "hammasi",
+   "fieldtype": "Check",
+   "label": "Тўланган ҳужжатлар ҳам",
+   "mandatory": 0,
+   "wildcard_filter": 0
+  },
+  {
    "fieldname": "ichki_firma",
    "fieldtype": "Check",
    "label": "Ички фирмани ҳам кўрсатиш",
@@ -50,7 +57,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letterhead": null,
- "modified": "2026-10-05 12:00:00.000000",
+ "modified": "2026-10-05 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Qarzdorlik",

@@ -12,12 +12,16 @@ from frappe.utils import flt
 
 from carieer.carieer.report.common import prepare
 from carieer.carieer.report.moliya import (
+	card,
+	drop_empty_months,
 	finalize,
 	get_accounts,
 	get_monthly_gl,
 	get_months,
 	line,
+	money,
 	month_columns,
+	note_box,
 	percent_line,
 	tree_rows,
 )
@@ -29,10 +33,65 @@ INVENTAR_TYPES = ("Stock Adjustment",)
 def execute(filters=None):
 	filters = prepare(filters, period="year")
 	months = get_months(filters.from_date, filters.to_date)
-	return month_columns(months, _("Модда")), finalize(get_data(filters, months))
+	data, totals, expense_rows = get_data(filters, months, with_totals=True)
+	data = finalize(data)
+	columns, shown = drop_empty_months(month_columns(months, _("Модда")), data, months)
+	currency = frappe.get_cached_value("Company", filters.company, "default_currency")
+	return columns, data, get_message(totals, expense_rows, shown, currency), None, get_summary(totals, currency)
 
 
-def get_data(filters, months):
+def get_summary(t, currency):
+	"""Tepadagi kartochkalar: daromad -> tannarx -> yalpi foyda -> xarajatlar -> sof foyda."""
+	income, net = t["income"], t["net"]
+	margin_pct = f" ({flt(t['margin'] / income * 100, 1)}%)" if income else ""
+	net_pct = f" ({flt(net / income * 100, 1)}%)" if income else ""
+	return [
+		card(_("Daromad (Выручка)"), income, "Blue", currency),
+		card(_("Tannarx (Себестоимость)"), t["cogs"], "Orange", currency),
+		card(_("Yalpi foyda") + margin_pct, t["margin"], "Green" if t["margin"] >= 0 else "Red", currency),
+		card(_("Xarajatlar (Расходы)"), t["other"] + t["inv"], "Orange", currency),
+		card(_("Sof foyda") + net_pct if net >= 0 else _("Zarar") + net_pct, net, "Green" if net >= 0 else "Red", currency),
+	]
+
+
+def get_message(t, expense_rows, months, currency):
+	"""Oddiy tilda: davr natijasi va eng katta xarajatlar."""
+	period = months[0].label if len(months) == 1 else f"{months[0].label} – {months[-1].label}"
+	net = t["net"]
+	if not (t["income"] or t["cogs"] or t["other"] or t["inv"]):
+		return note_box(_("{0}: daromad ham, xarajat ham yo'q").format(period), [])
+	headline = (
+		_("{0}: sof foyda {1}").format(period, money(net, currency))
+		if net >= 0
+		else _("{0}: zarar {1}").format(period, money(-net, currency))
+	)
+	lines = [
+		_("Sotuvdan tushum: <b>{0}</b>, sotilgan tovar tannarxi: <b>{1}</b> → yalpi foyda <b>{2}</b>").format(
+			money(t["income"], currency), money(t["cogs"], currency), money(t["margin"], currency)
+		),
+		_("Boshqa xarajatlar (ish haqi, yoqilg'i, ijara ...): <b>{0}</b>").format(money(t["other"], currency)),
+	]
+	if t["inv"]:
+		lines.append(_("Inventarizatsiya natijasi: <b>{0}</b>").format(money(-t["inv"], currency)))
+	top = sorted(
+		(r for r in expense_rows if not r.get("is_group") and flt(r.get("total")) > 0),
+		key=lambda r: -flt(r["total"]),
+	)[:3]
+	if top:
+		lines.append(
+			_("Eng katta xarajatlar: {0}").format(
+				", ".join(f"{frappe.utils.escape_html(r['label'])} — {money(r['total'], currency)}" for r in top)
+			)
+		)
+	if t["income"] and not t["cogs"]:
+		lines.append(
+			_("Diqqat: tannarx 0 - sotilgan tovarning kirim narxi (tan narxi) kiritilmagan, foyda haqiqiydan katta ko'rinadi.")
+		)
+	color = "var(--green-600, #2f9e44)" if net >= 0 else "var(--red-600, #e03636)"
+	return note_box(frappe.utils.escape_html(headline), lines, color)
+
+
+def get_data(filters, months, with_totals=False):
 	accounts = get_accounts(filters.company, ("Income", "Expense"))
 	values = get_monthly_gl(
 		filters.company, ("Income", "Expense"), filters.to_date, from_date=months[0].start, skip_closing=True
@@ -79,7 +138,17 @@ def get_data(filters, months):
 		line(_("Чистая прибыль"), months, net, bold=1, total_row=1),
 		percent_line(_("Рентабельность по чистой прибыли, %"), months, net, income_total),
 	]
-	return data
+	if not with_totals:
+		return data
+	totals = {
+		"income": flt(income_total.get("total")),
+		"cogs": flt(cogs_total.get("total")),
+		"margin": flt(margin.get("total")),
+		"inv": flt(inv_total.get("total")),
+		"other": flt(other_total.get("total")),
+		"net": flt(net.get("total")),
+	}
+	return data, totals, [dict(r) for r in other_rows]
 
 
 def cogs_parents(accounts, leaves: set) -> set:

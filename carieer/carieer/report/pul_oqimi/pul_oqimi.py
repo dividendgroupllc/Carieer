@@ -17,7 +17,18 @@ from frappe.utils import flt, getdate
 
 from carieer.carieer.report.common import prepare
 from carieer.carieer.report.dds.dds import get_data as get_dds_data
-from carieer.carieer.report.moliya import finalize, get_months, line, month_columns, ru
+from carieer.carieer.report.moliya import (
+	card,
+	drop_empty_months,
+	finalize,
+	get_months,
+	line,
+	money,
+	month_columns,
+	note_box,
+	ru,
+)
+from carieer.utils import get_kassa_info
 from carieer.install import XARAJAT_KATEGORIYALARI
 
 # Jadvaldagi "Категория 1 типа" tartibi
@@ -44,10 +55,63 @@ PEREMESHENIE = "Перемещение между кассами"
 def execute(filters=None):
 	filters = prepare(filters, period="year")
 	months = get_months(filters.from_date, filters.to_date)
-	return month_columns(months, _("Статья")), finalize(get_data(filters, months))
+	data, t = get_data(filters, months, with_totals=True)
+	data = finalize(data)
+	columns, shown = drop_empty_months(month_columns(months, _("Статья")), data, months)
+	currency = frappe.get_cached_value("Company", filters.company, "default_currency")
+	if filters.get("mode_of_payment"):
+		currency = get_kassa_info(filters.mode_of_payment, filters.company).currency or currency
+	return columns, data, get_message(t, shown, currency, filters), None, get_summary(t, currency)
 
 
-def get_data(filters, months):
+def get_summary(t, currency):
+	"""Pul qayerdan keldi va qayerga ketdi: boshida -> kirdi -> chiqdi -> oxirida."""
+	return [
+		card(_("Davr boshida kassada"), t["opening"], "Blue", currency),
+		card(_("Kirdi (Поступления)"), t["kirim"], "Green", currency),
+		card(_("Chiqdi (Выплаты)"), t["chiqim"], "Red", currency),
+		card(_("Davr oxirida kassada"), t["closing"], "Blue" if t["closing"] >= 0 else "Red", currency),
+	]
+
+
+def get_message(t, months, currency, filters):
+	esc = frappe.utils.escape_html
+	period = months[0].label if len(months) == 1 else f"{months[0].label} – {months[-1].label}"
+	change = t["closing"] - t["opening"]
+	where = esc(filters.mode_of_payment) if filters.get("mode_of_payment") else _("kassalarda")
+	headline = (
+		_("{0}: {1} pul {2} ko'paydi").format(period, where, money(change, currency))
+		if change >= 0
+		else _("{0}: {1} pul {2} kamaydi").format(period, where, money(-change, currency))
+	)
+
+	def top(items):
+		pairs = sorted(((k, sum(v)) for k, v in items.items()), key=lambda p: -p[1])
+		return ", ".join(f"{esc(k)} — {money(v, currency)}" for k, v in pairs[:3] if v)
+
+	lines = [
+		_("Boshida: <b>{0}</b> → kirdi <b>{1}</b> → chiqdi <b>{2}</b> → oxirida <b>{3}</b>").format(
+			money(t["opening"], currency), money(t["kirim"], currency), money(t["chiqim"], currency), money(t["closing"], currency)
+		),
+	]
+	if t["kirim_items"]:
+		lines.append(_("Pul qayerdan keldi: {0}").format(top(t["kirim_items"])))
+	if t["chiqim_items"]:
+		lines.append(_("Pul qayerga ketdi: {0}").format(top(t["chiqim_items"])))
+	if t["transfer"] and filters.get("mode_of_payment"):
+		lines.append(_("Boshqa kassalar bilan o'tkazma: {0}").format(money(t["transfer"], currency)))
+	negative = [m.label for m in months if flt(t["ends_by_month"].get(m.key)) < -0.005]
+	if negative:
+		lines.append(
+			_("⚠ Minus qoldiq ({0}): kassadan unda yo'q pul chiqarilgan - kirim kiritilmagan bo'lishi mumkin").format(
+				", ".join(negative)
+			)
+		)
+	color = "var(--green-600, #2f9e44)" if change >= 0 else "var(--red-600, #e03636)"
+	return note_box(headline, lines, color)
+
+
+def get_data(filters, months, with_totals=False):
 	dds_filters = frappe._dict(
 		company=filters.company,
 		from_date=months[0].start,
@@ -74,6 +138,12 @@ def get_data(filters, months):
 		cat = d["category"]
 		if cat == "transfer":
 			transfer[i] += k - c
+			continue
+		if cat == "internal":  # o'zimizning ikkinchi firmamiz bilan pul (Firmalararo To'lov)
+			if k:
+				put(kirim, d["dds_kategoriya"], i, k)
+			if c:
+				put(chiqim.setdefault("", {}), d["dds_kategoriya"], i, c)
 			continue
 		if k:
 			if d.get("kategoriya"):
@@ -127,7 +197,23 @@ def get_data(filters, months):
 		data.append(line(_(PEREMESHENIE), months, transfer, bold=1))
 	data.append(line(_("Изменение за месяц"), months, change, bold=1))
 	data.append(balance_line(_("Денег на конец месяца"), end))
-	return data
+	if not with_totals:
+		return data
+	chiqim_items = {}
+	for guruh, items in chiqim.items():
+		for label, vals in items.items():
+			chiqim_items[label] = [a + b for a, b in zip(chiqim_items.get(label, [0.0] * n), vals)]
+	ends = dict(zip([m.key for m in months], end))
+	return data, {
+		"opening": flt(start[0]) if start else flt(opening),
+		"kirim": flt(sum(kirim_total)),
+		"chiqim": flt(sum(chiqim_total)),
+		"transfer": flt(sum(transfer)),
+		"closing": flt(end[-1]) if end else flt(opening),
+		"kirim_items": kirim,
+		"chiqim_items": chiqim_items,
+		"ends_by_month": ends,
+	}
 
 
 def expense_groups(company) -> dict:

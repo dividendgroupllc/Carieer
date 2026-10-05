@@ -199,6 +199,10 @@ def party_balances(company, accounts, to_date) -> list[tuple[str, dict]]:
 			ichki[party] = firma.represents_company if firma and firma.get(field) else None
 		if ichki[party]:
 			key = ("internal", ichki[party])
+		elif r.party_type == "Employee":
+			# Kassa'da xodim -> Creditors hisobiga yoziladi (Party Type Employee = Payable), lekin bu ta'minotchi emas:
+			# musbat qoldiq - подотчёт, manfiy - xodimga qarz
+			key = ("Asset Payable", party)
 		else:
 			kind = f"{r.root_type} {r.account_type}" if r.root_type == "Asset" else "Liability Payable"
 			key = (kind, party)

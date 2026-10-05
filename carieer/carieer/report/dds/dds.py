@@ -9,6 +9,7 @@ from frappe import _
 from frappe.utils import flt
 
 from carieer.carieer.report.common import blank_zeros, bold, prepare, resolve_party
+from carieer.utils import get_internal_company
 
 CATEGORY_MAP = {
 	"Покупатели": "customer",
@@ -19,6 +20,7 @@ CATEGORY_MAP = {
 	"Расходы": "expense",
 	"Прочие доходы": "income",
 	"Перемещения": "transfer",
+	"Firmalararo": "internal",
 	"Прочие": "other",
 }
 CATEGORY_LABELS = {v: k for k, v in CATEGORY_MAP.items()}
@@ -53,7 +55,7 @@ def execute(filters=None):
 	if filters.get("kategoriya"):
 		data = [d for d in data if d["dds_kategoriya"] == filters.kategoriya]
 	balances = get_balances(filters)
-	message = get_summary_html(balances)
+	message = get_summary_html(balances, filters)
 	if filters.get("batafsil"):
 		return get_detail_columns(), data, message
 	return summary(data, filters, balances)
@@ -103,7 +105,7 @@ def summary(data, filters, balances):
 		start[f"kirim_{f}"] = b["opening"]
 		end[f"kirim_{f}"] = b["closing"]
 	fields = [c["fieldname"] for c in columns[1:]]
-	return columns, blank_zeros([start, *rows, total, end], fields), get_summary_html(balances)
+	return columns, blank_zeros([start, *rows, total, end], fields), get_summary_html(balances, filters)
 
 
 def get_balances(filters) -> dict:
@@ -132,24 +134,92 @@ def get_balances(filters) -> dict:
 	return out
 
 
-def get_summary_html(balances) -> str:
+def get_kassa_balances(filters) -> list[frappe._dict]:
+	"""Har bir kassa (hisob) bo'yicha: boshlang'ich qoldiq, kirim, chiqim, yakuniy qoldiq (kassa valyutasida)."""
+	accounts = get_cash_accounts(filters)
+	if not accounts:
+		return []
+	names = {}
+	for m in frappe.db.sql(
+		"""select a.default_account, a.parent, m.enabled from `tabMode of Payment Account` a
+		join `tabMode of Payment` m on m.name = a.parent where a.company = %s order by m.enabled desc, a.parent""",
+		filters.company,
+		as_dict=True,
+	):
+		names.setdefault(m.default_account, m.parent)
+	rows = frappe.db.sql(
+		"""select account, account_currency cur,
+			sum(if(posting_date < %(from_date)s, debit_in_account_currency - credit_in_account_currency, 0)) opening,
+			sum(if(posting_date >= %(from_date)s, debit_in_account_currency, 0)) kirim,
+			sum(if(posting_date >= %(from_date)s, credit_in_account_currency, 0)) chiqim
+		from `tabGL Entry`
+		where account in %(acc)s and posting_date <= %(to_date)s and is_cancelled = 0
+		group by account, account_currency""",
+		{"acc": accounts, "from_date": filters.from_date, "to_date": filters.to_date},
+		as_dict=True,
+	)
+	by_account = {r.account: r for r in rows}
+	out = []
+	for acc in accounts:
+		r = by_account.get(acc) or frappe._dict(
+			cur=frappe.get_cached_value("Account", acc, "account_currency"), opening=0, kirim=0, chiqim=0
+		)
+		out.append(
+			frappe._dict(
+				kassa=names.get(acc, acc),
+				cur=r.cur,
+				opening=flt(r.opening, 2),
+				kirim=flt(r.kirim, 2),
+				chiqim=flt(r.chiqim, 2),
+				closing=flt(flt(r.opening) + flt(r.kirim) - flt(r.chiqim), 2),
+			)
+		)
+	return out
+
+
+def get_summary_html(balances, filters=None) -> str:
+	"""Tepadagi jadval: har bir kassa alohida (kassa nazorati), keyin valyuta bo'yicha jami.
+	Minus qoldiq qizil - kassada yo'q pul chiqarilgan."""
 	if not balances:
 		return ""
+	esc = frappe.utils.escape_html
 
 	def fmt(v):
 		return f"{flt(v):,.2f}".replace(",", " ")
 
 	td = "padding:6px 10px;border:1px solid var(--border-color);text-align:right"
-	rows = "".join(
-		f"<tr><td style='{td};text-align:left'><b>{frappe.utils.escape_html(cur)}</b></td><td style='{td}'>{fmt(b['opening'])}</td>"
-		f"<td style='{td}'>{fmt(b['kirim'])}</td><td style='{td}'>{fmt(b['chiqim'])}</td><td style='{td}'><b>{fmt(b['closing'])}</b></td></tr>"
-		for cur, b in balances.items()
-	)
+	red = "color:var(--red-600, #e03636)"
+
+	def tr(label, b, strong=False):
+		closing_style = red if flt(b["closing"]) < -0.005 else ""
+		warn = " ⚠" if flt(b["closing"]) < -0.005 else ""
+		cells = "".join(f"<td style='{td}'>{fmt(b[k])}</td>" for k in ("opening", "kirim", "chiqim"))
+		label = f"<b>{label}</b>" if strong else label
+		return (
+			f"<tr><td style='{td};text-align:left'>{label}</td>{cells}"
+			f"<td style='{td};{closing_style}'><b>{fmt(b['closing'])}{warn}</b></td></tr>"
+		)
+
+	kassalar = get_kassa_balances(filters) if filters else []
+	body = ""
+	for cur, b in balances.items():
+		items = [k for k in kassalar if k.cur == cur]
+		for k in items:
+			body += tr(f"{esc(k.kassa)} <span style='color:var(--text-muted)'>({esc(cur)})</span>", k)
+		if len(items) != 1:
+			body += tr(esc(_("Jami {0}").format(cur)), b, strong=True)
 	head = "".join(
 		f"<th style='{td}'>{h}</th>"
-		for h in (_("Валюта"), _("Остаток на начало"), _("Кирим"), _("Чиқим"), _("Остаток на конец"))
+		for h in (_("Касса"), _("Остаток на начало"), _("Кирим"), _("Чиқим"), _("Остаток на конец"))
 	)
-	return f"<table style='border-collapse:collapse;margin:8px 0 14px'><thead><tr>{head}</tr></thead><tbody>{rows}</tbody></table>"
+	note = ""
+	if any(flt(k.closing) < -0.005 for k in kassalar):
+		note = (
+			f"<div style='{red};margin:-8px 0 12px;font-size:13px'>"
+			+ esc(_("⚠ Minus qoldiq: kassadan unda yo'q pul chiqarilgan. Kirimi kiritilmagan yoki xato kassa tanlangan."))
+			+ "</div>"
+		)
+	return f"<table style='border-collapse:collapse;margin:8px 0 14px'><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>{note}"
 
 
 def get_detail_columns():
@@ -266,6 +336,11 @@ def get_data(filters):
 		if filters.get("party") and info.get("party") != filters.party:
 			continue
 		k = kassa.get(r.voucher_no) or {}
+		# o'zimizning ikkinchi firmamiz bilan pul (Firmalararo To'lov) - mijoz / ta'minotchi emas
+		ichki = internal(info.get("party_type"), info.get("party"))
+		if ichki:
+			info["category"] = "internal"
+			info["description"] = _("Firmalararo: {0}").format(ichki)
 		if info["category"] == "expense":
 			s = expense_summaries.setdefault(info["description"], {"kirim": 0, "chiqim": 0})
 			s["kirim"] += kirim
@@ -278,6 +353,7 @@ def get_data(filters):
 				"description": info["description"],
 				"kategoriya": k.get("kategoriya") or "",
 				"dds_kategoriya": k.get("kategoriya")
+				or (info["description"] if ichki else None)
 				or CATEGORY_DEFAULT.get(info["category"])
 				or info["description"],
 				"category": info["category"],
@@ -294,6 +370,16 @@ def get_data(filters):
 			}
 		)
 	return data, expense_summaries, opening, balance
+
+
+def internal(party_type, party) -> str | None:
+	"""Kontragent o'zimizning boshqa firmamiz bo'lsa - o'sha firma nomi (so'rov ichida keshlanadi)."""
+	if party_type not in ("Customer", "Supplier") or not party:
+		return None
+	cache = frappe.flags.setdefault("dds_internal", {})
+	if (party_type, party) not in cache:
+		cache[(party_type, party)] = get_internal_company(party_type, party)
+	return cache[(party_type, party)]
 
 
 def party_name(party_type, party):

@@ -6,8 +6,8 @@
    "label": "Kunlik sotuv (oxirgi oy)"
   }
  ],
- "content": "[{\"id\": \"h_kpi\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Ko'rsatkichlar</b></span>\", \"col\": 12}}, {\"id\": \"nc_0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Bugungi sotuv\", \"col\": 4}}, {\"id\": \"nc_1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shu oy sotuv\", \"col\": 4}}, {\"id\": \"nc_2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Sotuvlar bo'yicha qarz\", \"col\": 4}}, {\"id\": \"nc_3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Kassalarda pul\", \"col\": 4}}, {\"id\": \"nc_4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Mijozlar qarzi (jami)\", \"col\": 4}}, {\"id\": \"nc_5\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shu oy ishlab chiqarildi\", \"col\": 4}}, {\"id\": \"ch_0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Kunlik sotuv (oxirgi oy)\", \"col\": 12}}, {\"id\": \"h_sc\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Tezkor kirish</b></span>\", \"col\": 12}}, {\"id\": \"sc_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Yangi sotuv\", \"col\": 3}}, {\"id\": \"sc_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sotuvlar\", \"col\": 3}}, {\"id\": \"sc_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ishlab chiqarish\", \"col\": 3}}, {\"id\": \"sc_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kunlik otchet\", \"col\": 3}}, {\"id\": \"sc_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Retsept (BOM)\", \"col\": 3}}, {\"id\": \"sc_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kassa\", \"col\": 3}}, {\"id\": \"sc_6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Akt sverka\", \"col\": 3}}, {\"id\": \"sc_7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Qarzdorlik\", \"col\": 3}}]",
- "creation": "2026-10-05 12:00:00.000000",
+ "content": "[{\"id\": \"h_kpi\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Ko'rsatkichlar</b></span>\", \"col\": 12}}, {\"id\": \"nc_0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Bugungi sotuv\", \"col\": 4}}, {\"id\": \"nc_1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shu oy sotuv\", \"col\": 4}}, {\"id\": \"nc_2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shu oy mijozlardan tushum\", \"col\": 4}}, {\"id\": \"nc_3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Sotuvlar bo'yicha qarz\", \"col\": 4}}, {\"id\": \"nc_4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Mijozlar qarzi (jami)\", \"col\": 4}}, {\"id\": \"nc_5\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Tasdiqlanmagan sotuvlar (Draft)\", \"col\": 4}}, {\"id\": \"nc_6\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Kassalarda pul\", \"col\": 4}}, {\"id\": \"nc_7\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shu oy xarajatlar\", \"col\": 4}}, {\"id\": \"nc_8\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shu oy ishlab chiqarildi\", \"col\": 4}}, {\"id\": \"ch_0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Kunlik sotuv (oxirgi oy)\", \"col\": 12}}, {\"id\": \"h_sc\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Tezkor kirish</b></span>\", \"col\": 12}}, {\"id\": \"sc_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Yangi sotuv\", \"col\": 3}}, {\"id\": \"sc_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sotuvlar\", \"col\": 3}}, {\"id\": \"sc_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ishlab chiqarish\", \"col\": 3}}, {\"id\": \"sc_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kunlik otchet\", \"col\": 3}}, {\"id\": \"sc_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Retsept (BOM)\", \"col\": 3}}, {\"id\": \"sc_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kassa\", \"col\": 3}}, {\"id\": \"sc_6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Akt sverka\", \"col\": 3}}, {\"id\": \"sc_7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Qarzdorlik\", \"col\": 3}}]",
+ "creation": "2026-10-05 18:30:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -18,7 +18,7 @@
  "is_hidden": 0,
  "label": "Beton Zavod",
  "links": [],
- "modified": "2026-10-05 12:00:00.000000",
+ "modified": "2026-10-05 23:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Beton Zavod",
@@ -32,16 +32,28 @@
    "number_card_name": "Beton Oylik Sotuv"
   },
   {
+   "label": "Shu oy mijozlardan tushum",
+   "number_card_name": "Beton Oylik Tushum"
+  },
+  {
    "label": "Sotuvlar bo'yicha qarz",
    "number_card_name": "Beton Qarzga Sotuvlar"
+  },
+  {
+   "label": "Mijozlar qarzi (jami)",
+   "number_card_name": "Beton Mijozlar Qarzi"
+  },
+  {
+   "label": "Tasdiqlanmagan sotuvlar (Draft)",
+   "number_card_name": "Beton Tasdiqlanmagan Sotuv"
   },
   {
    "label": "Kassalarda pul",
    "number_card_name": "Beton Kassa Qoldigi"
   },
   {
-   "label": "Mijozlar qarzi (jami)",
-   "number_card_name": "Beton Mijozlar Qarzi"
+   "label": "Shu oy xarajatlar",
+   "number_card_name": "Beton Oylik Xarajat"
   },
   {
    "label": "Shu oy ishlab chiqarildi",

@@ -1,6 +1,6 @@
 {
  "color": "#7575FF",
- "creation": "2026-10-05 12:00:00.000000",
+ "creation": "2026-10-05 18:30:00.000000",
  "docstatus": 0,
  "doctype": "Number Card",
  "document_type": "GL Entry",
@@ -11,7 +11,7 @@
  "is_standard": 1,
  "label": "Beton Kassa Qoldigi",
  "method": "carieer.carieer.dashboard.kassa_qoldigi",
- "modified": "2026-10-05 12:00:00.000000",
+ "modified": "2026-10-05 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Beton Kassa Qoldigi",

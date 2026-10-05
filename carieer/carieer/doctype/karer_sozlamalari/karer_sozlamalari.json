@@ -1,6 +1,6 @@
 {
  "actions": [],
- "creation": "2026-10-05 12:00:00.000000",
+ "creation": "2026-10-05 18:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -15,7 +15,9 @@
   "gps_section",
   "gps_token",
   "gps_cb",
-  "gps_saqlash_kun"
+  "gps_saqlash_kun",
+  "kassa_section",
+  "kassa_minus_ruxsat"
  ],
  "fields": [
   {
@@ -87,12 +89,25 @@
    "fieldname": "gps_saqlash_kun",
    "fieldtype": "Int",
    "label": "GPS nuqtalar necha kun saqlansin"
+  },
+  {
+   "fieldname": "kassa_section",
+   "fieldtype": "Section Break",
+   "label": "Kassa nazorati"
+  },
+  {
+   "default": "0",
+   "description": "O'chiq (tavsiya): kassada yo'q pulni chiqarib bo'lmaydi (Kassa chiqim / o'tkazma, Firmalararo to'lov). Faqat System Manager o'zgartira oladi.",
+   "fieldname": "kassa_minus_ruxsat",
+   "fieldtype": "Check",
+   "label": "Kassada minus qoldiqqa ruxsat berish",
+   "permlevel": 1
   }
  ],
  "index_web_pages_for_search": 0,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-05 12:00:00.000000",
+ "modified": "2026-10-05 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Karer Sozlamalari",
@@ -115,6 +130,12 @@
    "print": 1,
    "read": 1,
    "role": "Beton Menejer",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager",
    "write": 1
   }
  ],

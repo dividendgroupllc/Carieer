@@ -16,6 +16,31 @@ def get_zavod(company: str | None) -> frappe._dict:
 	return frappe._dict(frappe.get_cached_doc("Zavod", name).as_dict()) if name else frappe._dict()
 
 
+def find_zavod(bolim: str | None) -> str | None:
+	"""Bo'lim («Karer» / «Beton») -> Zavod nomi. Zavod boshqacha nomlangan bo'lsa ham topiladi
+	(masalan «Beton Zavod»): avval aniq nom, keyin nomida, keyin firmasi nomida shu so'z bo'lgan zavod."""
+	if not bolim:
+		return None
+	if frappe.db.exists("Zavod", bolim):
+		return bolim
+	for filters in ({"name": ["like", f"%{bolim}%"]}, {"company": ["like", f"%{bolim}%"]}):
+		name = frappe.db.get_value("Zavod", filters, "name", order_by="creation asc")
+		if name:
+			return name
+	return None
+
+
+def company_for_bolim(bolim: str | None) -> str | None:
+	"""Bo'lim -> firma (dashboard uchun). Zavod yozuvi bo'lmasa - nomida shu so'z bo'lgan firma."""
+	zavod = find_zavod(bolim)
+	if zavod:
+		return frappe.db.get_value("Zavod", zavod, "company")
+	if not bolim:
+		return None
+	companies = frappe.get_all("Company", filters={"name": ["like", f"%{bolim}%"]}, pluck="name")
+	return companies[0] if len(companies) == 1 else None
+
+
 def company_for_tip(tip: str | None) -> str:
 	company = frappe.db.get_value("Zavod", tip, "company") if tip else None
 	if not company:
@@ -87,15 +112,23 @@ def validate_not_internal(party_type: str | None, party: str | None, tavsiya: st
 def as_admin():
 	"""Firmalararo hujjat ikkinchi firma kitobiga ham yozadi, xodimda esa u firmaga ruxsat yo'q (User Permission).
 	Faqat shu ichki qism tizim nomidan bajariladi."""
-	user = frappe.session.user
-	if user == "Administrator":
+	if frappe.session.user == "Administrator":
 		yield
 		return
+	# frappe.set_user() sessiya obyektining o'zini o'zgartiradi (sid = user, data = {} -> csrf_token, user yo'qoladi)
+	# va so'rov oxirida buzilgan sessiya keshga yoziladi. Shuning uchun nusxada almashtiramiz, keyin asl obyektni qaytaramiz.
+	saved_session, saved_form_dict = frappe.local.session, frappe.local.form_dict
+	frappe.local.session = frappe._dict(saved_session)
 	frappe.set_user("Administrator")
 	try:
 		yield
 	finally:
-		frappe.set_user(user)
+		frappe.local.session = saved_session
+		frappe.local.form_dict = saved_form_dict
+		frappe.local.cache = {}
+		frappe.local.role_permissions = {}
+		frappe.local.new_doc_templates = {}
+		frappe.local.user_perms = None
 
 
 # ------------------------------------------------------------------ Kassa
@@ -110,14 +143,153 @@ def get_kassa_info(mode_of_payment: str | None, company: str | None) -> frappe._
 	if not out.account:
 		return out
 	out.currency = frappe.get_cached_value("Account", out.account, "account_currency")
-	out.balance = flt(
+	out.balance = account_balance(out.account)
+	return out
+
+
+def account_balance(account: str, upto=None) -> float:
+	"""Kassa hisobidagi qoldiq (hisob valyutasida); upto berilsa - shu sana oxiriga."""
+	cond = " and posting_date <= %(upto)s" if upto else ""
+	return flt(
 		frappe.db.sql(
-			"""select sum(debit_in_account_currency) - sum(credit_in_account_currency)
-			from `tabGL Entry` where account = %s and is_cancelled = 0""",
-			out.account,
+			f"""select sum(debit_in_account_currency) - sum(credit_in_account_currency)
+			from `tabGL Entry` where account = %(account)s and is_cancelled = 0{cond}""",
+			{"account": account, "upto": upto},
 		)[0][0]
 	)
-	return out
+
+
+def check_kassa_balance(mode_of_payment: str, company: str, amount: float, sana=None):
+	"""Kassa nazorati: kassada yo'q pulni chiqarib bo'lmaydi (minus qoldiq).
+	Orqa sana bilan kiritilsa ham tekshiriladi: o'sha kundagi va bugungi qoldiqdan kichigi olinadi.
+	Karer Sozlamalari -> «Kassada minus qoldiqqa ruxsat» yoqilsa faqat ogohlantiradi."""
+	info = get_kassa_info(mode_of_payment, company)
+	if not info.account or flt(amount) <= 0:
+		return
+	available = min(account_balance(info.account, sana), info.balance) if sana else info.balance
+	if flt(amount) <= flt(available) + 0.005:
+		return
+	msg = _("{0} kassasida {1} bor, {2} chiqarilmoqda. Avval kassaga kirim qiling.").format(
+		f"<b>{mode_of_payment}</b>",
+		frappe.format_value(available, {"fieldtype": "Currency", "options": info.currency}),
+		frappe.format_value(amount, {"fieldtype": "Currency", "options": info.currency}),
+	)
+	if frappe.db.get_single_value("Karer Sozlamalari", "kassa_minus_ruxsat"):
+		frappe.msgprint(msg, indicator="orange", alert=True)
+	else:
+		frappe.throw(msg, title=_("Kassada pul yetarli emas"))
+
+
+def apply_advances(company: str, party_type: str, party: str, invoice_type: str, invoice_name: str) -> float:
+	"""Kontragentning ishlatilmagan avanslari (oldindan to'langan Payment Entry) shu hisob-fakturaga o'tkaziladi
+	(ERPNext Payment Reconciliation). Masalan: Beton Karer'ga 6 mln avans bergan, keyin 1,96 mln tovar oldi ->
+	tovar avansdan yopiladi, Sotuv «To'langan» bo'ladi. Qaytaradi: o'tkazilgan summa."""
+	if flt(frappe.db.get_value(invoice_type, invoice_name, "outstanding_amount")) <= 0:
+		return 0
+	pr = frappe.new_doc("Payment Reconciliation")
+	pr.company = company
+	pr.party_type = party_type
+	pr.party = party
+	pr.receivable_payable_account = frappe.db.get_value(
+		invoice_type, invoice_name, "debit_to" if invoice_type == "Sales Invoice" else "credit_to"
+	)
+	pr.get_unreconciled_entries()
+	invoices = [i.as_dict() for i in pr.invoices if i.invoice_number == invoice_name]
+	payments = [p.as_dict() for p in pr.payments if p.reference_type == "Payment Entry"]
+	if not invoices or not payments:
+		return 0
+	pr.allocate_entries(frappe._dict(invoices=invoices, payments=payments))
+	if not pr.allocation:
+		return 0
+	mute = frappe.flags.mute_messages
+	frappe.flags.mute_messages = True  # «Successfully Reconciled» xabari operatorga chiqmasin
+	try:
+		pr.reconcile()
+	finally:
+		frappe.flags.mute_messages = mute
+	return sum(flt(a.allocated_amount) for a in pr.allocation)
+
+
+def validate_internal_payment(doc, method=None):
+	"""hooks.py: Payment Entry -> validate. O'zimizning ikkinchi firmamizga to'lov faqat «Firmalararo To'lov» orqali:
+	oddiy Payment Entry faqat bitta firma kitobiga yoziladi va ikki firma qarzi bir-biriga mos kelmay qoladi."""
+	if not (doc.is_new() or doc.docstatus == 0) or doc.flags.get("firmalararo"):
+		return
+	if not get_internal_company(doc.party_type, doc.party):
+		return
+	if doc.reference_no and frappe.db.exists("Firmalararo Tolov", doc.reference_no):
+		return
+	frappe.throw(
+		_(
+			"{0} - o'zimizning firmamiz. Unga to'lov <b>Firmalararo To'lov</b> orqali kiritiladi "
+			"(ikkala firma kitobiga birdan yoziladi). Oldindan berilgan avans bo'lsa - u tovarga avtomatik o'tadi."
+		).format(doc.party),
+		title=_("Ichki firma"),
+	)
+
+
+def validate_mode_of_payment(doc, method=None):
+	"""hooks.py: Mode of Payment -> validate. Kassa nazorati:
+	- har bir kassaning o'z hisobi bo'lsin (ikki kassa bitta hisobga ulansa qoldiqlari aralashib ketadi);
+	- nomida USD / $ bo'lgan kassa dollar hisobiga ulansin (aks holda 100$ = 100 so'm bo'lib yoziladi)."""
+	if not doc.enabled:
+		return
+	for row in doc.accounts:
+		if doc.flags.get("skip_kassa_check"):
+			break
+		if not row.default_account:
+			continue
+		other = frappe.db.sql(
+			"""select a.parent from `tabMode of Payment Account` a join `tabMode of Payment` m on m.name = a.parent
+			where a.default_account = %s and a.company = %s and a.parent != %s and m.enabled = 1 limit 1""",
+			(row.default_account, row.company, doc.name),
+		)
+		if other:
+			frappe.throw(
+				_(
+					"{0} hisobi «{1}» kassasiga ulangan. Har bir kassaning o'z hisobi bo'lishi kerak, "
+					"aks holda kassalar qoldig'i aralashib ketadi."
+				).format(row.default_account, other[0][0]),
+				title=_("Kassa hisobi band"),
+			)
+		want = kassa_currency_hint(doc.name)
+		have = frappe.get_cached_value("Account", row.default_account, "account_currency")
+		if want and have != want:
+			frappe.throw(
+				_("«{0}» kassasi {1} da, lekin {2} hisobi {3} da. {1} hisobini tanlang.").format(
+					doc.name, want, row.default_account, have
+				),
+				title=_("Kassa valyutasi"),
+			)
+
+
+def kassa_currency_hint(name: str) -> str | None:
+	"""Kassa nomidan valyuta: «Karer naqd USD», «Наличные $» -> USD."""
+	low = (name or "").lower()
+	if "usd" in low or "$" in low or "dollar" in low:
+		return "USD"
+	if "eur" in low or "€" in low:
+		return "EUR"
+	if "rub" in low or "₽" in low:
+		return "RUB"
+	return None
+
+
+def validate_currency_exchange(doc, method=None):
+	"""hooks.py: Currency Exchange -> validate. Teskari kurs nazorati: «UZS -> USD = 11 900» xato
+	(1 so'm 11 900 dollar bo'lib qoladi), to'g'risi «USD -> UZS = 11 900»."""
+	company_currencies = set(frappe.get_all("Company", pluck="default_currency"))
+	if (
+		doc.from_currency in company_currencies
+		and doc.to_currency not in company_currencies
+		and flt(doc.exchange_rate) > 1
+	):
+		frappe.throw(
+			_("Kurs teskari kiritilgan. To'g'risi: «{0} → {1} = {2}» (1 {0} necha {1} turadi).").format(
+				doc.to_currency, doc.from_currency, frappe.format_value(doc.exchange_rate, {"fieldtype": "Float"})
+			),
+			title=_("Valyuta kursi"),
+		)
 
 
 def get_kategoriya_account(

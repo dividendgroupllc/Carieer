@@ -13,6 +13,7 @@ from frappe.utils import flt, fmt_money
 from carieer.permissions import check_company, get_allowed_companies
 from carieer.utils import (
 	as_admin,
+	check_kassa_balance,
 	ensure_inter_company_parties,
 	get_company_currency,
 	get_kassa_info,
@@ -77,19 +78,10 @@ class FirmalararoTolov(Document):
 			if side == "tolovchi":
 				# boshqa firmaning kassa qoldig'i ko'rsatilmaydi
 				self.tolovchi_qoldiq = info["balance"] if check_company(firma, throw=False) else 0
-		if (
-			self.docstatus == 0
-			and check_company(self.tolovchi_firma, throw=False)
-			and flt(self.tolovchi_kassa_summa) > flt(self.tolovchi_qoldiq)
-		):
-			frappe.msgprint(
-				_("Diqqat: {0} kassasida {1} bor, {2} chiqarilmoqda").format(
-					self.tolovchi_kassa,
-					fmt_money(self.tolovchi_qoldiq, 2, self.tolovchi_valyuta),
-					fmt_money(self.tolovchi_kassa_summa, 2, self.tolovchi_valyuta),
-				),
-				indicator="orange",
-				alert=True,
+		if self.docstatus < 2:
+			# kassa nazorati: to'lovchi kassada yo'q pulni o'tkazib bo'lmaydi
+			check_kassa_balance(
+				self.tolovchi_kassa, self.tolovchi_firma, self.tolovchi_kassa_summa, self.posting_date
 			)
 
 	def kassa_amount(self, kassa_currency):

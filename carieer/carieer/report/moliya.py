@@ -298,3 +298,37 @@ def percent_line(label, months, numerator: dict, denominator: dict) -> dict:
 		d = flt(denominator.get(f))
 		row[f] = flt(flt(numerator.get(f)) / d * 100, 1) if d else None
 	return row
+
+
+# ------------------------------------------------------------------ tushunarli ko'rinish (P&L, Cash Flow)
+def drop_empty_months(columns: list[dict], rows: list[dict], months) -> tuple[list[dict], list]:
+	"""Hech qanday harakat bo'lmagan oylar ustuni yashiriladi (yil boshidan 10 ta bo'sh ustun chiqmasin).
+	finalize() dan keyin chaqiriladi; foiz qatorlari hisobga olinmaydi. Kamida oxirgi oy qoladi."""
+	keep = [
+		m
+		for m in months
+		if any(r.get(m.fieldname) not in (None, 0) for r in rows if not r.get("is_percent"))
+	] or months[-1:]
+	drop = {m.fieldname for m in months} - {m.fieldname for m in keep}
+	return [c for c in columns if c["fieldname"] not in drop], keep
+
+
+def card(label, value, indicator="Blue", currency=None, datatype="Currency"):
+	out = {"label": label, "value": flt(value, 2), "datatype": datatype, "indicator": indicator}
+	if currency:
+		out["currency"] = currency
+	return out
+
+
+def money(value, currency=None) -> str:
+	return frappe.utils.fmt_money(flt(value), 0, currency)
+
+
+def note_box(headline: str, lines: list[str], color: str = "var(--text-color)") -> str:
+	"""Hisobot tepasidagi oddiy tilda izoh (HTML)."""
+	items = "".join(f"<li style='margin:2px 0'>{line}</li>" for line in lines if line)
+	return f"""
+<div style="margin:4px 0 12px;padding:12px 14px;border:1px solid var(--border-color);border-radius:8px">
+	<div style="font-size:15px;font-weight:600;color:{color}">{headline}</div>
+	<ul style="margin:6px 0 0;padding-left:18px;color:var(--text-muted);font-size:13px">{items}</ul>
+</div>"""

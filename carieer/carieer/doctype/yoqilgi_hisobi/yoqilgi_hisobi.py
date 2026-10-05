@@ -73,9 +73,17 @@ class YoqilgiHisobi(Document):
 			self.sarf_100km = flt(flt(self.qty) * 100 / self.yurgan_km, 2)
 
 	def expense_account(self):
-		return get_kategoriya_account(
-			MODDA.get(self.turi), self.company, "Expense"
-		) or frappe.get_cached_value("Company", self.company, "default_expense_account")
+		# standart xarajat hisobi (Cost of Goods Sold) ga tushmasin: P&L da yoqilg'i tannarx bo'lib ko'rinadi
+		modda = MODDA.get(self.turi)
+		account = get_kategoriya_account(modda, self.company, "Expense")
+		if not account:
+			frappe.throw(
+				_("«{0}» xarajat moddasi {1} hisoblar rejasida yo'q. Administrator: install.make_moddalar").format(
+					modda, self.company
+				),
+				title=_("Xarajat hisobi yo'q"),
+			)
+		return account
 
 	def on_submit(self):
 		if self.manba == "Zapravkadan" and self.supplier and flt(self.amount) > 0:

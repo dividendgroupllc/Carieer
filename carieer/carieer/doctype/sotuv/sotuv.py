@@ -15,6 +15,7 @@ from frappe.model.document import Document
 from frappe.utils import flt, fmt_money, formatdate, nowdate
 
 from carieer.utils import (
+	apply_advances,
 	as_admin,
 	company_for_tip,
 	ensure_inter_company_parties,
@@ -30,6 +31,21 @@ from carieer.utils import (
 )
 
 INTER_COMPANY_PRICE_LIST = "Firmalararo narx"
+
+
+def get_selling_price(item_code: str, uom: str | None, currency: str) -> float:
+	"""Narx kiritilmagan bo'lsa - sotuv narxlar ro'yxatidan (Selling Settings -> standart, odatda «Standard Selling»)."""
+	price_list = frappe.db.get_single_value("Selling Settings", "selling_price_list") or "Standard Selling"
+	prices = frappe.get_all(
+		"Item Price",
+		filters={"item_code": item_code, "price_list": price_list, "currency": currency, "selling": 1},
+		fields=["price_list_rate", "uom"],
+		order_by="valid_from desc",
+	)
+	for p in prices:
+		if p.uom in (uom, None, ""):
+			return flt(p.price_list_rate)
+	return 0
 
 
 class Sotuv(Document):
@@ -86,6 +102,14 @@ class Sotuv(Document):
 				)
 			row.conversion_factor = cf
 			row.stock_qty = flt(row.qty) * cf
+			if not flt(row.rate) and self.docstatus == 0:
+				row.rate = get_selling_price(row.item_code, row.uom, self.currency)
+				if not row.rate:
+					frappe.throw(
+						_(
+							"Товары {0}-qator: {1} narxini kiriting yoki «Narxlar (Item Price)» ga {2} narx qo'shing"
+						).format(row.idx, row.item_code, self.currency)
+					)
 			row.amount = flt(flt(row.qty) * flt(row.rate), 2)
 			row.currency = self.currency
 			if (
@@ -179,29 +203,38 @@ class Sotuv(Document):
 				ensure_inter_company_parties(self.company, self.ichki_firma)
 				si = self.make_sales_invoice()
 				pi = self.make_purchase_invoice(si)
+				# xaridor firma oldindan pul bergan bo'lsa (Firmalararo To'lov avansi) - ikkala kitobda tovarga o'tadi
+				apply_advances(self.company, "Customer", self.customer, "Sales Invoice", si.name)
+				apply_advances(self.ichki_firma, "Supplier", pi.supplier, "Purchase Invoice", pi.name)
 			self.db_set({"sales_invoice": si.name, "purchase_invoice": pi.name})
 		else:
 			si = self.make_sales_invoice()
 			self.db_set("sales_invoice", si.name)
 			self.make_payments()
+			# mijoz oldindan (Kassa orqali) avans bergan bo'lsa - qolgan qarz avansdan yopiladi
+			with as_admin():
+				apply_advances(self.company, "Customer", self.customer, "Sales Invoice", si.name)
 		self.update_payment_status()
 		self.send_notification()
 
 	def before_update_after_submit(self):
-		self.set_tolovlar()
 		old = {r.name: r for r in (self.get_doc_before_save() or frappe._dict(tolovlar=[])).tolovlar}
 		for row in self.tolovlar:
 			before = old.get(row.name)
-			if (
-				before
-				and before.payment_entry
-				and (flt(before.summa) != flt(row.summa) or before.mode_of_payment != row.mode_of_payment)
-			):
+			changed = before and (
+				flt(before.summa) != flt(row.summa) or before.mode_of_payment != row.mode_of_payment
+			)
+			if not (changed and before.payment_entry):
+				continue
+			if is_posted(before.payment_entry):
 				frappe.throw(
 					_("Оплаты {0}-qator allaqachon o'tkazilgan, uni o'zgartirib bo'lmaydi").format(row.idx)
 				)
+			# Payment Entry o'z formasidan bekor qilingan: qator tuzatiladi va qaytadan o'tkaziladi
+			row.payment_entry = None
+		self.set_tolovlar()
 		current = {r.name for r in self.tolovlar}
-		removed = [r for name, r in old.items() if r.payment_entry and name not in current]
+		removed = [r for name, r in old.items() if is_posted(r.payment_entry) and name not in current]
 		if removed:
 			frappe.throw(
 				_(
@@ -392,6 +425,11 @@ class Sotuv(Document):
 
 
 # ---------------------------------------------------------------- module level
+def is_posted(payment_entry: str | None) -> bool:
+	"""To'lov qatori haqiqatan o'tkazilganmi (Payment Entry tasdiqlangan, bekor qilinmagan)."""
+	return bool(payment_entry) and frappe.db.get_value("Payment Entry", payment_entry, "docstatus") == 1
+
+
 def get_inter_company_price_list(currency: str) -> str:
 	"""ERPNext firmalararo hujjat uchun buying + selling belgilangan narx varaqasini talab qiladi."""
 	if not frappe.db.exists("Price List", INTER_COMPANY_PRICE_LIST):
@@ -415,16 +453,23 @@ def make_payment_entry(doc: "Sotuv", row):
 	si = frappe.db.get_value(
 		"Sales Invoice",
 		doc.sales_invoice,
-		["currency", "party_account_currency", "conversion_rate"],
+		["currency", "party_account_currency", "conversion_rate", "outstanding_amount"],
 		as_dict=True,
 	)
 	account = get_bank_cash_account(row.mode_of_payment, doc.company)["account"]
+	cash_currency = frappe.get_cached_value("Account", account, "account_currency")
 	# debitor hisobi valyutasidagi summa
 	party_amount = (
 		flt(row.sotuv_summa)
 		if si.party_account_currency == si.currency
 		else flt(row.sotuv_summa) * flt(si.conversion_rate)
 	)
+	# Dollarda sotilgan, mijoz hisobi va kassa so'mda: ERPNext kassaga party_amount yozadi (bank_amount e'tiborga
+	# olinmaydi). Kassaga aynan olingan pul yozilishi kerak, qarz esa sotuv kursida yopiladi - farq kurs farqi.
+	fx_case = si.party_account_currency != si.currency and cash_currency == si.party_account_currency
+	allocate = min(party_amount, flt(si.outstanding_amount))
+	if fx_case:
+		party_amount = flt(row.summa)
 	pe = get_payment_entry(
 		"Sales Invoice",
 		doc.sales_invoice,
@@ -432,6 +477,20 @@ def make_payment_entry(doc: "Sotuv", row):
 		bank_account=account,
 		bank_amount=flt(row.summa),
 	)
+	if fx_case:
+		for ref in pe.references:
+			if ref.reference_name == doc.sales_invoice:
+				ref.allocated_amount = flt(allocate, 2)
+		diff = flt(allocate - party_amount, 2)  # musbat - kurs zarari, manfiy - kurs foydasi
+		if abs(diff) >= 0.01:
+			pe.append(
+				"deductions",
+				{
+					"account": frappe.get_cached_value("Company", doc.company, "exchange_gain_loss_account"),
+					"cost_center": frappe.get_cached_value("Company", doc.company, "cost_center"),
+					"amount": diff,
+				},
+			)
 	pe.mode_of_payment = row.mode_of_payment
 	pe.posting_date = row.sana or nowdate()
 	pe.reference_no = doc.name

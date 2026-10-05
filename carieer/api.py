@@ -1,8 +1,8 @@
-"""GPS: tashqi tizimlar uchun API (Traccar Client telefon ilovasi va GPS trekkerlar).
+"""GPS: tashqi tizimlar uchun API (Traccar Client telefon ilovasi va GPS trekkerlar) va «Texnikalar xaritasi».
 
-Xarita uchun alohida JS sahifa yo'q - Frappe'ning o'z «Map» ko'rinishi ishlatiladi:
-  - Vehicle ro'yxati -> Map: har bir texnikaning oxirgi joyi (latitude / longitude maydonlari)
-  - GPS Malumot ro'yxati -> Map: tanlangan texnika / kun bo'yicha nuqtalar (yurgan yo'li)
+- gps_push / traccar: qurilmalardan nuqta qabul qilish -> GPS Malumot + Vehicle'dagi oxirgi joy
+- get_live_positions / get_track: «Texnikalar xaritasi» sahifasi (/desk/texnika-xarita) uchun
+- yangi nuqta kelganda xaritaga realtime xabar ("karer_gps") yuboriladi
 """
 
 import hashlib
@@ -13,7 +13,29 @@ from zoneinfo import ZoneInfo
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, cint, flt, get_datetime, get_system_timezone, now_datetime
+from frappe.utils import (
+	add_days,
+	cint,
+	flt,
+	get_datetime,
+	get_system_timezone,
+	getdate,
+	now_datetime,
+	nowdate,
+)
+
+# Realtime hodisa: yangi GPS nuqta kelganda xarita sahifasi darhol yangilanadi
+GPS_EVENT = "karer_gps"
+XARITA_ROLLARI = (
+	"System Manager",
+	"Karer Menejer",
+	"Karer Operator",
+	"Beton Menejer",
+	"Beton Operator",
+)
+# Ikki nuqta orasida shundan ko'p vaqt VA masofa bo'lsa - uzilish (masofaga qo'shilmaydi), JS bilan bir xil
+GAP_SECONDS = 120
+GAP_METERS = 300
 
 
 def check_token(token: str | None):
@@ -58,7 +80,25 @@ def save_point(imei: str, **values) -> dict | None:
 		return None
 	if vehicle.name:
 		update_vehicle_position(vehicle.name, doc)
-	return {"gps_imei": imei, "vehicle": vehicle.name, "vaqt": str(doc.vaqt)}
+	point = point_dict(doc)
+	frappe.publish_realtime(GPS_EVENT, point, after_commit=True)
+	return point
+
+
+def point_dict(d) -> dict:
+	return {
+		"gps_imei": d.gps_imei,
+		"vehicle": d.vehicle,
+		"company": d.get("company"),
+		"vaqt": str(d.vaqt),
+		"lat": flt(d.latitude),
+		"lon": flt(d.longitude),
+		"tezlik": flt(d.tezlik),
+		"yonalish": flt(d.get("yonalish")),
+		"batareya": d.get("batareya") or None,  # 0 = qurilma yubormagan
+		"yoqilgi_darajasi": d.get("yoqilgi_darajasi"),
+		"qurilma": d.get("qurilma"),
+	}
 
 
 def update_vehicle_position(vehicle: str, point):
@@ -245,6 +285,120 @@ def to_system_time(value) -> datetime:
 		return dt.astimezone(tz).replace(tzinfo=None) if dt.tzinfo else dt
 	except ValueError:
 		return now_datetime()
+
+
+# ------------------------------------------------------------------ «Texnikalar xaritasi» sahifasi
+def allowed_companies() -> list[str]:
+	"""Xodim faqat o'z firmasi texnikalarini ko'radi (User Permission -> Company). Bo'sh = cheklov yo'q."""
+	from carieer.permissions import get_allowed_companies
+
+	return get_allowed_companies()
+
+
+def visible_vehicles(company: str | None = None) -> dict:
+	"""GPS IMEI yozilgan texnikalar: imei -> Vehicle (firma bo'yicha filtr bilan)."""
+	filters = {"gps_imei": ["is", "set"]}
+	allowed = allowed_companies()
+	if company:
+		if allowed and company not in allowed:
+			frappe.throw(
+				_("{0} firmasini ko'rishga ruxsatingiz yo'q").format(company), frappe.PermissionError
+			)
+		filters["company"] = company
+	elif allowed:
+		filters["company"] = ["in", allowed]
+	return {
+		v.gps_imei: v
+		for v in frappe.get_all(
+			"Vehicle",
+			filters=filters,
+			fields=["name", "gps_imei", "texnika_turi", "make", "model", "company", "employee"],
+		)
+	}
+
+
+@frappe.whitelist()
+def get_live_positions(company: str | None = None, days: int = 7, with_km: int = 0) -> list[dict]:
+	"""Har bir texnikaning oxirgi nuqtasi (oxirgi `days` kun ichida) + GPS IMEI yozilgan, lekin hali ma'lumot
+	kelmagan texnikalar. with_km=1 bo'lsa bugun yurgan masofa (km) ham hisoblanadi."""
+	frappe.only_for(XARITA_ROLLARI)
+	vehicles = visible_vehicles(company)
+	# Vehicle'ga bog'lanmagan qurilmalar faqat cheklovsiz foydalanuvchiga (admin) ko'rinadi
+	show_unlinked = not company and not allowed_companies()
+	since = add_days(now_datetime(), -cint(days or 7))
+	rows = frappe.db.sql(
+		"""select g.gps_imei, g.vehicle, g.company, g.vaqt, g.latitude, g.longitude, g.tezlik, g.yonalish,
+			g.batareya, g.yoqilgi_darajasi, g.qurilma
+		from `tabGPS Malumot` g
+		join (select gps_imei, max(vaqt) vaqt from `tabGPS Malumot` where vaqt >= %s group by gps_imei) m
+			on m.gps_imei = g.gps_imei and m.vaqt = g.vaqt""",
+		since,
+		as_dict=True,
+	)
+	out = {}
+	for r in rows:
+		if r.gps_imei in vehicles or (
+			show_unlinked and not frappe.db.exists("Vehicle", {"gps_imei": r.gps_imei})
+		):
+			out.setdefault(r.gps_imei, point_dict(r))
+	for imei, v in vehicles.items():
+		p = out.setdefault(imei, {"gps_imei": imei, "vaqt": None, "lat": None, "lon": None})
+		p.update(
+			vehicle=v.name,
+			company=v.company,
+			texnika_turi=v.texnika_turi,
+			model=" ".join(filter(None, (v.make, v.model))),
+			haydovchi=frappe.db.get_value("Employee", v.employee, "employee_name") if v.employee else None,
+		)
+	if cint(with_km) and out:
+		km = today_km(list(out))
+		for imei, p in out.items():
+			p["bugun_km"] = km.get(imei, 0)
+	return sorted(out.values(), key=lambda p: p.get("vehicle") or p["gps_imei"])
+
+
+def today_km(imeis: list[str]) -> dict[str, float]:
+	"""Bugun yurgan masofa (uzilishlar hisobga olinmaydi - xaritadagi hisob bilan bir xil)."""
+	start = getdate(nowdate())
+	rows = frappe.db.sql(
+		"""select gps_imei, vaqt, latitude, longitude from `tabGPS Malumot`
+		where gps_imei in %s and vaqt >= %s and vaqt < %s order by gps_imei, vaqt""",
+		(tuple(imeis), start, add_days(start, 1)),
+		as_dict=True,
+	)
+	out, prev = {}, None
+	for r in rows:
+		if prev and prev.gps_imei == r.gps_imei:
+			meters = distance_m(prev.latitude, prev.longitude, r.latitude, r.longitude)
+			secs = (get_datetime(r.vaqt) - get_datetime(prev.vaqt)).total_seconds()
+			if not (secs > GAP_SECONDS and meters > GAP_METERS):
+				out[r.gps_imei] = out.get(r.gps_imei, 0) + meters / 1000
+		prev = r
+	return {k: round(v, 1) for k, v in out.items()}
+
+
+def distance_m(lat1, lon1, lat2, lon2) -> float:
+	from math import asin, cos, radians, sin, sqrt
+
+	lat1, lon1, lat2, lon2 = map(lambda x: radians(flt(x)), (lat1, lon1, lat2, lon2))
+	a = sin((lat2 - lat1) / 2) ** 2 + cos(lat1) * cos(lat2) * sin((lon2 - lon1) / 2) ** 2
+	return 2 * 6371000 * asin(sqrt(a))
+
+
+@frappe.whitelist()
+def get_track(gps_imei: str, date: str) -> list[dict]:
+	"""Bitta texnikaning tanlangan kundagi yurgan yo'li."""
+	frappe.only_for(XARITA_ROLLARI)
+	if allowed_companies() and gps_imei not in visible_vehicles():
+		frappe.throw(_("Bu texnikani ko'rishga ruxsatingiz yo'q"), frappe.PermissionError)
+	day = getdate(date)
+	return frappe.db.sql(
+		"""select vaqt, latitude as lat, longitude as lon, tezlik from `tabGPS Malumot`
+		where gps_imei = %s and vaqt >= %s and vaqt < %s
+		order by vaqt""",
+		(gps_imei, day, add_days(day, 1)),
+		as_dict=True,
+	)
 
 
 def sync_vehicle_gps(doc, method=None):

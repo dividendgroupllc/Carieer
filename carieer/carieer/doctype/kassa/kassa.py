@@ -11,6 +11,7 @@ from frappe.model.document import Document
 from frappe.utils import flt
 
 from carieer.utils import (
+	check_kassa_balance,
 	cross_rate,
 	get_company_currency,
 	get_kassa_info,
@@ -31,23 +32,9 @@ class Kassa(Document):
 		self.validate_kategoriya()
 		if flt(self.amount) <= 0:
 			frappe.throw(_("Summa 0 dan katta bo'lishi kerak"))
-		if (
-			self.docstatus == 0
-			and self.turi in ("Chiqim", "O'tkazma")
-			and flt(self.amount) > flt(self.qoldiq)
-		):
-			frappe.msgprint(
-				_("Diqqat: summa ({0}) kassadagi qoldiqdan ({1}) katta").format(
-					frappe.format_value(
-						self.amount, {"fieldtype": "Currency", "options": self.kassa_valyutasi}
-					),
-					frappe.format_value(
-						self.qoldiq, {"fieldtype": "Currency", "options": self.kassa_valyutasi}
-					),
-				),
-				indicator="orange",
-				alert=True,
-			)
+		if self.turi in ("Chiqim", "O'tkazma"):
+			# kassada yo'q pulni chiqarib bo'lmaydi (saqlashda ham, tasdiqlashda ham)
+			check_kassa_balance(self.mode_of_payment, self.company, self.amount, self.sana)
 		self.status = {0: "Draft", 1: "Tasdiqlangan", 2: "Bekor qilingan"}[self.docstatus]
 
 	def set_kassa_details(self):
@@ -137,9 +124,18 @@ class Kassa(Document):
 	def validate_kategoriya(self):
 		if not self.kategoriya or self.turi == "O'tkazma":
 			return
-		turi = frappe.db.get_value("Kassa Kategoriya", self.kategoriya, "turi")
-		if turi not in ("Ikkalasi", None, "", self.turi):
-			frappe.throw(_("{0} kategoriyasi faqat {1} uchun").format(self.kategoriya, turi))
+		kat = frappe.db.get_value("Kassa Kategoriya", self.kategoriya, ["turi", "guruh_1"], as_dict=True) or {}
+		if kat.get("turi") not in ("Ikkalasi", None, "", self.turi):
+			frappe.throw(_("{0} kategoriyasi faqat {1} uchun").format(self.kategoriya, kat.get("turi")))
+		# Xato: xarajat (ijara, yoqilg'i ...) mijoz nomiga yozilsa - mijoz bizga qarzdor bo'lib qoladi
+		if self.party_type == "Customer" and self.turi == "Chiqim" and kat.get("guruh_1"):
+			frappe.throw(
+				_(
+					"«{0}» - xarajat moddasi. Mijozga chiqim qilinsa, pul xarajatga emas, mijozning qarziga yoziladi. "
+					"Kontragent turini <b>Xarajat</b> tanlang (xizmat ko'rsatgan bo'lsa - <b>Supplier</b>)."
+				).format(self.kategoriya),
+				title=_("Noto'g'ri kontragent turi"),
+			)
 
 	# ------------------------------------------------------------------ submit / cancel
 	def on_submit(self):

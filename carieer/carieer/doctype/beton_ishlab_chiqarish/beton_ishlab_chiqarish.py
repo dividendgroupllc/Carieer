@@ -20,11 +20,20 @@ class BetonIshlabChiqarish(Document):
 		)
 		if not bom or bom.docstatus != 1 or not bom.is_active:
 			frappe.throw(_("BOM {0} faol va submit qilingan bo'lishi kerak").format(self.bom))
-		if bom.company != self.company:
-			frappe.throw(_("BOM {0} {1} firmasiga tegishli emas").format(self.bom, self.company))
+		# Firma retseptdan olinadi (formada tanlanmaydi): retsept qaysi firmada bo'lsa, ishlab chiqarish o'sha yerda
+		self.company = bom.company
 		self.item_code = bom.item
 		self.uom = bom.uom
 		zavod = get_zavod(self.company)
+		if not zavod.get("xomashyo_ombori") and not self.xomashyo_ombori:
+			beton = frappe.db.get_value("Zavod", {"xomashyo_ombori": ["is", "set"]}, "company")
+			frappe.throw(
+				_(
+					"Retsept {0} {1} firmasida yaratilgan, bu firmada xomashyo ombori yo'q. "
+					"Beton ishlab chiqarish Beton zavodi firmasida ({2}) bo'ladi: retseptni (BOM) shu firmada yarating."
+				).format(self.bom, self.company, beton or "Zavod -> Beton"),
+				title=_("Retsept boshqa firmada"),
+			)
 		self.xomashyo_ombori = self.xomashyo_ombori or zavod.get("xomashyo_ombori")
 		self.tayyor_ombori = self.tayyor_ombori or zavod.get("asosiy_ombor")
 		if not self.xomashyo_ombori or not self.tayyor_ombori:
@@ -66,12 +75,32 @@ class BetonIshlabChiqarish(Document):
 
 	def before_submit(self):
 		kam = [
-			f"{r.item_code}: {_('kerak')} {r.required_qty} {r.uom}, {_('bor')} {r.available_qty}"
+			"<li>{0}: {1} {2} {3}, {4} {5} <b>({6} {7})</b></li>".format(
+				r.item_code,
+				_("kerak"),
+				frappe.format(r.required_qty, {"fieldtype": "Float"}),
+				r.uom,
+				_("omborda"),
+				frappe.format(r.available_qty, {"fieldtype": "Float"}),
+				_("yetmaydi"),
+				frappe.format(flt(r.required_qty) - flt(r.available_qty), {"fieldtype": "Float"}),
+			)
 			for r in self.xomashyolar
 			if flt(r.available_qty) < flt(r.required_qty)
 		]
 		if kam and not frappe.db.get_single_value("Stock Settings", "allow_negative_stock"):
-			frappe.throw("<br>".join(kam), title=_("Xomashyo yetarli emas"))
+			frappe.throw(
+				_("Ombor: <b>{0}</b>").format(self.xomashyo_ombori)
+				+ "<ul>"
+				+ "".join(kam)
+				+ "</ul>"
+				+ _(
+					"Xomashyoni shu omborga kiriting: <b>Xarid (Приход) -> Qabul (Receipt)</b>, "
+					"Karer'dan <b>Sotuv</b> (mijoz = Beton firmasi) yoki <b>Инвентаризация</b> (boshlang'ich qoldiq). "
+					"Qoldiqni <b>Ombor qoldig'i (Stock Balance)</b> hisobotida ko'ring."
+				),
+				title=_("Xomashyo yetarli emas"),
+			)
 
 	def on_submit(self):
 		se = frappe.new_doc("Stock Entry")
