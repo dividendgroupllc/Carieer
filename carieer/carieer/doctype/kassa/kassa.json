@@ -114,7 +114,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Kassa (to'lov turi)",
-   "link_filters": "[[\"Mode of Payment\", \"enabled\", \"=\", 1]]",
+   "link_filters": "[[\"Mode of Payment\", \"firma\", \"like\", \"eval:doc.company || '%'\"], [\"Mode of Payment\", \"enabled\", \"=\", 1]]",
    "options": "Mode of Payment",
    "reqd": 1
   },
@@ -154,7 +154,7 @@
    "fieldname": "mode_of_payment_to",
    "fieldtype": "Link",
    "label": "Kassa (qayerga)",
-   "link_filters": "[[\"Mode of Payment\", \"enabled\", \"=\", 1]]",
+   "link_filters": "[[\"Mode of Payment\", \"firma\", \"like\", \"eval:doc.company || '%'\"], [\"Mode of Payment\", \"enabled\", \"=\", 1]]",
    "mandatory_depends_on": "eval:doc.turi==\"O'tkazma\"",
    "options": "Mode of Payment"
   },
@@ -305,7 +305,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-05 18:00:00.000000",
+ "modified": "2026-10-06 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Kassa",

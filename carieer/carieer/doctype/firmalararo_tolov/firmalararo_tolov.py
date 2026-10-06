@@ -26,8 +26,20 @@ class FirmalararoTolov(Document):
 		if self.tolovchi_firma == self.oluvchi_firma:
 			frappe.throw(_("To'lovchi va oluvchi firma bir xil bo'lishi mumkin emas"))
 		allowed = get_allowed_companies()
-		if allowed and self.tolovchi_firma not in allowed and self.oluvchi_firma not in allowed:
-			frappe.throw(_("To'lovchi yoki oluvchi sizning firmangiz bo'lishi kerak"), frappe.PermissionError)
+		if allowed and self.tolovchi_firma not in allowed:
+			# kassalar alohida: pul qaysi firma kassasidan chiqsa, to'lovni o'sha firma kiritadi.
+			# Oluvchi firma faqat ko'radi; to'lanmaguncha qarz «Firmalararo qarzlar» da turadi.
+			frappe.throw(
+				_(
+					"Bu to'lovni <b>{0}</b> kiritadi - pul uning kassasidan chiqadi. "
+					"Siz faqat qarzni «Firmalararo qarzlar» hisobotida ko'rasiz."
+				).format(self.tolovchi_firma),
+				frappe.PermissionError,
+			)
+		if not self.oluvchi_kassa:
+			from carieer.utils import get_zavod
+
+			self.oluvchi_kassa = get_zavod(self.oluvchi_firma).get("kassa")
 		self.currency = get_company_currency(self.tolovchi_firma)
 		if get_company_currency(self.oluvchi_firma) != self.currency:
 			frappe.throw(_("Ikkala firmaning asosiy valyutasi bir xil bo'lishi kerak"))

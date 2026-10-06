@@ -90,7 +90,7 @@
    "fieldname": "tolovchi_kassa",
    "fieldtype": "Link",
    "label": "To'lovchi kassa",
-   "link_filters": "[[\"Mode of Payment\", \"enabled\", \"=\", 1]]",
+   "link_filters": "[[\"Mode of Payment\", \"firma\", \"like\", \"eval:doc.tolovchi_firma || '%'\"], [\"Mode of Payment\", \"enabled\", \"=\", 1]]",
    "options": "Mode of Payment",
    "reqd": 1
   },
@@ -111,6 +111,7 @@
   {
    "fieldname": "tolovchi_qoldiq",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Kassadagi qoldiq",
    "no_copy": 1,
    "options": "tolovchi_valyuta",
@@ -131,12 +132,13 @@
    "reqd": 1
   },
   {
+   "description": "Bo'sh qolsa - oluvchi zavodning asosiy kassasi",
    "fieldname": "oluvchi_kassa",
    "fieldtype": "Link",
    "label": "Oluvchi kassa",
-   "link_filters": "[[\"Mode of Payment\", \"enabled\", \"=\", 1]]",
+   "link_filters": "[[\"Mode of Payment\", \"firma\", \"like\", \"eval:doc.oluvchi_firma || '%'\"], [\"Mode of Payment\", \"enabled\", \"=\", 1]]",
    "options": "Mode of Payment",
-   "reqd": 1
+   "reqd": 0
   },
   {
    "fieldname": "oluvchi_valyuta",
@@ -245,7 +247,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-05 18:00:00.000000",
+ "modified": "2026-10-06 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Firmalararo Tolov",

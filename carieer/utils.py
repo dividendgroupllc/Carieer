@@ -169,11 +169,17 @@ def check_kassa_balance(mode_of_payment: str, company: str, amount: float, sana=
 	available = min(account_balance(info.account, sana), info.balance) if sana else info.balance
 	if flt(amount) <= flt(available) + 0.005:
 		return
-	msg = _("{0} kassasida {1} bor, {2} chiqarilmoqda. Avval kassaga kirim qiling.").format(
-		f"<b>{mode_of_payment}</b>",
-		frappe.format_value(available, {"fieldtype": "Currency", "options": info.currency}),
-		frappe.format_value(amount, {"fieldtype": "Currency", "options": info.currency}),
-	)
+	from carieer.permissions import check_company
+
+	if check_company(company, throw=False):
+		msg = _("{0} kassasida {1} bor, {2} chiqarilmoqda. Avval kassaga kirim qiling.").format(
+			f"<b>{mode_of_payment}</b>",
+			frappe.format_value(available, {"fieldtype": "Currency", "options": info.currency}),
+			frappe.format_value(amount, {"fieldtype": "Currency", "options": info.currency}),
+		)
+	else:
+		# boshqa firmaning kassa qoldig'i ko'rsatilmaydi
+		msg = _("{0} kassasida bu to'lov uchun pul yetarli emas.").format(f"<b>{mode_of_payment}</b>")
 	if frappe.db.get_single_value("Karer Sozlamalari", "kassa_minus_ruxsat"):
 		frappe.msgprint(msg, indicator="orange", alert=True)
 	else:
@@ -232,6 +238,10 @@ def validate_mode_of_payment(doc, method=None):
 	"""hooks.py: Mode of Payment -> validate. Kassa nazorati:
 	- har bir kassaning o'z hisobi bo'lsin (ikki kassa bitta hisobga ulansa qoldiqlari aralashib ketadi);
 	- nomida USD / $ bo'lgan kassa dollar hisobiga ulansin (aks holda 100$ = 100 so'm bo'lib yoziladi)."""
+	companies = {a.company for a in doc.accounts if a.company}
+	if doc.meta.has_field("firma"):
+		# kassa egasi: bitta firmaniki bo'lsa - o'sha firma (kassa ro'yxatlari shu bo'yicha filtrlanadi)
+		doc.firma = companies.pop() if len(companies) == 1 else None
 	if not doc.enabled:
 		return
 	for row in doc.accounts:

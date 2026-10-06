@@ -34,7 +34,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Счёт (kassa)",
-   "link_filters": "[[\"Mode of Payment\", \"enabled\", \"=\", 1]]",
+   "link_filters": "[[\"Mode of Payment\", \"firma\", \"like\", \"eval:parent.company || '%'\"], [\"Mode of Payment\", \"enabled\", \"=\", 1]]",
    "options": "Mode of Payment",
    "reqd": 1
   },
@@ -112,7 +112,7 @@
  "index_web_pages_for_search": 0,
  "istable": 1,
  "links": [],
- "modified": "2026-10-05 18:00:00.000000",
+ "modified": "2026-10-06 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Sotuv Tolov",

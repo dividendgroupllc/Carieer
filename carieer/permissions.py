@@ -75,6 +75,32 @@ def check_report_company(filters: frappe._dict):
 	check_company(filters.company)
 
 
+def sync_user_companies(doc, method=None):
+	"""hooks.py: User -> on_update. Karer / Beton rollari bo'yicha firma va zavod cheklovi (User Permission)
+	o'zi qo'yiladi: Beton xodimi Karer kassasi, sotuvi, qarzlarini ko'rmaydi (va aksincha).
+	Ikkala bo'lim roli bo'lsa - ikkala firma. Katta (ERPNext) rollari bor foydalanuvchiga tegilmaydi."""
+	roles = {r.role for r in doc.roles}
+	if doc.name in ("Administrator", "Guest") or roles & POWER_ROLES or not roles & set(ALL_ROLES):
+		return
+	from carieer.install import set_user_permissions
+	from carieer.utils import find_zavod
+
+	bolimlar = [b for b, rs in (("Karer", KARER_ROLES), ("Beton", BETON_ROLES)) if roles & set(rs)]
+	zavodlar = [z for z in (find_zavod(b) for b in bolimlar) if z]
+	companies = list(dict.fromkeys(c for c in (frappe.db.get_value("Zavod", z, "company") for z in zavodlar) if c))
+	if not companies:
+		return
+	set_user_permissions(doc.name, "Company", companies)
+	set_user_permissions(doc.name, "Zavod", zavodlar)
+
+
+def sync_all_users():
+	"""Mavjud xodimlar uchun bir marta: bench --site SITE execute carieer.permissions.sync_all_users"""
+	for name in frappe.get_all("User", filters={"user_type": "System User", "enabled": 1}, pluck="name"):
+		sync_user_companies(frappe.get_doc("User", name))
+	frappe.db.commit()
+
+
 def user_sections(roles=None) -> set[str]:
 	roles = set(roles if roles is not None else frappe.get_roles())
 	sections = set()

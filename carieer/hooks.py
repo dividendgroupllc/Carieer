@@ -32,6 +32,10 @@ doc_events = {
 	"Vehicle": {
 		"on_update": "carieer.api.sync_vehicle_gps",
 	},
+	# Karer / Beton roli berilsa - faqat o'z firmasi va zavodi ko'rinadi (User Permission o'zi qo'yiladi)
+	"User": {
+		"on_update": "carieer.permissions.sync_user_companies",
+	},
 	# Yangi xarajat / daromad kategoriyasi -> ikkala firmada shu modda hisobi
 	"Kassa Kategoriya": {
 		"on_update": "carieer.install.make_kategoriya_accounts",

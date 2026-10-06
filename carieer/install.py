@@ -254,7 +254,23 @@ def make_custom_fields():
 					"insert_after": "longitude",
 					"read_only": 1,
 				},
-			]
+			],
+			# Kassa qaysi firmaniki: kassa tanlash ro'yxatlari shu bo'yicha filtrlanadi
+			# (Karer xodimi Beton kassalarini ko'rmaydi). Hisoblar jadvalidan o'zi qo'yiladi.
+			"Mode of Payment": [
+				{
+					"fieldname": "firma",
+					"fieldtype": "Link",
+					"options": "Company",
+					"label": "Firma (kassa egasi)",
+					"insert_after": "type",
+					"read_only": 1,
+					"in_list_view": 1,
+					"in_standard_filter": 1,
+					# Firmalararo to'lovda oluvchi firma kassasi ham tanlanadi
+					"ignore_user_permissions": 1,
+				},
+			],
 		},
 		update=True,
 	)

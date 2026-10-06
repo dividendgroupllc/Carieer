@@ -7,7 +7,8 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-from carieer.carieer.report.common import bold, prepare, resolve_party
+from carieer.carieer.report.common import PARTY_FILTERS, bold, prepare
+from carieer.carieer.report.firmalararo_qarzlar.firmalararo_qarzlar import party_condition
 
 GROUPS = {
 	"Sales Invoice": "goods",
@@ -19,10 +20,23 @@ GROUPS = {
 
 def execute(filters=None):
 	filters = prepare(filters, period="year")
-	if not resolve_party(filters):
+	if not resolve_parties(filters):
 		return get_columns(), [], _("Контрагентни танланг: Мижоз, Таъминотчи ёки Ходим")
 	data, summary = get_data(filters)
 	return get_columns(), data, get_summary_html(summary, filters)
+
+
+def resolve_parties(filters) -> bool:
+	"""Mijoz / Ta'minotchi / Xodim. Bir nechtasi tanlansa - birgalikdagi akt (masalan bitta firma bizdan tovar oladi
+	va bizga xizmat ko'rsatadi: mijoz va ta'minotchi qarzi bir aktda qo'shib ko'rsatiladi)."""
+	chosen = [(dt, filters.get(f)) for f, dt in PARTY_FILTERS if filters.get(f)]
+	if not chosen:
+		return False
+	filters.party_type, filters.party = chosen[0]
+	filters.party_label = " + ".join(dict.fromkeys(p for _dt, p in chosen))
+	filters.party_cond, values = party_condition(chosen)
+	filters.update(values)
+	return True
 
 
 def get_columns():
@@ -61,8 +75,8 @@ def party_currency(filters) -> str:
 	if filters.get("currency"):
 		return filters.currency
 	row = frappe.db.sql(
-		"""select account_currency from `tabGL Entry`
-		where company=%(company)s and party_type=%(party_type)s and party=%(party)s and is_cancelled=0
+		f"""select account_currency from `tabGL Entry`
+		where company=%(company)s and {filters.party_cond} and is_cancelled=0
 		order by posting_date desc, creation desc limit 1""",
 		filters,
 	)
@@ -73,17 +87,17 @@ def get_data(filters):
 	filters.currency = party_currency(filters)
 	opening = flt(
 		frappe.db.sql(
-			"""select sum(credit_in_account_currency) - sum(debit_in_account_currency) from `tabGL Entry`
-			where company=%(company)s and party_type=%(party_type)s and party=%(party)s and account_currency=%(currency)s
+			f"""select sum(credit_in_account_currency) - sum(debit_in_account_currency) from `tabGL Entry`
+			where company=%(company)s and {filters.party_cond} and account_currency=%(currency)s
 			and posting_date < %(from_date)s and is_cancelled=0""",
 			filters,
 		)[0][0]
 	)
 	gl = frappe.db.sql(
-		"""select posting_date, voucher_type, voucher_no,
+		f"""select posting_date, voucher_type, voucher_no,
 			sum(credit_in_account_currency) credit, sum(debit_in_account_currency) debit, min(creation) creation
 		from `tabGL Entry`
-		where company=%(company)s and party_type=%(party_type)s and party=%(party)s and account_currency=%(currency)s
+		where company=%(company)s and {filters.party_cond} and account_currency=%(currency)s
 			and posting_date between %(from_date)s and %(to_date)s and is_cancelled=0
 		group by posting_date, voucher_type, voucher_no
 		order by posting_date, creation""",
@@ -248,7 +262,7 @@ def get_summary_html(s, filters):
 		<td style="{td}text-align:right;color:#388e3c">{fmt(dr)}</td></tr>"""
 		for label, cr, dr, style in rows
 	)
-	who = frappe.utils.escape_html(filters.party)
+	who = frappe.utils.escape_html(filters.get("party_label") or filters.party)
 	return f"""<div style="margin:10px 0 16px">
 		<div style="margin-bottom:6px"><b>{_("Контрагент")}:</b> {who} · <b>{_("Валюта")}:</b> {filters.currency}
 		· {frappe.format(filters.from_date, "Date")} – {frappe.format(filters.to_date, "Date")}</div>
