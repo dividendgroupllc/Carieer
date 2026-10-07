@@ -245,6 +245,10 @@ def kassa_qoldigi(filters=None):
 		where gl.company = %s and gl.is_cancelled = 0 and a.account_type in ('Cash', 'Bank')""",
 		company,
 	)[0][0]
+	if flt(value) < -0.005:
+		# kassa minusda: pul o'rniga kassa qarzi ko'rsatiladi (Number Card matnni o'zgartirmasdan chiqaradi)
+		currency = frappe.get_cached_value("Company", company, "default_currency")
+		return _("Kassa qarzi: {0}").format(frappe.utils.fmt_money(-flt(value), 0, currency))
 	return {
 		"value": flt(value, 2),
 		"fieldtype": "Currency",

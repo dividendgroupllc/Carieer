@@ -103,10 +103,12 @@ def get_message(t, months, currency, filters):
 	negative = [m.label for m in months if flt(t["ends_by_month"].get(m.key)) < -0.005]
 	if negative:
 		lines.append(
-			_("⚠ Minus qoldiq ({0}): kassadan unda yo'q pul chiqarilgan - kirim kiritilmagan bo'lishi mumkin").format(
+			_("Kassa qarzi ({0}): kassadan bor puldan ko'p chiqarilgan, qarz keyingi kirimlar bilan yopiladi").format(
 				", ".join(negative)
 			)
 		)
+	if t["closing"] < -0.005:
+		lines.append(_("<b>Hozir kassa qarzi: {0}</b>").format(money(-t["closing"], currency)))
 	color = "var(--green-600, #2f9e44)" if change >= 0 else "var(--red-600, #e03636)"
 	return note_box(headline, lines, color)
 

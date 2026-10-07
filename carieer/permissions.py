@@ -118,6 +118,14 @@ def boot_session(bootinfo):
 	sidebars = bootinfo.get("workspace_sidebar_item") or {}
 	sidebars.pop("carieer", None)
 
+	# bo'lim -> firma (public/js/carieer.js: Beton Zavod menyusidan ochilgan hisobot Eko Beton bilan ochiladi)
+	from carieer.utils import company_for_bolim
+
+	bootinfo.carieer_bolim = {
+		KARER_SECTION.lower(): company_for_bolim("Karer"),
+		BETON_SECTION.lower(): company_for_bolim("Beton"),
+	}
+
 	roles = set(frappe.get_roles())
 	if roles & POWER_ROLES or not roles & set(ALL_ROLES):
 		return

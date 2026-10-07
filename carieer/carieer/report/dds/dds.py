@@ -179,7 +179,7 @@ def get_kassa_balances(filters) -> list[frappe._dict]:
 
 def get_summary_html(balances, filters=None) -> str:
 	"""Tepadagi jadval: har bir kassa alohida (kassa nazorati), keyin valyuta bo'yicha jami.
-	Minus qoldiq qizil - kassada yo'q pul chiqarilgan."""
+	Minus qoldiq qizil - kassa qarzi (bor puldan ko'p chiqarilgan)."""
 	if not balances:
 		return ""
 	esc = frappe.utils.escape_html
@@ -192,7 +192,7 @@ def get_summary_html(balances, filters=None) -> str:
 
 	def tr(label, b, strong=False):
 		closing_style = red if flt(b["closing"]) < -0.005 else ""
-		warn = " ⚠" if flt(b["closing"]) < -0.005 else ""
+		warn = " " + esc(_("(kassa qarzi)")) if flt(b["closing"]) < -0.005 else ""
 		cells = "".join(f"<td style='{td}'>{fmt(b[k])}</td>" for k in ("opening", "kirim", "chiqim"))
 		label = f"<b>{label}</b>" if strong else label
 		return (
@@ -213,10 +213,12 @@ def get_summary_html(balances, filters=None) -> str:
 		for h in (_("Касса"), _("Остаток на начало"), _("Кирим"), _("Чиқим"), _("Остаток на конец"))
 	)
 	note = ""
-	if any(flt(k.closing) < -0.005 for k in kassalar):
+	minus = [k for k in kassalar if flt(k.closing) < -0.005]
+	if minus:
+		qarz = ", ".join(f"{k.kassa} — {fmt(-k.closing)} {k.cur}" for k in minus)
 		note = (
 			f"<div style='{red};margin:-8px 0 12px;font-size:13px'>"
-			+ esc(_("⚠ Minus qoldiq: kassadan unda yo'q pul chiqarilgan. Kirimi kiritilmagan yoki xato kassa tanlangan."))
+			+ esc(_("Kassa qarzi: {0}. Kassadan bor puldan ko'p chiqarilgan - qarz keyingi kirimlar (sotuv) bilan yopiladi.").format(qarz))
 			+ "</div>"
 		)
 	return f"<table style='border-collapse:collapse;margin:8px 0 14px'><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>{note}"

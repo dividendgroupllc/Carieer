@@ -145,7 +145,8 @@ def fifo(rows, sign):
 	return docs, open_dec
 
 
-def get_data(filters):
+def get_data(filters, only_debt=False):
+	"""only_debt: faqat qoldig'i musbat (qarz bor) kontragentlar - «Qarzlarimiz» hisoboti uchun."""
 	entries = get_entries(filters)
 	sign = 1 if filters.party_type == "Customer" else -1  # ta'minotchi / xodim: biz qarz bo'lsak musbat
 	by_party = {}
@@ -160,6 +161,8 @@ def get_data(filters):
 		tolandi = sum(sign * -flt(r.net) for r in rows if sign * flt(r.net) < 0)
 		qoldiq = flt(sum(sign * flt(r.net) for r in rows), 2)
 		if abs(qoldiq) < 0.5 and not filters.get("show_zero"):
+			continue
+		if only_debt and qoldiq < 0.5:
 			continue
 		p = frappe._dict(
 			party=party,

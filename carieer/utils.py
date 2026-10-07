@@ -160,9 +160,10 @@ def account_balance(account: str, upto=None) -> float:
 
 
 def check_kassa_balance(mode_of_payment: str, company: str, amount: float, sana=None):
-	"""Kassa nazorati: kassada yo'q pulni chiqarib bo'lmaydi (minus qoldiq).
-	Orqa sana bilan kiritilsa ham tekshiriladi: o'sha kundagi va bugungi qoldiqdan kichigi olinadi.
-	Karer Sozlamalari -> «Kassada minus qoldiqqa ruxsat» yoqilsa faqat ogohlantiradi."""
+	"""Kassa nazorati: kassadagidan ko'p pul chiqarilsa.
+	Karer Sozlamalari -> «Kassada minus qoldiqqa ruxsat» yoqiq (standart): to'lov o'tadi, kassa minusga (qarzga)
+	kiradi va ogohlantiriladi; o'chirilsa - bloklanadi.
+	Orqa sana bilan kiritilsa ham tekshiriladi: o'sha kundagi va bugungi qoldiqdan kichigi olinadi."""
 	info = get_kassa_info(mode_of_payment, company)
 	if not info.account or flt(amount) <= 0:
 		return
@@ -171,16 +172,24 @@ def check_kassa_balance(mode_of_payment: str, company: str, amount: float, sana=
 		return
 	from carieer.permissions import check_company
 
-	if check_company(company, throw=False):
-		msg = _("{0} kassasida {1} bor, {2} chiqarilmoqda. Avval kassaga kirim qiling.").format(
-			f"<b>{mode_of_payment}</b>",
-			frappe.format_value(available, {"fieldtype": "Currency", "options": info.currency}),
-			frappe.format_value(amount, {"fieldtype": "Currency", "options": info.currency}),
-		)
-	else:
+	def money(value):
+		return frappe.format_value(value, {"fieldtype": "Currency", "options": info.currency})
+
+	minus_ok = frappe.db.get_single_value("Karer Sozlamalari", "kassa_minus_ruxsat")
+	if not check_company(company, throw=False):
 		# boshqa firmaning kassa qoldig'i ko'rsatilmaydi
-		msg = _("{0} kassasida bu to'lov uchun pul yetarli emas.").format(f"<b>{mode_of_payment}</b>")
-	if frappe.db.get_single_value("Karer Sozlamalari", "kassa_minus_ruxsat"):
+		msg = _("{0} kassasida pul yetarli emas - kassa minusga (qarzga) kiradi.").format(f"<b>{mode_of_payment}</b>")
+	elif minus_ok:
+		msg = _(
+			"{0} kassasida {1} bor, {2} chiqarilmoqda. Kassa minusga kiradi: qoldiq {3} bo'ladi - "
+			"bu kassa qarzi, keyingi kirimlar (sotuv) bilan yopiladi."
+		).format(f"<b>{mode_of_payment}</b>", money(available), money(amount), money(flt(available) - flt(amount)))
+	else:
+		msg = _("{0} kassasida {1} bor, {2} chiqarilmoqda. Avval kassaga kirim qiling.").format(
+			f"<b>{mode_of_payment}</b>", money(available), money(amount)
+		)
+	if minus_ok:
+		# kassa minusga kirishi mumkin (Karer Sozlamalari): to'lov o'tadi, faqat ogohlantiriladi
 		frappe.msgprint(msg, indicator="orange", alert=True)
 	else:
 		frappe.throw(msg, title=_("Kassada pul yetarli emas"))

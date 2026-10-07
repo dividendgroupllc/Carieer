@@ -10,7 +10,9 @@ app_license = "mit"
 # ERPNext (buxgalteriya, ombor) va HRMS (xodimlar) ustida ishlaydi
 required_apps = ["erpnext", "hrms"]
 
-# Custom JS yo'q: barcha formalar, ro'yxatlar va hisobotlar Frappe / ERPNext'ning o'z UI'si bilan ishlaydi.
+# Formalar, ro'yxatlar va hisobotlar Frappe / ERPNext'ning o'z UI'si bilan ishlaydi. Yagona kichik JS:
+# bo'lim menyusidan ochilgan hisobotga shu bo'lim firmasini qo'yadi (build talab qilmaydi).
+app_include_js = "/assets/carieer/js/carieer.js"
 # Bo'limlar (desktop ikonkasi + chap menyu): carieer/desktop_icon, carieer/workspace_sidebar, carieer/carieer/workspace
 
 # Menyuni tozalash: Karer xodimi faqat «Karer», beton xodimi faqat «Beton Zavod» bo'limini ko'radi
