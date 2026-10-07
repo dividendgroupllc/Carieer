@@ -192,8 +192,29 @@ class Sotuv(Document):
 		for (item, wh), qty in need.items():
 			available = flt(get_stock_balance(item, wh, self.posting_date, self.posting_time))
 			if available + 1e-6 < qty:
+				uom = frappe.get_cached_value("Item", item, "stock_uom")
+				# boshqa omborlarda bormi (o'z firmasi va ikkinchi firma) - operator qayerdan olishni bilsin
+				boshqa = frappe.db.sql(
+					"""select b.warehouse, b.actual_qty, w.company from `tabBin` b join `tabWarehouse` w on w.name = b.warehouse
+					where b.item_code = %s and b.actual_qty > 0 and b.warehouse != %s order by b.actual_qty desc limit 5""",
+					(item, wh),
+					as_dict=True,
+				)
+				hint = (
+					"<br>"
+					+ _("Boshqa omborlarda: {0}").format(
+						", ".join(f"{b.warehouse} ({b.company}) — {flt(b.actual_qty):g} {uom}" for b in boshqa)
+					)
+					if boshqa
+					else "<br>" + _("Bu tovar hech qaysi omborda yo'q.")
+				)
 				frappe.throw(
-					_("{0} omborida {1} yetarli emas. Bor: {2}, kerak: {3}").format(wh, item, available, qty),
+					_(
+						"<b>{0}</b> omborida <b>{1}</b> yetarli emas: bor {2} {5}, kerak {3} {5}.{4}<br><br>"
+						"Tovarni kiritish: ikkinchi firmadan olinsa - o'sha firma <b>Sotuv</b> qiladi (Клиент = {6}) va "
+						"tasdiqlaydi (to'lov shart emas, qarzga ham bo'ladi); tashqaridan olinsa - <b>Xarid fakturasi</b> "
+						"(Update Stock ✓)."
+					).format(wh, item, flt(available), qty, hint, uom, self.company),
 					title=_("Qoldiq yetarli emas"),
 				)
 

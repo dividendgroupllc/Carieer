@@ -6,11 +6,21 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt
 
-from carieer.utils import get_zavod, validate_warehouse_company
+from carieer.utils import company_for_bolim, get_zavod, validate_warehouse_company
 
 
 class QazibOlish(Document):
 	def validate(self):
+		# qazib olish - faqat karer firmasida (Beton zavod tovarni Karer'dan sotib oladi)
+		karer = company_for_bolim("Karer")
+		if karer and self.company != karer:
+			frappe.throw(
+				_(
+					"Qazib olish faqat <b>{0}</b> firmasida bo'ladi. {1} tovarni Karer'dan oladi: "
+					"Karer bo'limida <b>Sotuv</b> (Клиент = {1})."
+				).format(karer, self.company),
+				title=_("Noto'g'ri firma"),
+			)
 		self.warehouse = self.warehouse or get_zavod(self.company).get("asosiy_ombor")
 		if not self.warehouse:
 			frappe.throw(_("Omborni tanlang (yoki Zavod'da asosiy omborni ko'rsating)"))
