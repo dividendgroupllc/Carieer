@@ -350,6 +350,7 @@ class Sotuv(Document):
 			row.discount_percentage = 0
 			row.margin_rate_or_amount = 0
 		si.conversion_rate = self.conversion_rate
+		si.flags.carieer_sotuv = True  # utils.validate_inter_company_document: ichki mijozga faqat Sotuv orqali
 		si.insert()
 		si.submit()
 		return si

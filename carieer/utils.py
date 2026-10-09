@@ -201,16 +201,45 @@ def apply_advances(company: str, party_type: str, party: str, invoice_type: str,
 	tovar avansdan yopiladi, Sotuv «To'langan» bo'ladi. Qaytaradi: o'tkazilgan summa."""
 	if flt(frappe.db.get_value(invoice_type, invoice_name, "outstanding_amount")) <= 0:
 		return 0
+	account = frappe.db.get_value(
+		invoice_type, invoice_name, "debit_to" if invoice_type == "Sales Invoice" else "credit_to"
+	)
+	return reconcile(company, party_type, party, account, voucher=invoice_name, only_payment_entries=True)
+
+
+def reconcile(
+	company: str,
+	party_type: str,
+	party: str,
+	account: str | None = None,
+	voucher: str | None = None,
+	only_payment_entries: bool = False,
+) -> float:
+	"""ERPNext Payment Reconciliation («Allocate» + «Reconcile»): kontragentning ochiq hujjatlari (hisob-faktura,
+	Начисление, qaytarilgan pul) ishlatilmagan to'lovlariga (avans) FIFO bilan bog'lanadi - buxgalter qo'lda
+	qiladigan ishni o'zi qiladi. voucher berilsa - faqat shu hujjat bog'lanadi (u ochiq hujjat yoki to'lov bo'lishi
+	mumkin). Bog'lanmasa GL qoldig'i to'g'ri bo'ladi, lekin ERPNext'ning Accounts Receivable / Payable
+	hisobotlarida hujjat va to'lov alohida «osilib» turadi. Qaytaradi: bog'langan summa."""
+	if party_type not in ("Customer", "Supplier") or not party:
+		return 0
+	if not account:
+		from erpnext.accounts.party import get_party_account
+
+		account = get_party_account(party_type, party, company)
 	pr = frappe.new_doc("Payment Reconciliation")
 	pr.company = company
 	pr.party_type = party_type
 	pr.party = party
-	pr.receivable_payable_account = frappe.db.get_value(
-		invoice_type, invoice_name, "debit_to" if invoice_type == "Sales Invoice" else "credit_to"
-	)
+	pr.receivable_payable_account = account
 	pr.get_unreconciled_entries()
-	invoices = [i.as_dict() for i in pr.invoices if i.invoice_number == invoice_name]
-	payments = [p.as_dict() for p in pr.payments if p.reference_type == "Payment Entry"]
+	invoices = [i.as_dict() for i in pr.invoices]
+	payments = [p.as_dict() for p in pr.payments if not only_payment_entries or p.reference_type == "Payment Entry"]
+	if voucher:
+		mine = [i for i in invoices if i.invoice_number == voucher]
+		if mine:
+			invoices = mine
+		else:
+			payments = [p for p in payments if p.reference_name == voucher]
 	if not invoices or not payments:
 		return 0
 	pr.allocate_entries(frappe._dict(invoices=invoices, payments=payments))
@@ -223,6 +252,46 @@ def apply_advances(company: str, party_type: str, party: str, invoice_type: str,
 	finally:
 		frappe.flags.mute_messages = mute
 	return sum(flt(a.allocated_amount) for a in pr.allocation)
+
+
+def validate_inter_company_document(doc, method=None):
+	"""hooks.py: Sales Invoice, Delivery Note, Purchase Invoice, Purchase Receipt -> before_validate
+	(ERPNext'ning o'z tekshiruvlaridan oldin - xabar o'zbekcha va tushunarli bo'lsin).
+	O'zimizning ikkinchi firmamiz bilan oldi-sotdi faqat «Sotuv» orqali: sotuvchida Sales Invoice va xaridorda unga
+	bog'langan Purchase Invoice birga yaratiladi. Qo'lda kiritilgan hujjat faqat bitta firma kitobiga yoziladi:
+	masalan Beton'da «Eko Karer'dan» Purchase Receipt - Beton omboriga tovar kiradi, Beton Karer'ga qarzdor bo'ladi,
+	lekin Karer ombori kamaymaydi va Karer kitobida bu qarz yo'q (Firmalararo qarzlar: «Kitoblar mos emas»)."""
+	if doc.doctype in ("Sales Invoice", "Delivery Note"):
+		seller, buyer = doc.company, get_internal_company("Customer", doc.customer)
+		linked = doc.flags.get("carieer_sotuv")
+	else:
+		seller, buyer = get_internal_company("Supplier", doc.supplier), doc.company
+		# ERPNext'ning o'z firmalararo hujjati (Sales Invoice / Delivery Note dan yaratilgan) - ikkinchi kitobda jufti bor
+		linked = not doc.get("is_return") and (
+			doc.get("inter_company_invoice_reference") or doc.get("inter_company_reference")
+		)
+	if not seller or not buyer or linked:
+		return
+	if seller == buyer:
+		# masalan Beton Zavod bo'limida Qabul ochilgan, lekin «Firma» maydonida Eko Karer qolib ketgan va
+		# ta'minotchi ham Eko Karer (ERPNext: «Internal Sales Reference Missing»)
+		frappe.throw(
+			_(
+				"Firma ({0}) va kontragent ({1}) - bitta firma: firma o'zidan o'zi xarid qila olmaydi / o'ziga sotolmaydi."
+				"<br><br>Hujjatdagi <b>Firma (Company)</b> maydonini tekshiring. Boshqa firmamizdan tovar olinsa - "
+				"sotuvchi firma bo'limida <b>Sotuv</b> qilinadi, bu yerda hech narsa kiritilmaydi."
+			).format(doc.company, doc.get("customer") or doc.get("supplier")),
+			title=_("Firma noto'g'ri tanlangan"),
+		)
+	frappe.throw(
+		_(
+			"{0} va {1} - o'zimizning firmalarimiz. Ular o'rtasidagi oldi-sotdi qo'lda kiritilmaydi: "
+			"<b>{0}</b> bo'limida <b>Sotuv</b> qiling (Клиент = {1}). Shunda {0} da Sales Invoice (ombordan chiqim, "
+			"{1} ning qarzi) va {1} da Purchase Invoice (omborga kirim, qarzimiz) birga yaratiladi - ikkala kitob mos keladi."
+			"<br><br>Qaytarish bo'lsa - o'sha Sotuv'ni bekor qilib (Cancel) to'g'ri miqdor bilan qayta kiriting."
+		).format(seller, buyer),
+		title=_("Firmalararo oldi-sotdi"),
+	)
 
 
 def validate_internal_payment(doc, method=None):

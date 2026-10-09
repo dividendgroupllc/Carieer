@@ -17,6 +17,7 @@ from carieer.utils import (
 	get_kassa_info,
 	get_kategoriya_account,
 	get_rate,
+	reconcile,
 	validate_not_internal,
 )
 
@@ -203,7 +204,12 @@ class Kassa(Document):
 		pe.source_exchange_rate = self.rate_to_company(pe.paid_from_account_currency)
 		pe.target_exchange_rate = self.rate_to_company(pe.paid_to_account_currency)
 		allocate_to_invoices(pe)
-		return self.insert_submit(pe)
+		self.insert_submit(pe)
+		if flt(pe.unallocated_amount) > 0.005:
+			# hisob-fakturaga tushmagan qismi Начисление (Journal Entry) yoki avansga bog'lanadi -
+			# aks holda ERPNext'ning Accounts Payable / Receivable hisobotida ikkalasi alohida osilib turadi
+			reconcile(self.company, self.party_type, self.party, party_account, voucher=pe.name)
+		return pe
 
 	def make_transfer(self):
 		pe = frappe.new_doc("Payment Entry")

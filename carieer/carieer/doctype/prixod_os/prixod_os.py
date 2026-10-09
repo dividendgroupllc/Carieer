@@ -10,7 +10,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt
 
-from carieer.utils import get_company_currency, get_rate
+from carieer.utils import get_company_currency, get_rate, validate_not_internal
 
 
 class PrixodOS(Document):
@@ -32,6 +32,8 @@ class PrixodOS(Document):
 			frappe.throw(_("Asosiy vosita hisobini tanlang"))
 		self.check_account(self.hisob, ("Asset",))
 		if self.supplier:
+			# ichki firmadan qarz faqat shu kitobga yozilardi - ikkinchi firma bilmay qoladi
+			validate_not_internal("Supplier", self.supplier, _("Sotuv (sotuvchi firma bo'limida)"))
 			self.kredit_hisob = None
 		else:
 			self.kredit_hisob = self.kredit_hisob or defaults["kredit_hisob"]

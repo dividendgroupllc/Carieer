@@ -10,7 +10,12 @@ from frappe.model.document import Document
 from frappe.utils import flt
 
 from carieer.carieer.doctype.qazib_olish.qazib_olish import cancel_stock_entry
-from carieer.utils import get_kategoriya_account, get_zavod, validate_warehouse_company
+from carieer.utils import (
+	get_kategoriya_account,
+	get_zavod,
+	validate_not_internal,
+	validate_warehouse_company,
+)
 
 # Yoqilg'i turi -> xarajat moddasi (Kassa Kategoriya / hisoblar rejasi)
 MODDA = {
@@ -37,6 +42,8 @@ class YoqilgiHisobi(Document):
 			self.supplier = None
 		else:
 			self.item_code = self.warehouse = None
+			# ichki firmadan qarz faqat shu kitobga yozilardi - ikkinchi firma bilmay qoladi
+			validate_not_internal("Supplier", self.supplier, _("Sotuv (sotuvchi firma bo'limida)"))
 		self.amount = flt(self.qty) * flt(self.rate)
 		self.set_probeg()
 

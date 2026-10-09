@@ -2,6 +2,8 @@
 # Bitta hujjat ikkala kitobga yoziladi:
 #   to'lovchi firmada  Payment Entry "Pay"     -> kassadan chiqim, oluvchi firmaga qarzimiz kamayadi
 #   oluvchi firmada    Payment Entry "Receive" -> kassaga kirim, to'lovchi firmaning qarzi kamayadi
+# Qaytarish (oluvchi ilgari ortiqcha to'lagan, to'lovchi avansini qaytaryapti): to'lovchida mijozga «Pay», oluvchida
+# ta'minotchidan «Receive» - ikkala kitobda avans yopiladi (yangi soxta avans paydo bo'lmaydi).
 # To'lov boshqa valyutada bo'lishi mumkin: 250 USD x kurs = so'm. Qarz so'mda kamayadi, kassadan esa
 # kassa valyutasida chiqadi. To'lov eng eski to'lanmagan firmalararo hisob-fakturalarga taqsimlanadi.
 
@@ -18,6 +20,7 @@ from carieer.utils import (
 	get_company_currency,
 	get_kassa_info,
 	get_rate,
+	reconcile,
 )
 
 
@@ -109,15 +112,46 @@ class FirmalararoTolov(Document):
 			self.make_documents()
 
 	def make_documents(self):
-		# oluvchi = "sotuvchi" (unda to'lovchi firma ichki mijoz), to'lovchi = "xaridor" (unda oluvchi ichki yetkazib beruvchi)
-		customer, supplier = ensure_inter_company_parties(self.oluvchi_firma, self.tolovchi_firma)
-		pay = self.make_payment_entry("Pay", self.tolovchi_firma, self.tolovchi_kassa, "Supplier", supplier)
-		receive = self.make_payment_entry(
-			"Receive", self.oluvchi_firma, self.oluvchi_kassa, "Customer", customer
-		)
+		if self.is_refund():
+			# Qaytarish: oluvchi ilgari ortiqcha to'lagan, to'lovchi uning avansini qaytaryapti.
+			# to'lovchida - mijozga (oluvchi) pul qaytarildi, oluvchida - ta'minotchidan (to'lovchi) pul qaytdi.
+			# Ikkala kitobda avans yopiladi; aks holda bir tomonda «mijoz avansi», ikkinchisida «ta'minotchiga avans»
+			# bo'lib osilib qoladi va keyingi sotuv qaytarilgan avansdan «to'langan» bo'lib ketadi.
+			customer, supplier = ensure_inter_company_parties(self.tolovchi_firma, self.oluvchi_firma)
+			pay = self.make_payment_entry("Pay", self.tolovchi_firma, self.tolovchi_kassa, "Customer", customer)
+			receive = self.make_payment_entry(
+				"Receive", self.oluvchi_firma, self.oluvchi_kassa, "Supplier", supplier
+			)
+		else:
+			# oluvchi = "sotuvchi" (unda to'lovchi firma ichki mijoz), to'lovchi = "xaridor" (unda oluvchi ichki yetkazib beruvchi)
+			customer, supplier = ensure_inter_company_parties(self.oluvchi_firma, self.tolovchi_firma)
+			pay = self.make_payment_entry("Pay", self.tolovchi_firma, self.tolovchi_kassa, "Supplier", supplier)
+			receive = self.make_payment_entry(
+				"Receive", self.oluvchi_firma, self.oluvchi_kassa, "Customer", customer
+			)
 		self.db_set(
 			{"tolovchi_payment_entry": pay, "oluvchi_payment_entry": receive, "status": "Tasdiqlangan"}
 		)
+
+	def is_refund(self) -> bool:
+		"""To'lovchi kitobida: oluvchiga tovar uchun qarzi yo'q, lekin oluvchidan olgan ishlatilmagan avansi bor ->
+		bu to'lov avansni qaytarish (masalan Beton Karer'ga ortiqcha to'lagan, Karer farqni qaytaryapti)."""
+		from carieer.carieer.report.firmalararo_qarzlar.firmalararo_qarzlar import internal_parties
+
+		qarz = avans = 0.0
+		for party_type, party in internal_parties(self.oluvchi_firma):
+			credit = -flt(
+				frappe.db.sql(
+					"""select sum(debit) - sum(credit) from `tabGL Entry` where company = %s and party_type = %s
+					and party = %s and posting_date <= %s and is_cancelled = 0""",
+					(self.tolovchi_firma, party_type, party, self.posting_date),
+				)[0][0]
+			)
+			if party_type == "Supplier":
+				qarz += credit  # ta'minotchi kredit qoldig'i - biz unga qarzdormiz
+			else:
+				avans += credit  # mijoz kredit qoldig'i - uning bizdagi avansi
+		return qarz < 0.005 and avans > 0.005
 
 	def on_cancel(self):
 		with as_admin():
@@ -169,13 +203,18 @@ class FirmalararoTolov(Document):
 				),
 			}
 		)
-		allocate(pe, "Purchase Invoice" if pay else "Sales Invoice", party_type, party, company, base)
+		refund = (party_type == "Customer") == pay  # mijozga to'lov / ta'minotchidan kirim - avans qaytarilmoqda
+		if not refund:
+			allocate(pe, "Purchase Invoice" if pay else "Sales Invoice", party_type, party, company, base)
 		pe.flags.ignore_permissions = True
 		pe.setup_party_account_field()
 		pe.set_missing_values()
 		pe.set_amounts()
 		pe.insert()
 		pe.submit()
+		if refund:
+			# qaytarilgan pul avansga bog'lanadi (ERPNext Payment Reconciliation) - AR / AP da osilib qolmaydi
+			reconcile(company, party_type, party, party_account, voucher=pe.name)
 		return pe.name
 
 

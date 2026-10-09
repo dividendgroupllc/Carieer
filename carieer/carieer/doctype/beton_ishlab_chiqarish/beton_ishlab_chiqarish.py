@@ -47,7 +47,9 @@ class BetonIshlabChiqarish(Document):
 		from erpnext.stock.utils import get_stock_balance
 
 		self.set("xomashyolar", [])
-		items = get_bom_items_as_dict(self.bom, self.company, qty=flt(self.qty), fetch_exploded=1)
+		# Faqat retseptning o'z qatorlari (bir pog'ona). Qum, shag'al o'zining retseptiga yoyilmaydi: ular Karer'dan
+		# tayyor olinadi (ERPNext qatorga boshqa firmaning «Qum» retseptini bog'lab qo'yishi mumkin -> tuproq, suv so'raydi)
+		items = get_bom_items_as_dict(self.bom, self.company, qty=flt(self.qty), fetch_exploded=0)
 		jami = 0
 		for it in items.values():
 			balance = get_stock_balance(
@@ -113,7 +115,7 @@ class BetonIshlabChiqarish(Document):
 				"posting_time": self.posting_time,
 				"set_posting_time": 1,
 				"from_bom": 1,
-				"use_multi_level_bom": 1,
+				"use_multi_level_bom": 0,  # set_xomashyolar bilan bir xil: retseptning o'z qatorlari
 				"bom_no": self.bom,
 				"fg_completed_qty": self.qty,
 				"from_warehouse": self.xomashyo_ombori,

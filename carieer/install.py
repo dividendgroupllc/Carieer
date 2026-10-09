@@ -94,6 +94,7 @@ LAVOZIM_PERMS = {
 		"Payment Entry": ("read", "create", "submit", "report"),
 		"Journal Entry": RR,
 		"GL Entry": RR,  # moliyaviy hisobotlar
+		"Stock Ledger Entry": RR,  # Ombor qoldig'i / tarixi - faqat ko'rish (kassir Qabul ham qiladi)
 	},
 	"Menejer": {
 		"Customer": CRW,
@@ -143,8 +144,8 @@ def make_standard_permissions():
 
 # ERPNext hisobotlari (menyuda bor) -> qaysi lavozimlar ochadi. Hisobotning o'z rollari saqlanadi.
 REPORT_ROLES = {
-	"Stock Balance": ("Operator", "Menejer"),  # ombor qoldig'i
-	"Stock Ledger": ("Operator", "Menejer"),  # ombor harakati tarixi
+	"Stock Balance": ("Operator", "Kassir", "Menejer"),  # ombor qoldig'i
+	"Stock Ledger": ("Operator", "Kassir", "Menejer"),  # ombor harakati tarixi
 }
 
 

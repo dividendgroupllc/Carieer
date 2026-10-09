@@ -10,7 +10,13 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt
 
-from carieer.utils import get_company_currency, get_kategoriya_account, get_rate, validate_not_internal
+from carieer.utils import (
+	get_company_currency,
+	get_kategoriya_account,
+	get_rate,
+	reconcile,
+	validate_not_internal,
+)
 
 PARTY_NAME_FIELD = {"Customer": "customer_name", "Supplier": "supplier_name"}
 # install.py -> make_moddalar yaratadi (P&L: "Выручка от реализации услуг")
@@ -172,6 +178,8 @@ class Nachislenie(Document):
 		je.insert()
 		je.submit()
 		self.db_set({"journal_entry": je.name, "status": "Tasdiqlangan"})
+		# pul oldindan (Kassa orqali) to'langan / olingan bo'lsa - Начисление shu avansdan yopiladi
+		reconcile(self.company, self.party_type, self.party, party_account, voucher=je.name)
 
 	def on_cancel(self):
 		self.ignore_linked_doctypes = ("GL Entry", "Payment Ledger Entry", "Journal Entry")

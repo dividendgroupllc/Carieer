@@ -7,7 +7,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-from carieer.carieer.report.common import blank_zeros, bold, prepare
+from carieer.carieer.report.common import blank_zeros, bold, prepare, usd_rate
 
 GROUPS = {
 	"Mijoz": ("customer", _("Mijoz"), "Link", "Customer"),
@@ -19,8 +19,12 @@ GROUPS = {
 
 
 def execute(filters=None):
+	kunlik = ((filters or {}).get("korinish") or "Kunlik otchet") == "Kunlik otchet"
+	if kunlik and not (filters or {}).get("from_date"):
+		# jadvaldagi «Отчет» - bitta kun («Дата отчета»): «Sana dan» bo'sh bo'lsa faqat «Sana gacha» kuni
+		filters = dict(filters or {}, from_date=(filters or {}).get("to_date") or frappe.utils.today())
 	filters = prepare(filters, period="month")
-	if (filters.get("korinish") or "Kunlik otchet") == "Kunlik otchet":
+	if kunlik:
 		return kunlik_otchet(filters)
 	data = get_data(filters)
 	group_by = filters.get("group_by")
@@ -51,13 +55,13 @@ def get_data(filters):
 	To'langan / qarz hujjat bo'yicha - faqat hujjatning birinchi qatorida ko'rsatiladi."""
 	rows = frappe.db.sql(
 		f"""select ks.name, ks.posting_date, ks.posting_time, ks.tip, ks.customer, ks.customer_name, ks.mashina_raqami,
-			ks.currency, ks.conversion_rate, ks.total_paid, ks.outstanding_amount, ks.status,
+			ks.currency, ks.conversion_rate, ks.total_paid, ks.outstanding_amount, ks.status, ks.sales_invoice,
 			t.item_code, t.item_name, t.qty, t.uom, t.stock_qty, t.rate, t.amount, t.warehouse, t.idx, 0 as is_service
 		from `tabSotuv` ks join `tabSotuv Tovar` t on t.parent = ks.name
 		where {conditions(filters)}
 		union all
 		select ks.name, ks.posting_date, ks.posting_time, ks.tip, ks.customer, ks.customer_name, ks.mashina_raqami,
-			ks.currency, ks.conversion_rate, ks.total_paid, ks.outstanding_amount, ks.status,
+			ks.currency, ks.conversion_rate, ks.total_paid, ks.outstanding_amount, ks.status, ks.sales_invoice,
 			x.xizmat, x.xizmat, x.qty, '', 0, x.rate, x.amount, '', 100 + x.idx, 1
 		from `tabSotuv` ks join `tabSotuv Xizmat` x on x.parent = ks.name
 		where {conditions(filters)} and %(show_services)s = 1
@@ -66,8 +70,22 @@ def get_data(filters):
 		as_dict=True,
 	)
 	seen = set()
+	cost = get_cost(rows)
+	rates = {}
+	item_groups = dict(frappe.get_all("Item", fields=["name", "item_group"], as_list=True))
 	for r in rows:
 		r.base_amount = flt(r.amount) * flt(r.conversion_rate or 1)
+		# «Курс» - shu kungi USD kursi, «Сумма $» - dollardagi summa (jadvaldagi kabi)
+		kurs = usd_rate(filters.company, r.posting_date, rates) if filters.get("company") else 0
+		r.kurs = flt(r.conversion_rate) if r.currency == "USD" else kurs
+		r.amount_usd = flt(r.amount) if r.currency == "USD" else (r.base_amount / kurs if kurs else None)
+		r.item_group = item_groups.get(r.item_code)
+		# «Цена СС / Сумма СС» - sotilgan tovarning tan narxi (ombordan chiqqan qiymat, firma valyutasida)
+		if not r.is_service:
+			c = cost.get((r.sales_invoice, r.item_code))
+			if c and flt(c[0]):
+				r.cc_amount = flt(c[1] * flt(r.stock_qty) / c[0], 2)
+				r.cc_rate = flt(r.cc_amount / flt(r.qty), 2) if flt(r.qty) else 0
 		if r.name in seen:
 			r.total_paid = r.outstanding_amount = 0
 			r.status = ""
@@ -75,11 +93,29 @@ def get_data(filters):
 	return rows
 
 
+def get_cost(rows):
+	"""{(Sales Invoice, tovar): (ombordan chiqqan miqdor, tan narx qiymati)} - Stock Ledger Entry'dan."""
+	invoices = list({r.sales_invoice for r in rows if r.sales_invoice})
+	if not invoices:
+		return {}
+	return {
+		(r.voucher_no, r.item_code): (flt(r.qty), flt(r.value))
+		for r in frappe.db.sql(
+			"""select voucher_no, item_code, -sum(actual_qty) qty, -sum(stock_value_difference) value
+			from `tabStock Ledger Entry`
+			where voucher_type = 'Sales Invoice' and voucher_no in %(invoices)s and is_cancelled = 0
+			group by voucher_no, item_code""",
+			{"invoices": invoices},
+			as_dict=True,
+		)
+	}
+
+
 def get_columns():
+	"""«Продажа карьер» varag'i tartibida: Дата, Наименование, Кол-во, Ед.изм, Цена, Валюта, Сумма, Клиент,
+	Номер машины, Курс, Сумма $, Цех, Цена СС, Сумма СС, Тип продукта; keyin hujjat va to'lov holati."""
 	return [
 		{"fieldname": "posting_date", "label": _("Дата"), "fieldtype": "Date", "width": 95},
-		{"fieldname": "name", "label": _("Hujjat"), "fieldtype": "Link", "options": "Sotuv", "width": 130},
-		{"fieldname": "tip", "label": _("Тип"), "fieldtype": "Data", "width": 70},
 		{
 			"fieldname": "item_code",
 			"label": _("Наименование"),
@@ -118,13 +154,13 @@ def get_columns():
 			"width": 150,
 		},
 		{"fieldname": "mashina_raqami", "label": _("Номер машины"), "fieldtype": "Data", "width": 110},
-		{
-			"fieldname": "conversion_rate",
-			"label": _("Курс"),
-			"fieldtype": "Float",
-			"precision": 2,
-			"width": 80,
-		},
+		{"fieldname": "kurs", "label": _("Курс"), "fieldtype": "Float", "precision": "0", "width": 80},
+		{"fieldname": "amount_usd", "label": _("Сумма $"), "fieldtype": "Float", "precision": "2", "width": 110},
+		{"fieldname": "tip", "label": _("Цех"), "fieldtype": "Data", "width": 100},
+		{"fieldname": "cc_rate", "label": _("Цена СС"), "fieldtype": "Currency", "width": 105},
+		{"fieldname": "cc_amount", "label": _("Сумма СС"), "fieldtype": "Currency", "width": 120},
+		{"fieldname": "item_group", "label": _("Тип продукта"), "fieldtype": "Data", "width": 120},
+		{"fieldname": "name", "label": _("Hujjat"), "fieldtype": "Link", "options": "Sotuv", "width": 130},
 		{"fieldname": "base_amount", "label": _("Сумма (сўм)"), "fieldtype": "Currency", "width": 120},
 		{
 			"fieldname": "total_paid",
@@ -207,6 +243,8 @@ def grouped(rows, group_by):
 			"width": 140,
 		},
 		{"fieldname": "base_amount", "label": _("Summa (UZS)"), "fieldtype": "Currency", "width": 140},
+		{"fieldname": "cc_amount", "label": _("Сумма СС (tan narx)"), "fieldtype": "Currency", "width": 140},
+		{"fieldname": "foyda", "label": _("Маржа (foyda)"), "fieldtype": "Currency", "width": 140},
 	]
 	return columns, sorted(out.values(), key=lambda d: (str(d.group), d.currency))
 

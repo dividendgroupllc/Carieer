@@ -40,6 +40,7 @@ Har bir xodim faqat o'z firmasining ma'lumotini ko'radi (ERPNext **User Permissi
 | Kassa, Начисление, Firmalararo to'lov | — | ✅ | ✅ |
 | Приход ОС, Приход, Инвентаризация, BOM | — | — | ✅ |
 | Kunlik otchet, Material hisobot | ✅ | ✅ (kunlik) | ✅ |
+| Ombor qoldig'i, Ombor tarixi (faqat ko'rish) | ✅ | ✅ | ✅ |
 | Akt sverka, Оборотка, Qarzdorlik, ДДС, Cash Flow, Firmalararo qarzlar | — | ✅ | ✅ |
 | P&L, Баланс, Texnika xarajatlari | — | — | ✅ |
 
@@ -169,8 +170,12 @@ Pul keyin Kassa orqali to'lanadi / olinadi.
 ### 4.6 Firmalararo oldi-sotdi (Karer ↔ Beton)
 * **Perexod / sotuv**: oddiy **Sotuv**, mijoz = ikkinchi firmamiz (ichki mijoz). Submit → sotuvchida Sales Invoice,
   xaridorda **avtomatik Purchase Invoice** (tovar uning xomashyo omboriga kiradi). Ikkala kitob doim mos.
+* **Qo'lda kiritib bo'lmaydi**: Beton'da «Eko Karer'dan» Purchase Receipt / Purchase Invoice yoki Karer'da
+  «Eko Beton'ga» Sales Invoice bloklanadi - ular faqat bitta kitobga yozilardi (Karer ombori kamaymaydi, Karer
+  qarzni ko'rmaydi). Har doim sotuvchi firma **Sotuv** qiladi.
 * **To'lov**: **Firmalararo to'lov** → ikkala firmada Payment Entry (to'lovchida chiqim, oluvchida kirim).
-* Holat: **Firmalararo qarzlar** hisoboti.
+  Ortiqcha to'langan pul qaytarilsa (masalan Karer Beton'ga qaytaradi) - u avansni qaytarish bo'lib yoziladi va avans yopiladi.
+* Holat: **Firmalararo qarzlar** hisoboti, bosh sahifada **Firmalararo qarz** kartochkasi (kitoblar mos kelmasa ⚠).
 
 ### 4.7 Beton
 1. Karerdan sheben / qum — firmalararo sotuv (4.6) bilan **Beton xomashyo** omboriga.
@@ -200,20 +205,21 @@ Pul keyin Kassa orqali to'lanadi / olinadi.
 | Varaq | Tizimda |
 |---|---|
 | Диспетчер | Tovarlar (Item), birliklar, xizmatlar, Kassa Kategoriya, kassalar (Mode of Payment), kontragentlar |
-| Продажа карьер | **Sotuv** |
+| Продажа карьер | **Sotuv**; jadval ko'rinishi - Kontrol Hisobot → «Sotuvlar» (Курс, Сумма $, Цех, Цена СС, Сумма СС, Тип продукта) |
 | Касса карьер | **Kassa** |
-| Приход | Purchase Invoice |
+| Приход | Purchase Invoice / Receipt, Начисление; jadval - hisobot **Prixod** (Месяц, Дата, ..., Поставщик, Курс, Сумма $, Тип, Цех) |
 | Приход ОС | **Prixod OS** |
 | Инвентаризация | Stock Reconciliation |
 | Начисление карьер | **Nachislenie** |
-| Оборотка Контрагентов | hisobot **Kontragent Otchet** |
+| Оборотка Контрагентов | hisobot **Kontragent Otchet** (har kontragent bitta qatorda, Сум va $ yonma-yon) |
 | Акт сверка | **Akt Sverka** |
 | Баланс / Баланс бпр | **Balans** |
 | P&L / P&L Разбитый | **Foyda Zarar** |
 | Cash Flow | **Pul Oqimi** |
 | ДДС | **DDS** |
 | Отчет | **Kontrol Hisobot** (ko'rinish: Kunlik otchet) |
-| Постав/Клиент, БД контрагент | Kontragent Otchet (tur filtri) |
+| Постав/Клиент | hisobot **Postav Klient** (har oy oxiridagi qoldiq, Тип контрагента) |
+| БД контрагент | Mijozlar / Ta'minotchilar ro'yxati (guruh: Прочие лица, Налог) |
 | Карздорликлар | **Qarzdorlik** (7 / 14 / 21 kun) |
 
 ## 6. Hisobotlar
@@ -221,7 +227,9 @@ Pul keyin Kassa orqali to'lanadi / olinadi.
 | Hisobot | Nima ko'rsatadi |
 |---|---|
 | **Kontrol Hisobot** | *Kunlik otchet*: ПРОДАЖА (mijoz, tovar, miqdor, narx, summa) + КАССА (kategoriya bo'yicha kirim / chiqim), tepada kassa qoldig'i. *Sotuvlar*: har bir sotuv, guruhlash (mijoz / tovar / kun / mashina) |
-| **Kontragent Otchet** | Оборотка: boshlang'ich, oborot, yakuniy qoldiq (Кредит / Дебет, сўм va $ alohida), Акт сверка havolasi |
+| **Kontragent Otchet** | Оборотка: har kontragent bitta qatorda - boshlang'ich, oborot, yakuniy qoldiq (Кредит / Дебет × Сум / $), Сальдо, Акт сверка havolasi; tepada «Общая задолженность» |
+| **Postav Klient** | Постав/Клиент: kontragent × oy - har oy oxiridagi qoldiq (Д-К), tepada debitor / kreditor / sof jami |
+| **Prixod** | Приход: xarid fakturalari, fakturasiz qabullar, Начисление (Закуп услуга), Приход ОС - sana, nomi, miqdor, narx, summa, $, tur |
 | **Akt Sverka** | bitta kontragent: har bir hujjat (tovar, miqdor, narx), to'lovlar, начисления, qoldiq; tepada yig'ma |
 | **Qarzdorlik** | sof qarz va muddati: 7 kun ichi, 7 / 14 / 21 kundan ko'p (FIFO) |
 | **DDS** | kategoriya × valyuta (kirim / chiqim), boshlang'ich va yakuniy qoldiq; «Batafsil» — har bir harakat |
@@ -273,5 +281,6 @@ carieer/
 | «... kassasida ... firmasi uchun hisob yo'q» | Kassalar (Mode of Payment) → Accounts jadvaliga shu firma hisobini qo'shing |
 | «Zavod '...' uchun firma ko'rsatilmagan» | Sozlamalar → Zavodlar: Karer va Beton yozuvlari (setup_karer yaratadi) |
 | «Ichki firmaga sotuvda to'lov shu yerda olinmaydi» | Firmalararo to'lov orqali kiriting |
+| «... o'zimizning firmalarimiz. Ular o'rtasidagi oldi-sotdi qo'lda kiritilmaydi» | Sotuvchi firma bo'limida **Sotuv** qiling (Клиент = ikkinchi firma) - xaridorda Purchase Invoice o'zi yaratiladi |
 | Firmalararo sotuvni bekor qilib bo'lmaydi | Avval undan foydalangan hujjatlarni (beton ishlab chiqarish, sotuv) bekor qiling |
 | Menyuda bo'lim ko'rinmaydi | `bench --site SITE clear-cache`, foydalanuvchi qayta kirsin |

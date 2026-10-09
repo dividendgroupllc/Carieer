@@ -302,6 +302,18 @@
    "idx": 24,
    "indent": 0,
    "keep_closed": 0,
+   "label": "Приход (xaridlar jadvali)",
+   "link_to": "Prixod",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "idx": 25,
+   "indent": 0,
+   "keep_closed": 0,
    "label": "Ta'minotchilar",
    "link_to": "Supplier",
    "link_type": "DocType",
@@ -311,7 +323,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 25,
+   "idx": 26,
    "indent": 0,
    "keep_closed": 0,
    "label": "Приход ОС",
@@ -325,7 +337,7 @@
    "child": 0,
    "collapsible": 1,
    "icon": "truck",
-   "idx": 26,
+   "idx": 27,
    "indent": 1,
    "keep_closed": 0,
    "label": "Texnika",
@@ -336,7 +348,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 27,
+   "idx": 28,
    "indent": 0,
    "keep_closed": 0,
    "label": "Texnikalar",
@@ -349,7 +361,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 28,
+   "idx": 29,
    "indent": 0,
    "keep_closed": 0,
    "label": "Texnikalar xaritasi",
@@ -361,7 +373,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 29,
+   "idx": 30,
    "indent": 0,
    "keep_closed": 0,
    "label": "Yoqilg'i va moy",
@@ -374,7 +386,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 30,
+   "idx": 31,
    "indent": 0,
    "keep_closed": 0,
    "label": "GPS nuqtalar",
@@ -387,7 +399,7 @@
    "child": 0,
    "collapsible": 1,
    "icon": "chart-bar",
-   "idx": 31,
+   "idx": 32,
    "indent": 1,
    "keep_closed": 0,
    "label": "Hisobotlar",
@@ -398,7 +410,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 32,
+   "idx": 33,
    "indent": 0,
    "keep_closed": 0,
    "label": "Kunlik otchet (Отчет)",
@@ -410,10 +422,10 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 33,
+   "idx": 34,
    "indent": 0,
    "keep_closed": 0,
-   "label": "Kontragent otchet",
+   "label": "Оборотка контрагентов",
    "link_to": "Kontragent Otchet",
    "link_type": "Report",
    "show_arrow": 0,
@@ -422,7 +434,19 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 34,
+   "idx": 35,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Постав/Клиент (oyma-oy qoldiq)",
+   "link_to": "Postav Klient",
+   "link_type": "Report",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "idx": 36,
    "indent": 0,
    "keep_closed": 0,
    "label": "Акт сверка",
@@ -434,7 +458,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 35,
+   "idx": 37,
    "indent": 0,
    "keep_closed": 0,
    "label": "Қарздорликлар",
@@ -446,7 +470,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 36,
+   "idx": 38,
    "indent": 0,
    "keep_closed": 0,
    "label": "ДДС",
@@ -458,7 +482,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 37,
+   "idx": 39,
    "indent": 0,
    "keep_closed": 0,
    "label": "Cash Flow (oyma-oy)",
@@ -470,7 +494,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 38,
+   "idx": 40,
    "indent": 0,
    "keep_closed": 0,
    "label": "P&L (foyda / zarar)",
@@ -482,7 +506,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 39,
+   "idx": 41,
    "indent": 0,
    "keep_closed": 0,
    "label": "Баланс",
@@ -494,7 +518,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 40,
+   "idx": 42,
    "indent": 0,
    "keep_closed": 0,
    "label": "Материальный отчет",
@@ -506,7 +530,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 41,
+   "idx": 43,
    "indent": 0,
    "keep_closed": 0,
    "label": "Firmalararo qarzlar",
@@ -518,7 +542,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 42,
+   "idx": 44,
    "indent": 0,
    "keep_closed": 0,
    "label": "Texnika xarajatlari",
@@ -531,7 +555,7 @@
    "child": 0,
    "collapsible": 1,
    "icon": "settings",
-   "idx": 43,
+   "idx": 45,
    "indent": 1,
    "keep_closed": 1,
    "label": "Sozlamalar",
@@ -542,7 +566,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 44,
+   "idx": 46,
    "indent": 0,
    "keep_closed": 0,
    "label": "Zavodlar (firma, ombor)",
@@ -555,7 +579,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 45,
+   "idx": 47,
    "indent": 0,
    "keep_closed": 0,
    "label": "Tovarlar",
@@ -567,7 +591,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 46,
+   "idx": 48,
    "indent": 0,
    "keep_closed": 0,
    "label": "Narxlar (Item Price)",
@@ -579,7 +603,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 47,
+   "idx": 49,
    "indent": 0,
    "keep_closed": 0,
    "label": "Omborlar",
@@ -592,7 +616,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 48,
+   "idx": 50,
    "indent": 0,
    "keep_closed": 0,
    "label": "Kassalar (to'lov turlari)",
@@ -605,7 +629,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 49,
+   "idx": 51,
    "indent": 0,
    "keep_closed": 0,
    "label": "Kategoriyalar (DDS / P&L)",
@@ -617,7 +641,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 50,
+   "idx": 52,
    "indent": 0,
    "keep_closed": 0,
    "label": "Xodimlar",
@@ -629,7 +653,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 51,
+   "idx": 53,
    "indent": 0,
    "keep_closed": 0,
    "label": "O'lchov birliklari",
@@ -641,7 +665,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 52,
+   "idx": 54,
    "indent": 0,
    "keep_closed": 0,
    "label": "Hisoblar rejasi",
@@ -653,7 +677,7 @@
   {
    "child": 1,
    "collapsible": 1,
-   "idx": 53,
+   "idx": 55,
    "indent": 0,
    "keep_closed": 0,
    "label": "Karer sozlamalari (SMS, GPS)",
@@ -663,7 +687,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-10-07 10:00:00.000000",
+ "modified": "2026-10-08 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Karer",

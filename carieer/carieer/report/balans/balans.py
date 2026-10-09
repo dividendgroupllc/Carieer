@@ -1,13 +1,17 @@
 # Balans ("Баланс"): har oy oxiridagi holat, oyma-oy ustunlar.
-# Google Sheets'dagi "Баланс" varag'i kabi boshqaruv balansi (hisoblar rejasi daraxti emas, moddalar):
-#   АКТИВЫ:  Денежные средства (har kassa alohida) -> Дебиторская задолженность клиентов -> Авансы выданные
-#            поставщикам -> Подотчёт -> Товарно-материальные запасы -> Основные средства -> Прочие активы
-#   ПАССИВЫ: Обязательства (кредиторка, авансы полученные от клиентов, налоги, прочие) -> Капитал
-#            -> Нераспределённая прибыль (прошлых периодов / текущего периода)
+# Google Sheets'dagi "Баланс" varag'i tuzilishida (hisoblar rejasi daraxti emas, boshqaruv moddalari):
+#   Активы:  Внеоборотные активы (Основные средства)
+#            Оборотные активы: Запасы, Денежные средства (har kassa alohida),
+#                              Дебиторская задолженность (клиентов, выданные авансы, сотрудников, второй фирмы, налог),
+#                              Прочие активы
+#   Пассивы: Капитал (уставный капитал, ввод остатков, дивиденды; накопленная прибыль: прошлых / текущего периода)
+#            Обязательства: Кредиты и займы, Кредиторская задолженность (поставщикам, сотрудникам, налоги,
+#                           полученные авансы от клиентов, второй фирме), Прочие обязательства
 #   Итого, Разница (doim 0 bo'lishi kerak).
 # Mijoz qarzi va mijozdan olingan avans (ta'minotchi qarzi va unga berilgan avans) kontragent bo'yicha ajratiladi:
 # bitta Debtors hisobida qarzdor mijozlar aktivga, oldindan to'laganlar passivga tushadi.
 # Ikkinchi firmamiz bilan hisob-kitob alohida qator: mijoz va ta'minotchi tomoni netto.
+# «Ввод остатков» (Temporary Opening - boshlang'ich qoldiqlar qarshi hisobi) kapitalda ko'rsatiladi, aktivda minus emas.
 # Yil yopilmagan bo'lsa ham to'g'ri: foyda daromad/xarajat hisoblari qoldig'idan hisoblanadi.
 
 import frappe
@@ -27,25 +31,23 @@ from carieer.carieer.report.moliya import (
 
 ICHKI_FIELD = {"Customer": "is_internal_customer", "Supplier": "is_internal_supplier"}
 
-AKTIV = [
-	("cash", "Денежные средства"),
-	("debitor", "Дебиторская задолженность клиентов"),
-	("avans_berilgan", "Авансы выданные поставщикам"),
-	("ichki_aktiv", "Задолженность второй фирмы перед нами"),
-	("podotchet", "Подотчёт и авансы сотрудникам"),
-	("stock", "Товарно-материальные запасы"),
-	("fixed", "Основные средства"),
-	("other_asset", "Прочие активы"),
+DEBITORKA = [
+	("debitor", "Задолженность клиентов"),
+	("avans_berilgan", "Выданные авансы"),
+	("podotchet", "Задолженность сотрудников (подотчёт)"),
+	("ichki_aktiv", "Задолженность второй фирмы"),
+	("tax_asset", "Налог"),
 ]
-PASSIV = [
-	("kreditor", "Кредиторская задолженность поставщикам"),
-	("avans_olingan", "Авансы полученные от клиентов"),
-	("ichki_passiv", "Наша задолженность перед второй фирмой"),
-	("tax", "Налоги"),
-	("other_liability", "Прочие обязательства"),
+KREDITORKA = [
+	("kreditor", "Задолженность перед поставщиками"),
+	("xodim_qarz", "Задолженность перед сотрудниками"),
+	("tax", "Задолженность по налогам и сборам"),
+	("avans_olingan", "Полученные авансы от клиентов"),
+	("ichki_passiv", "Задолженность перед второй фирмой"),
 ]
 # Shu moddalarda har bir hisob alohida qator bo'lib ham chiqadi (kassalar, omborlar, OS, kapital ...)
-DETAIL = {"cash", "stock", "fixed", "other_asset", "tax", "other_liability", "equity"}
+DETAIL = {"cash", "stock", "fixed", "other_asset", "loans", "other_liability", "equity"}
+OPENING_LABEL = "Ввод остатков (начальный капитал)"
 
 
 def execute(filters=None):
@@ -59,14 +61,28 @@ def get_data(filters, months):
 	keys = [m.key for m in months]
 	n = len(keys)
 
-	accounts = [a for a in get_accounts(company, ("Asset", "Liability", "Equity")) if not a.is_group]
+	all_accounts = get_accounts(company, ("Asset", "Liability", "Equity"))
+	by_name = {a.name: a for a in all_accounts}
+	accounts = [a for a in all_accounts if not a.is_group]
 	values = get_monthly_gl(company, ("Asset", "Liability", "Equity"), filters.to_date)
 	party_accounts = {a.name for a in accounts if a.account_type in ("Receivable", "Payable")}
+	# bitta hisobga eski (o'chirilgan) kassa ham ulangan bo'lishi mumkin («Cash») - faol kassa nomi ustun turadi
 	kassa_nomi = dict(
 		frappe.db.sql(
-			"select default_account, parent from `tabMode of Payment Account` where company = %s", company
+			"""select a.default_account, a.parent from `tabMode of Payment Account` a
+			join `tabMode of Payment` m on m.name = a.parent where a.company = %s order by m.enabled""",
+			company,
 		)
 	)
+
+	def under(account, group_name):
+		"""Hisob shu nomli guruh ichidami (masalan «Loans (Liabilities)»)."""
+		node = by_name.get(account.parent_account)
+		while node:
+			if node.account_name == group_name:
+				return True
+			node = by_name.get(node.parent_account)
+		return False
 
 	def cumulative(per_month):
 		return [sum(v for ym, v in per_month.items() if ym <= k) for k in keys]
@@ -91,7 +107,7 @@ def get_data(filters, months):
 			add("avans_olingan", minus)
 		elif kind == "Asset Payable":  # xodimlar (подотчёт)
 			add("podotchet", plus)
-			add("other_liability", minus, ru("Payroll Payable"))
+			add("xodim_qarz", minus)
 		else:  # ta'minotchilar
 			add("avans_berilgan", plus)
 			add("kreditor", minus)
@@ -104,20 +120,30 @@ def get_data(filters, months):
 		label = kassa_nomi.get(a.name) or ru(a.account_name)
 		if a.root_type == "Asset":
 			if a.account_type in ("Cash", "Bank"):
-				bucket = "cash"
+				add("cash", bal, label)
 			elif a.account_type == "Stock":
-				bucket = "stock"
+				add("stock", bal, label)
 			elif a.account_type in ("Fixed Asset", "Accumulated Depreciation", "Capital Work in Progress"):
-				bucket = "fixed"
+				add("fixed", bal, label)
+			elif a.account_type == "Temporary":
+				# boshlang'ich qoldiqlar (Инвентаризация «Opening Stock», ochilish provodkasi) qarshi hisobi = kapital
+				add("equity", [-v for v in bal], _(OPENING_LABEL))
+			elif a.account_type == "Tax":
+				add("tax_asset", bal)
 			else:
-				bucket = "other_asset"
-			add(bucket, bal, label)
+				add("other_asset", bal, label)
 		elif a.root_type == "Liability":
 			neg = [-v for v in bal]
 			if a.account_name == "Customer Advances":
 				add("avans_olingan", neg)
+			elif a.account_type == "Tax":
+				add("tax", neg)
+			elif a.account_name == "Payroll Payable":
+				add("xodim_qarz", neg)
+			elif under(a, "Loans (Liabilities)") or under(a, "Non-Current Liabilities"):
+				add("loans", neg, label)
 			else:
-				add("tax" if a.account_type == "Tax" else "other_liability", neg, label)
+				add("other_liability", neg, label)
 		else:
 			add("equity", [-v for v in bal], label)
 
@@ -133,11 +159,33 @@ def get_data(filters, months):
 	def total_of(names):
 		return [sum(buckets[b]["total"][i] for b in names if b in buckets) for i in range(n)]
 
-	aktiv_total = total_of([b for b, _label in AKTIV])
-	majburiyat_total = total_of([b for b, _label in PASSIV])
-	kapital_total = total_of(["equity"])
-	passiv_total = [m + k + p for m, k, p in zip(majburiyat_total, kapital_total, profit)]
-	diff = [flt(a - p, 2) for a, p in zip(aktiv_total, passiv_total)]
+	def nonzero(vals):
+		return any(abs(v) >= 0.005 for v in vals)
+
+	def detail(bucket, label, indent):
+		"""Modda qatori va ostida har bir hisob (kassa, ombor, OS ...)."""
+		b = buckets.get(bucket)
+		if not b or not (nonzero(b["total"]) or any(nonzero(v) for v in b["rows"].values())):
+			return []
+		out = [line(_(label), months, b["total"], total=False, bold=1, indent=indent)]
+		out += [
+			line(row_label, months, vals, total=False, indent=indent + 1)
+			for row_label, vals in sorted(b["rows"].items())
+			if nonzero(vals)
+		]
+		return out
+
+	def group(label, items, indent):
+		"""Yig'ma qator (masalan «Дебиторская задолженность») va ostida moddalar."""
+		vals = total_of([b for b, _label in items])
+		if not nonzero(vals):
+			return []
+		out = [line(_(label), months, vals, total=False, bold=1, indent=indent)]
+		for bucket, item_label in items:
+			b = buckets.get(bucket)
+			if b and nonzero(b["total"]):
+				out.append(line(_(item_label), months, b["total"], total=False, indent=indent + 1))
+		return out
 
 	def header(label):
 		return {"label": label, "is_header": 1, "bold": 1}
@@ -145,26 +193,41 @@ def get_data(filters, months):
 	def total(label, vals, **extra):
 		return line(label, months, vals, total=False, bold=1, **extra)
 
-	def section(items, indent):
-		out = []
-		for bucket, label in items:
-			b = buckets.get(bucket)
-			if not b or not any(abs(v) >= 0.005 for v in b["total"]):
-				continue
-			if label:
-				out.append(line(_(label), months, b["total"], total=False, bold=1, indent=indent))
-			for row_label, vals in sorted(b["rows"].items()):
-				if any(abs(v) >= 0.005 for v in vals):
-					out.append(line(row_label, months, vals, total=False, indent=indent + 1))
-		return out
+	vneoborot = total_of(["fixed"])
+	oborot = total_of(["stock", "cash", *[b for b, _label in DEBITORKA], "other_asset"])
+	aktiv_total = [x + y for x, y in zip(vneoborot, oborot)]
+	kapital_total = [k + p for k, p in zip(total_of(["equity"]), profit)]
+	majburiyat_total = total_of(["loans", *[b for b, _label in KREDITORKA], "other_liability"])
+	passiv_total = [k + m for k, m in zip(kapital_total, majburiyat_total)]
+	diff = [flt(a - p, 2) for a, p in zip(aktiv_total, passiv_total)]
 
-	data = [header(_("АКТИВЫ")), *section(AKTIV, 1), total(_("Итого активы"), aktiv_total, total_row=1)]
-	data += [header(_("ПАССИВЫ")), total(_("Обязательства"), majburiyat_total, indent=1), *section(PASSIV, 2)]
-	data += [total(_("Капитал"), kapital_total, indent=1), *section([("equity", None)], 1)]
+	data = [header(_("АКТИВЫ"))]
+	if nonzero(vneoborot):
+		data += [total(_("Внеоборотные активы"), vneoborot, indent=1), *detail("fixed", "Основные средства", 2)]
 	data += [
-		total(_("Нераспределённая прибыль"), profit, indent=1),
-		line(_("прошлых периодов"), months, previous, total=False, indent=2),
-		line(_("текущего периода (месяц)"), months, current, total=False, indent=2),
+		total(_("Оборотные активы"), oborot, indent=1),
+		*detail("stock", "Запасы", 2),
+		*detail("cash", "Денежные средства", 2),
+		*group("Дебиторская задолженность", DEBITORKA, 2),
+		*detail("other_asset", "Прочие активы", 2),
+		total(_("Итого активы"), aktiv_total, total_row=1),
+		header(_("ПАССИВЫ")),
+		total(_("Капитал"), kapital_total, indent=1),
+	]
+	equity = buckets.get("equity", {"rows": {}})
+	data += [
+		line(row_label, months, vals, total=False, indent=2)
+		for row_label, vals in sorted(equity["rows"].items())
+		if nonzero(vals)
+	]
+	data += [
+		line(_("Накопленная прибыль/убыток"), months, profit, total=False, bold=1, indent=2),
+		line(_("прошлых периодов"), months, previous, total=False, indent=3),
+		line(_("текущего периода (месяц)"), months, current, total=False, indent=3),
+		total(_("Обязательства"), majburiyat_total, indent=1),
+		*detail("loans", "Кредиты и займы", 2),
+		*group("Кредиторская задолженность", KREDITORKA, 2),
+		*detail("other_liability", "Прочие обязательства", 2),
 		total(_("Итого пассивы"), passiv_total, total_row=1),
 		{**total(_("Разница (должна быть 0)"), diff), "is_check": 1},
 	]

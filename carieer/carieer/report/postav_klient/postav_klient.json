@@ -2,7 +2,7 @@
  "add_total_row": 0,
  "add_translate_data": 0,
  "columns": [],
- "creation": "2026-10-05 12:00:00.000000",
+ "creation": "2026-10-08 12:00:00.000000",
  "disabled": 0,
  "docstatus": 0,
  "doctype": "Report",
@@ -18,7 +18,7 @@
   {
    "fieldname": "from_date",
    "fieldtype": "Date",
-   "label": "Сана дан",
+   "label": "Сана дан (бўш = йил боши)",
    "mandatory": 0,
    "wildcard_filter": 0
   },
@@ -31,17 +31,17 @@
    "wildcard_filter": 0
   },
   {
-   "fieldname": "mode_of_payment",
-   "fieldtype": "Link",
-   "label": "Касса",
+   "fieldname": "turi",
+   "fieldtype": "Select",
+   "label": "Тип контрагента",
    "mandatory": 0,
-   "options": "Mode of Payment",
+   "options": "\nMijozlar\nTa'minotchilar\nXodimlar",
    "wildcard_filter": 0
   },
   {
-   "fieldname": "guruhlash",
+   "fieldname": "show_zero",
    "fieldtype": "Check",
-   "label": "Харажатларни гуруҳлаш (1-тур: Административный, Производственный ...)",
+   "label": "Нол қолдиқларни кўрсатиш",
    "mandatory": 0,
    "wildcard_filter": 0
   }
@@ -52,11 +52,11 @@
  "modified": "2026-10-08 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
- "name": "Pul Oqimi",
+ "name": "Postav Klient",
  "owner": "Administrator",
  "prepared_report": 0,
  "ref_doctype": "GL Entry",
- "report_name": "Pul Oqimi",
+ "report_name": "Postav Klient",
  "report_type": "Script Report",
  "roles": [
   {

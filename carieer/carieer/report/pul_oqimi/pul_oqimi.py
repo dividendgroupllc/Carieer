@@ -184,16 +184,24 @@ def get_data(filters, months, with_totals=False):
 	data += [line(label, months, vals, indent=1) for label, vals in sorted(kirim.items())]
 
 	data.append(line(_("Выплаты"), months, neg(chiqim_total), bold=1, is_header_line=1))
-	for label, vals in sorted(chiqim.get("", {}).items()):
-		data.append(line(label, months, neg(vals), indent=1))
-	order = GURUH_TARTIBI + sorted(g for g in chiqim if g and g not in GURUH_TARTIBI and g != BOSHQA_XARAJAT)
-	for guruh in [*order, BOSHQA_XARAJAT]:
-		items = chiqim.get(guruh)
-		if not items:
-			continue
-		group_total = [sum(v[i] for v in items.values()) for i in range(n)]
-		data.append(line(_(guruh), months, neg(group_total), bold=1, indent=1))
-		data += [line(label, months, neg(vals), indent=2) for label, vals in sorted(items.items())]
+	if not filters.get("guruhlash"):
+		# jadvaldagi kabi: har bir kategoriya bitta qator, alifbo tartibida (guruh yig'indilarisiz)
+		flat = {}
+		for items in chiqim.values():
+			for label, vals in items.items():
+				flat[label] = [a + b for a, b in zip(flat.get(label, [0.0] * n), vals)]
+		data += [line(label, months, neg(vals), indent=1) for label, vals in sorted(flat.items())]
+	else:
+		for label, vals in sorted(chiqim.get("", {}).items()):
+			data.append(line(label, months, neg(vals), indent=1))
+		order = GURUH_TARTIBI + sorted(g for g in chiqim if g and g not in GURUH_TARTIBI and g != BOSHQA_XARAJAT)
+		for guruh in [*order, BOSHQA_XARAJAT]:
+			items = chiqim.get(guruh)
+			if not items:
+				continue
+			group_total = [sum(v[i] for v in items.values()) for i in range(n)]
+			data.append(line(_(guruh), months, neg(group_total), bold=1, indent=1))
+			data += [line(label, months, neg(vals), indent=2) for label, vals in sorted(items.items())]
 
 	if any(abs(v) >= 0.005 for v in transfer):
 		data.append(line(_(PEREMESHENIE), months, transfer, bold=1))

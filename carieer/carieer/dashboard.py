@@ -258,6 +258,35 @@ def kassa_qoldigi(filters=None):
 
 
 @frappe.whitelist()
+def firmalararo_qarz(filters=None):
+	"""Ikkinchi firmamiz bilan hisob-kitob (shu firma kitobi bo'yicha): kim kimga qancha qarzdor.
+	«Mijozlar qarzi» va «tushum» kartochkalarida ichki firma yo'q - u shu yerda alohida ko'rinadi.
+	Ikki firma kitobi mos kelmasa (masalan Purchase Invoice qo'lda kiritilgan) - ogohlantiriladi."""
+	_check("GL Entry")
+	company = _company(filters)
+	if not company:
+		return _empty()
+	from carieer.carieer.report.firmalararo_qarzlar.firmalararo_qarzlar import balance, other_companies
+
+	currency = frappe.get_cached_value("Company", company, "default_currency")
+	today = nowdate()
+	parts = []
+	for other in other_companies(company):
+		bal = flt(balance(company, other, today), 2)
+		if bal > 0.005:
+			text = _("{0} bizga qarz: {1}").format(other, frappe.utils.fmt_money(bal, 0, currency))
+		elif bal < -0.005:
+			text = _("{0}ga qarzimiz: {1}").format(other, frappe.utils.fmt_money(-bal, 0, currency))
+		else:
+			text = _("{0} bilan qarz yo'q").format(other)
+		if abs(bal + flt(balance(other, company, today))) >= 0.01:
+			text += " · " + _("⚠ kitoblar mos emas")
+		parts.append(text)
+	# matn qaytariladi: Number Card uni o'zgartirmasdan ko'rsatadi
+	return " · ".join(parts) or _("Ichki firma yo'q")
+
+
+@frappe.whitelist()
 def mijozlar_qarzi(filters=None):
 	"""Mijozlar bizdan qancha qarz (faqat musbat qoldiqlar, o'zimizning ikkinchi firmamizsiz)."""
 	_check("GL Entry")

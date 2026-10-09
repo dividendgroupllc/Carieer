@@ -130,10 +130,17 @@ def get_data(filters, months, with_totals=False):
 		line(_("Маржинальная прибыль"), months, margin, bold=1, total_row=1),
 		percent_line(_("Рентабельность по маржинальному доходу, %"), months, margin, income_total),
 	]
-	if any(flt(v) for v in inv_total.values()):
-		data.append(line(_("Убыток (прибыль) от инвентаризации склада"), months, inv_total, bold=1))
-	# ildiz guruh ("Expenses") o'rniga "Расходы" qatori, ostida 1-tur -> 2-tur -> modda daraxti
-	data += [line(_("Расходы"), months, other_total, bold=1), *[r for r in other_rows if r["indent"] > 0]]
+	# jadvaldagi kabi doim ko'rinadi (nol bo'lsa ham)
+	data.append(line(_("Убыток (прибыль) от инвентаризации склада"), months, inv_total, bold=1))
+	# ildiz guruh ("Expenses") va ERPNext'ning «Прямые / Косвенные расходы» pog'onasi o'rniga "Расходы" qatori,
+	# ostida jadvaldagi 1-tur (Административный, Производственный ...) -> 2-tur -> modda daraxti
+	expense_rows = []
+	for r in other_rows:
+		if r["indent"] == 0 or (r["indent"] == 1 and r.get("is_group")):
+			continue
+		indent = max(r["indent"] - 1, 1)
+		expense_rows.append({**r, "indent": indent, "bold": 1 if r.get("is_group") and indent == 1 else 0})
+	data += [line(_("Расходы"), months, other_total, bold=1), *expense_rows]
 	data += [
 		line(_("Чистая прибыль"), months, net, bold=1, total_row=1),
 		percent_line(_("Рентабельность по чистой прибыли, %"), months, net, income_total),

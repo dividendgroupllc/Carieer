@@ -125,6 +125,7 @@ def boot_session(bootinfo):
 		KARER_SECTION.lower(): company_for_bolim("Karer"),
 		BETON_SECTION.lower(): company_for_bolim("Beton"),
 	}
+	bootinfo.carieer_route_options, bootinfo.carieer_form_defaults = section_route_options()
 
 	roles = set(frappe.get_roles())
 	if roles & POWER_ROLES or not roles & set(ALL_ROLES):
@@ -134,3 +135,43 @@ def boot_session(bootinfo):
 	keep_keys = {s.lower() for s in keep} | {"my workspaces"}
 	bootinfo.workspace_sidebar_item = {k: v for k, v in sidebars.items() if k in keep_keys}
 	bootinfo.desktop_icons = [i for i in (bootinfo.get("desktop_icons") or []) if i.get("label") in keep]
+
+
+def section_route_options() -> tuple[dict, dict]:
+	"""Bo'lim (Karer / Beton Zavod) ichida ochilgan hujjat shu bo'lim firmasida bo'lsin (public/js/carieer.js).
+	Aks holda ikkala firmaga ruxsati bor foydalanuvchida (Administrator, menejer) standart firma - masalan Eko Karer -
+	qo'yiladi: Beton Zavod -> Qabul -> tovar Karer omboriga tushib qoladi.
+	Qaytaradi:
+	  ro'yxat filtri / yangi forma qiymatlari: {"Purchase Receipt": {"beton zavod": {"company": "Eko Beton"}},
+	                                            "Sotuv": {"karer": {"tip": "Karer", "company": "Eko Karer"}}}
+	  faqat yangi forma uchun (ro'yxat filtri emas): {"Purchase Receipt": {"beton zavod": {"set_warehouse": ...}}}"""
+	from carieer.utils import find_zavod
+
+	options_out, defaults_out = {}, {}
+	for section, bolim in ((KARER_SECTION, "Karer"), (BETON_SECTION, "Beton")):
+		zavod = find_zavod(bolim)
+		z = zavod and frappe.db.get_value(
+			"Zavod", zavod, ["company", "xomashyo_ombori", "asosiy_ombor"], as_dict=True
+		)
+		if not z or not z.company:
+			continue
+		doctypes = frappe.get_all(
+			"Workspace Sidebar Item", filters={"parent": section, "link_type": "DocType"}, pluck="link_to"
+		)
+		for doctype in set(doctypes):
+			if not frappe.db.exists("DocType", doctype):
+				continue
+			meta = frappe.get_meta(doctype)
+			options = {}
+			for df in meta.get("fields", {"fieldtype": "Link"}):
+				if df.options == "Company" and df.fieldname == "company":
+					options["company"] = z.company
+				elif df.options == "Zavod":
+					options[df.fieldname] = zavod
+			if options:
+				options_out.setdefault(doctype, {})[section.lower()] = options
+			# xarid: tovar shu bo'lim omboriga (Beton - xomashyo ombori)
+			warehouse = z.xomashyo_ombori or z.asosiy_ombor
+			if warehouse and doctype in ("Purchase Receipt", "Purchase Invoice") and meta.has_field("set_warehouse"):
+				defaults_out.setdefault(doctype, {})[section.lower()] = {"set_warehouse": warehouse}
+	return options_out, defaults_out

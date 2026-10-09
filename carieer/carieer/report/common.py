@@ -6,7 +6,7 @@ Hisobot filtrlari JS'da emas, hisobot JSON'ida (Report -> Filters) turadi. JS'da
 
 import frappe
 from frappe import _
-from frappe.utils import escape_html, get_first_day, get_year_start, getdate, today
+from frappe.utils import escape_html, flt, get_first_day, get_year_start, getdate, today
 
 from carieer.permissions import check_report_company
 
@@ -44,6 +44,31 @@ def resolve_party(filters) -> bool:
 		filters.party_type, filters.party = chosen[0]
 		return True
 	return False
+
+
+def kontragent_turi(party_type: str, party: str) -> str:
+	"""Jadvaldagi «Тип Контрагента»: Клиент, Поставщик, Сотрудник, Прочие лица, Налог, Ички фирма.
+	Прочие лица / Налог - kontragent guruhidan (setup_karer -> KONTRAGENT_GURUHLARI)."""
+	field = {"Customer": "is_internal_customer", "Supplier": "is_internal_supplier"}.get(party_type)
+	if field and frappe.db.get_value(party_type, party, field):
+		return _("Ички фирма")
+	group_field = {"Customer": "customer_group", "Supplier": "supplier_group"}.get(party_type)
+	group = group_field and frappe.db.get_value(party_type, party, group_field)
+	if group in ("Прочие лица", "Налог"):
+		return group
+	return {"Customer": "Клиент", "Supplier": "Поставщик", "Employee": "Сотрудник"}.get(party_type, party_type)
+
+
+def usd_rate(company: str, date, cache: dict) -> float:
+	"""Kun bo'yicha USD kursi (Currency Exchange) - jadvaldagi «Курс» / «Сумма $» ustunlari uchun. Yo'q bo'lsa 0."""
+	from erpnext.setup.utils import get_exchange_rate
+
+	currency = frappe.get_cached_value("Company", company, "default_currency")
+	if currency == "USD":
+		return 1.0
+	if date not in cache:
+		cache[date] = flt(get_exchange_rate("USD", currency, date)) if frappe.db.exists("Currency", "USD") else 0
+	return cache[date]
 
 
 def bold(text) -> str:
