@@ -36,7 +36,12 @@ def execute(filters=None):
 
 
 def conditions(filters, alias="ks"):
-	cond = [f"{alias}.docstatus = 1", f"{alias}.posting_date between %(from_date)s and %(to_date)s"]
+	cond = [
+		f"{alias}.docstatus = 1",
+		# firmalararo sotuv - ikkinchi firma qabul qilgandan keyin sotuv bo'ladi
+		f"ifnull({alias}.qabul_holati, '') != 'Kutilmoqda'",
+		f"{alias}.posting_date between %(from_date)s and %(to_date)s",
+	]
 	for f in ("company", "customer", "status", "currency", "tip"):
 		if filters.get(f):
 			cond.append(f"{alias}.{f} = %({f})s")
@@ -317,10 +322,13 @@ def kunlik_otchet(filters):
 		{"fieldname": "uom", "label": _("Ед.изм"), "fieldtype": "Data", "width": 70},
 		{"fieldname": "rate", "label": _("Цена"), "fieldtype": "Float", "precision": 2, "width": 120},
 		{"fieldname": "summa", "label": _("Сумма"), "fieldtype": "Float", "precision": 2, "width": 140},
-		{"fieldname": "prixod", "label": _("Приход"), "fieldtype": "Float", "precision": 2, "width": 140},
-		{"fieldname": "rasxod", "label": _("Расход"), "fieldtype": "Float", "precision": 2, "width": 140},
+		{"fieldname": "tolandi", "label": _("Тўланди"), "fieldtype": "Float", "precision": 2, "width": 130},
+		{"fieldname": "qarz", "label": _("Қарзга"), "fieldtype": "Float", "precision": 2, "width": 130},
+		{"fieldname": "prixod", "label": _("Кассага кирим"), "fieldtype": "Float", "precision": 2, "width": 140},
+		{"fieldname": "rasxod", "label": _("Кассадан чиқим"), "fieldtype": "Float", "precision": 2, "width": 140},
 		{"fieldname": "currency", "label": _("Валюта"), "fieldtype": "Data", "width": 70},
 	]
+	numeric = ("qty", "rate", "summa", "tolandi", "qarz", "prixod", "rasxod")
 	data = [{"nomi": bold(_("ПРОДАЖА"))}]
 	sales = frappe.db.sql(
 		f"""select ks.customer_name, t.item_code, t.uom, ks.currency, sum(t.qty) qty, sum(t.amount) summa
@@ -336,28 +344,50 @@ def kunlik_otchet(filters):
 		filters,
 		as_dict=True,
 	)
-	jami = {}
-	for r in sales:
-		data.append(
-			{
-				"nomi": r.customer_name,
-				"item_code": r.item_code,
-				"qty": flt(r.qty),
-				"uom": r.uom,
-				"rate": flt(r.summa) / flt(r.qty) if flt(r.qty) else 0,
-				"summa": flt(r.summa),
-				"currency": r.currency,
-				"indent": 1,
-			}
+	# mijoz bo'yicha to'lov holati (sotuv hujjatlari bo'yicha: to'langan / qarzga qolgan)
+	tolov = {
+		(r.customer_name, r.currency): r
+		for r in frappe.db.sql(
+			f"""select ks.customer_name, ks.currency, sum(ks.total_paid) tolandi, sum(ks.outstanding_amount) qarz
+			from `tabSotuv` ks where {conditions(filters)} group by ks.customer_name, ks.currency""",
+			filters,
+			as_dict=True,
 		)
-		jami[r.currency] = jami.get(r.currency, 0) + flt(r.summa)
-	for cur, total in jami.items():
-		data.append({"nomi": bold(_("Итого продажа")), "summa": total, "currency": cur, "indent": 1})
+	}
+	jami, shown = {}, set()
+	for r in sales:
+		row = {
+			"nomi": r.customer_name,
+			"item_code": r.item_code,
+			"qty": flt(r.qty),
+			"uom": r.uom,
+			"rate": flt(r.summa) / flt(r.qty) if flt(r.qty) else 0,
+			"summa": flt(r.summa),
+			"currency": r.currency,
+			"indent": 1,
+		}
+		key = (r.customer_name, r.currency)
+		if key not in shown and key in tolov:  # mijozning birinchi qatorida
+			shown.add(key)
+			row.update(tolandi=flt(tolov[key].tolandi), qarz=flt(tolov[key].qarz))
+		data.append(row)
+		t = jami.setdefault(r.currency, [0.0, 0.0, 0.0])
+		t[0] += flt(r.summa)
+	for (_c, cur), r in tolov.items():
+		t = jami.setdefault(cur, [0.0, 0.0, 0.0])
+		t[1] += flt(r.tolandi)
+		t[2] += flt(r.qarz)
+	for cur, (total, tolandi, qarz) in jami.items():
+		data.append({"nomi": bold(_("Итого продажа")), "summa": total, "tolandi": tolandi, "qarz": qarz, "currency": cur, "indent": 1})
+	if not sales:
+		data.append({"nomi": _("Sotuv yo'q"), "indent": 1})
+
+	data += prixod_rows(filters)
 
 	summary = []
 	if not frappe.has_permission("GL Entry", "read"):
 		# operator kassa harakatlarini ko'rmaydi (faqat kassir / menejer)
-		return columns, blank_zeros(data, ("qty", "rate", "summa", "prixod", "rasxod")), None, None, summary
+		return columns, blank_zeros(data, numeric), None, None, summary
 
 	data.append({"nomi": bold(_("КАССА"))})
 	dds_filters = frappe._dict(
@@ -373,32 +403,97 @@ def kunlik_otchet(filters):
 		g[1] += d["chiqim_acc"]
 	for (kategoriya, cur), (kirim, chiqim) in sorted(groups.items()):
 		data.append({"nomi": kategoriya, "prixod": kirim, "rasxod": chiqim, "currency": cur, "indent": 1})
+	if not groups:
+		data.append({"nomi": _("Kassada harakat yo'q (sotuv qarzga yoki avansdan yopilgan)"), "indent": 1})
 
 	for cur, b in get_balances(dds_filters).items():
 		summary += [
 			{
-				"label": _("Остаток начало ({0})").format(cur),
+				"label": _("Kassada boshida ({0})").format(cur),
 				"value": b["opening"],
 				"datatype": "Float",
 				"indicator": "Blue",
 			},
 			{
-				"label": _("Приход ({0})").format(cur),
+				"label": _("Kassaga kirdi ({0})").format(cur),
 				"value": b["kirim"],
 				"datatype": "Float",
 				"indicator": "Green",
 			},
 			{
-				"label": _("Расход ({0})").format(cur),
+				"label": _("Kassadan chiqdi ({0})").format(cur),
 				"value": b["chiqim"],
 				"datatype": "Float",
 				"indicator": "Red",
 			},
 			{
-				"label": _("Остаток конец ({0})").format(cur),
+				"label": _("Kassada oxirida ({0})").format(cur),
 				"value": b["closing"],
 				"datatype": "Float",
 				"indicator": "Blue",
 			},
 		]
-	return columns, blank_zeros(data, ("qty", "rate", "summa", "prixod", "rasxod")), None, None, summary
+	return columns, blank_zeros(data, numeric), None, None, summary
+
+
+def prixod_rows(filters) -> list[dict]:
+	"""ПРИХОД (xarid): davr ichida kimdan nima olindi - Xarid fakturasi (o'zimizning ikkinchi firmamizdan olingan tovar
+	ham) va xizmat nachisleniyasi. To'langan / qarzga qolgan qismi bilan."""
+	rows = frappe.db.sql(
+		"""select pi.name, pi.supplier_name, pi.supplier, i.item_name, i.qty, i.uom, i.rate, i.amount,
+			pi.currency, pi.grand_total, pi.outstanding_amount, pi.represents_company
+		from `tabPurchase Invoice` pi join `tabPurchase Invoice Item` i on i.parent = pi.name
+		where pi.company = %(company)s and pi.docstatus = 1 and pi.is_return = 0
+			and pi.posting_date between %(from_date)s and %(to_date)s
+		order by pi.posting_date, pi.name, i.idx""",
+		filters,
+		as_dict=True,
+	)
+	nach = frappe.db.sql(
+		"""select party_name, kategoriya, qty, rate, amount, currency from `tabNachislenie`
+		where company = %(company)s and docstatus = 1 and turi = 'Закуп услуга'
+			and sana between %(from_date)s and %(to_date)s""",
+		filters,
+		as_dict=True,
+	)
+	out = [{"nomi": bold(_("ПРИХОД (xarid)"))}]
+	if not rows and not nach:
+		out.append({"nomi": _("Xarid yo'q"), "indent": 1})
+		return out
+	shown, jami = set(), {}
+	for r in rows:
+		nomi = r.supplier_name or r.supplier
+		if r.represents_company:
+			nomi += " " + _("(firmalararo)")
+		row = {
+			"nomi": nomi,
+			"item_code": r.item_name,
+			"qty": flt(r.qty),
+			"uom": r.uom,
+			"rate": flt(r.rate),
+			"summa": flt(r.amount),
+			"currency": r.currency,
+			"indent": 1,
+		}
+		if r.name not in shown:  # hujjatning birinchi qatorida
+			shown.add(r.name)
+			row.update(tolandi=flt(r.grand_total) - flt(r.outstanding_amount), qarz=flt(r.outstanding_amount))
+		out.append(row)
+		jami[r.currency] = jami.get(r.currency, 0) + flt(r.amount)
+	for n in nach:
+		out.append(
+			{
+				"nomi": n.party_name,
+				"item_code": n.kategoriya or _("Xizmat"),
+				"qty": flt(n.qty),
+				"rate": flt(n.rate),
+				"summa": flt(n.amount),
+				"qarz": flt(n.amount),
+				"currency": n.currency,
+				"indent": 1,
+			}
+		)
+		jami[n.currency] = jami.get(n.currency, 0) + flt(n.amount)
+	for cur, total in jami.items():
+		out.append({"nomi": bold(_("Итого приход")), "summa": total, "currency": cur, "indent": 1})
+	return out

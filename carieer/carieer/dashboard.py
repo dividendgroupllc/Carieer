@@ -35,11 +35,12 @@ def _check(doctype):
 
 
 def _sotuv_summa(company, from_date, to_date):
-	"""Tasdiqlangan sotuvlar summasi firma valyutasida (base_amount)."""
+	"""Tasdiqlangan sotuvlar summasi firma valyutasida (base_amount). Firmalararo sotuv - xaridor qabul qilgandan keyin."""
 	return flt(
 		frappe.db.sql(
 			"""select sum(base_amount) from `tabSotuv`
-			where company = %s and docstatus = 1 and posting_date between %s and %s""",
+			where company = %s and docstatus = 1 and posting_date between %s and %s
+				and ifnull(qabul_holati, '') != 'Kutilmoqda'""",
 			(company, from_date, to_date),
 		)[0][0],
 		2,
@@ -99,20 +100,70 @@ def qarzga_sotuvlar(filters=None):
 
 @frappe.whitelist()
 def tasdiqlanmagan_sotuv(filters=None):
-	"""Saqlangan, lekin tasdiqlanmagan (Draft) sotuvlar: ular sotuv, qarz va ombor hisobiga KIRMAYDI.
-	Operator «Submit» bosishni unutgan bo'lsa shu yerda ko'rinadi."""
+	"""Hali sotuv bo'lmagan hujjatlar: saqlangan, lekin tasdiqlanmagan (Draft) va ikkinchi firmamiz qabul qilishini
+	kutayotgan firmalararo sotuvlar. Ular sotuv, qarz va ombor hisobiga KIRMAYDI."""
 	_check("Sotuv")
 	company = _company(filters)
 	if not company:
 		return _empty()
 	value = frappe.db.sql(
-		"""select sum(base_amount) from `tabSotuv` where company = %s and docstatus = 0""", company
+		"""select sum(base_amount) from `tabSotuv` where company = %s
+		and (docstatus = 0 or (docstatus = 1 and qabul_holati = 'Kutilmoqda'))""",
+		company,
 	)[0][0]
 	return {
 		"value": flt(value, 2),
 		"fieldtype": "Currency",
 		"route": ["List", "Sotuv"],
-		"route_options": {"company": company, "docstatus": 0},
+		"route_options": {"company": company, "status": ["in", ["Draft", "Tasdiq kutilmoqda"]]},
+	}
+
+
+@frappe.whitelist()
+def kutilayotgan_xarid(filters=None):
+	"""Ikkinchi firmamiz bizga yuborgan, biz hali qabul qilmagan tovar (qabul qilish / rad etish kerak)."""
+	_check("Sotuv")
+	company = _company(filters)
+	if not company:
+		return _empty()
+	value = frappe.db.sql(
+		"""select sum(base_amount) from `tabSotuv`
+		where ichki_firma = %s and docstatus = 1 and qabul_holati = 'Kutilmoqda'""",
+		company,
+	)[0][0]
+	return {
+		"value": flt(value, 2),
+		"fieldtype": "Currency",
+		"route": ["List", "Sotuv"],
+		"route_options": {"ichki_firma": company, "qabul_holati": "Kutilmoqda"},
+	}
+
+
+@frappe.whitelist()
+def qarzlarimiz(filters=None):
+	"""Bizning qarzimiz: ta'minotchilarga (o'zimizning ikkinchi firmamiz ham), xodimlarga va kassa qarzi
+	(minusga kirgan kassalar). Bosilsa - «Qarzlarimiz»: kimga, nima uchun, qachondan."""
+	_check("GL Entry")
+	company = _company(filters)
+	if not company:
+		return _empty()
+	from carieer.utils import kassa_qarzlari
+
+	kassa = sum(k.qarz for k in kassa_qarzlari(company))
+	value = kassa + flt(frappe.db.sql(
+		"""select sum(t.qoldiq) from (
+			select sum(gl.credit) - sum(gl.debit) as qoldiq
+			from `tabGL Entry` gl
+			where gl.company = %s and gl.is_cancelled = 0 and gl.party_type in ('Supplier', 'Employee')
+			group by gl.party_type, gl.party having sum(gl.credit) - sum(gl.debit) > 0
+		) t""",
+		company,
+	)[0][0])
+	return {
+		"value": flt(value, 2),
+		"fieldtype": "Currency",
+		"route": ["query-report", "Qarzlarimiz"],
+		"route_options": {"company": company},
 	}
 
 
@@ -204,7 +255,7 @@ def _oylik_miqdor(doctype, sql, filters):
 		return "0"
 	today = nowdate()
 	rows = frappe.db.sql(sql, (company, get_first_day(today), get_last_day(today)))
-	return _miqdor_text(rows)
+	return _text_card(_miqdor_text(rows), ["List", doctype], {"company": company, "docstatus": 1})
 
 
 @frappe.whitelist()
@@ -248,7 +299,11 @@ def kassa_qoldigi(filters=None):
 	if flt(value) < -0.005:
 		# kassa minusda: pul o'rniga kassa qarzi ko'rsatiladi (Number Card matnni o'zgartirmasdan chiqaradi)
 		currency = frappe.get_cached_value("Company", company, "default_currency")
-		return _("Kassa qarzi: {0}").format(frappe.utils.fmt_money(-flt(value), 0, currency))
+		return _text_card(
+			_("Kassa qarzi: {0}").format(frappe.utils.fmt_money(-flt(value), 0, currency)),
+			["query-report", "Kassa Daftari"],
+			{"company": company},
+		)
 	return {
 		"value": flt(value, 2),
 		"fieldtype": "Currency",
@@ -257,11 +312,17 @@ def kassa_qoldigi(filters=None):
 	}
 
 
+def _text_card(text: str, route=None, route_options=None) -> dict:
+	"""Matnli kartochka (raqam emas), bosilganda hisobot ochiladi. Number Card qiymatni HTML sifatida chiqaradi."""
+	out = {"value": f"<span>{frappe.utils.escape_html(text)}</span>", "fieldtype": "Data"}
+	if route:
+		out.update({"route": route, "route_options": route_options or {}})
+	return out
+
+
 @frappe.whitelist()
 def firmalararo_qarz(filters=None):
-	"""Ikkinchi firmamiz bilan hisob-kitob (shu firma kitobi bo'yicha): kim kimga qancha qarzdor.
-	«Mijozlar qarzi» va «tushum» kartochkalarida ichki firma yo'q - u shu yerda alohida ko'rinadi.
-	Ikki firma kitobi mos kelmasa (masalan Purchase Invoice qo'lda kiritilgan) - ogohlantiriladi."""
+	"""Ikkinchi firmamiz bilan hisob: kim kimga qancha qarzdor (bosilsa - «Firmalararo qarzlar» hisoboti)."""
 	_check("GL Entry")
 	company = _company(filters)
 	if not company:
@@ -274,21 +335,23 @@ def firmalararo_qarz(filters=None):
 	for other in other_companies(company):
 		bal = flt(balance(company, other, today), 2)
 		if bal > 0.005:
-			text = _("{0} bizga qarz: {1}").format(other, frappe.utils.fmt_money(bal, 0, currency))
+			line = _("{0} bizga qarz: {1}").format(other, frappe.utils.fmt_money(bal, 0, currency))
 		elif bal < -0.005:
-			text = _("{0}ga qarzimiz: {1}").format(other, frappe.utils.fmt_money(-bal, 0, currency))
+			line = _("{0}ga qarzimiz: {1}").format(other, frappe.utils.fmt_money(-bal, 0, currency))
 		else:
-			text = _("{0} bilan qarz yo'q").format(other)
+			line = _("{0} bilan qarz yo'q").format(other)
 		if abs(bal + flt(balance(other, company, today))) >= 0.01:
-			text += " · " + _("⚠ kitoblar mos emas")
-		parts.append(text)
-	# matn qaytariladi: Number Card uni o'zgartirmasdan ko'rsatadi
-	return " · ".join(parts) or _("Ichki firma yo'q")
+			line += " ⚠"  # ikki firma hisobi farq qiladi - batafsil hisobotda
+		parts.append(line)
+	return _text_card(
+		" · ".join(parts) or _("Ichki firma yo'q"), ["query-report", "Firmalararo Qarzlar"], {"company": company}
+	)
 
 
 @frappe.whitelist()
 def mijozlar_qarzi(filters=None):
-	"""Mijozlar bizdan qancha qarz (faqat musbat qoldiqlar, o'zimizning ikkinchi firmamizsiz)."""
+	"""Bizga qarzdorlar: mijozlar va o'zimizning ikkinchi firmamiz (faqat musbat qoldiqlar).
+	Bosilsa - «Qarzdorlik» hisoboti: kim, qancha, nima olgan, qachondan beri."""
 	_check("GL Entry")
 	company = _company(filters)
 	if not company:
@@ -296,9 +359,8 @@ def mijozlar_qarzi(filters=None):
 	value = frappe.db.sql(
 		"""select sum(t.qoldiq) from (
 			select sum(gl.debit) - sum(gl.credit) as qoldiq
-			from `tabGL Entry` gl join `tabCustomer` c on c.name = gl.party
+			from `tabGL Entry` gl
 			where gl.company = %s and gl.is_cancelled = 0 and gl.party_type = 'Customer'
-				and ifnull(c.is_internal_customer, 0) = 0
 			group by gl.party having sum(gl.debit) - sum(gl.credit) > 0
 		) t""",
 		company,
@@ -307,5 +369,5 @@ def mijozlar_qarzi(filters=None):
 		"value": flt(value, 2),
 		"fieldtype": "Currency",
 		"route": ["query-report", "Qarzdorlik"],
-		"route_options": {"company": company},
+		"route_options": {"company": company, "turi": "Mijozlar", "ichki_firma": 1},
 	}

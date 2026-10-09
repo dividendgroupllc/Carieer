@@ -44,6 +44,12 @@
   "cb_6",
   "total_paid",
   "outstanding_amount",
+  "qabul_section",
+  "qabul_holati",
+  "qabul_qildi",
+  "qabul_cb",
+  "qabul_vaqti",
+  "rad_sababi",
   "hujjat_section",
   "sales_invoice",
   "purchase_invoice",
@@ -88,6 +94,7 @@
    "description": "Qaysi zavod nomidan sotiladi",
    "fieldname": "tip",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Тип (Karer / Beton)",
@@ -98,6 +105,7 @@
    "fetch_from": "tip.company",
    "fieldname": "company",
    "fieldtype": "Link",
+   "ignore_user_permissions": 1,
    "in_standard_filter": 1,
    "label": "Firma",
    "options": "Company",
@@ -143,7 +151,7 @@
    "in_standard_filter": 1,
    "label": "Holat",
    "no_copy": 1,
-   "options": "Draft\nTo'lanmagan\nQisman to'langan\nTo'langan\nCancelled",
+   "options": "Draft\nTasdiq kutilmoqda\nTo'lanmagan\nQisman to'langan\nTo'langan\nRad etildi\nCancelled",
    "read_only": 1
   },
   {
@@ -305,6 +313,54 @@
    "read_only": 1
   },
   {
+   "collapsible": 0,
+   "depends_on": "ichki_firma",
+   "fieldname": "qabul_section",
+   "fieldtype": "Section Break",
+   "label": "Xaridor firma tasdig'i"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Firmalararo sotuv: xaridor firma qabul qilgandan keyin tovar uning omboriga kiradi va qarz yoziladi",
+   "fieldname": "qabul_holati",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Tasdiq holati",
+   "no_copy": 1,
+   "options": "\nKutilmoqda\nQabul qilindi\nRad etildi",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "qabul_qildi",
+   "fieldtype": "Link",
+   "label": "Kim tasdiqladi",
+   "no_copy": 1,
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "qabul_cb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "qabul_vaqti",
+   "fieldtype": "Datetime",
+   "label": "Qachon",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "rad_sababi",
+   "fieldname": "rad_sababi",
+   "fieldtype": "Small Text",
+   "label": "Rad etish sababi",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
    "collapsible": 1,
    "fieldname": "hujjat_section",
    "fieldtype": "Section Break",
@@ -350,7 +406,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-06 14:00:00.000000",
+ "modified": "2026-10-09 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Sotuv",
@@ -450,6 +506,10 @@
  "sort_order": "DESC",
  "states": [
   {
+   "color": "Blue",
+   "title": "Tasdiq kutilmoqda"
+  },
+  {
    "color": "Red",
    "title": "To'lanmagan"
   },
@@ -460,6 +520,10 @@
   {
    "color": "Green",
    "title": "To'langan"
+  },
+  {
+   "color": "Gray",
+   "title": "Rad etildi"
   },
   {
    "color": "Gray",

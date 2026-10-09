@@ -45,7 +45,11 @@ def execute(filters=None):
 		)
 	elif not data:
 		messages.append(_("{0} gacha firmalar o'rtasida hech qanday hisob-kitob yo'q.").format(fdate(filters.to_date)))
-	return get_columns(), data, "".join(messages), None, summary
+	columns = get_columns()
+	if not any(str(r.get("tekshiruv") or "").startswith("⚠") for r in data):
+		# ikki firma hisobi mos - «Tekshiruv» ustuni ortiqcha ma'lumot
+		columns = [c for c in columns if c["fieldname"] != "tekshiruv"]
+	return columns, data, "".join(messages), None, summary
 
 
 # ------------------------------------------------------------------ juftliklar

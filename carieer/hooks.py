@@ -69,9 +69,12 @@ doc_events = {
 # Firmalararo To'lov ikkala firmaga (to'lovchi va oluvchi) ko'rinadi
 permission_query_conditions = {
 	"Firmalararo Tolov": "carieer.carieer.doctype.firmalararo_tolov.firmalararo_tolov.get_permission_query_conditions",
+	# firmalararo sotuv xaridor firmaga ham ko'rinadi (u qabul qiladi / rad etadi)
+	"Sotuv": "carieer.carieer.doctype.sotuv.sotuv.get_permission_query_conditions",
 }
 has_permission = {
 	"Firmalararo Tolov": "carieer.carieer.doctype.firmalararo_tolov.firmalararo_tolov.has_permission",
+	"Sotuv": "carieer.carieer.doctype.sotuv.sotuv.has_permission",
 }
 
 # GPS Malumot jadvali cheksiz o'smasin: eski nuqtalar har kuni o'chiriladi

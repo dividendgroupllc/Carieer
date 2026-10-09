@@ -124,16 +124,22 @@ def get_data(filters):
 
 
 def with_total(rows):
+	"""ЖАМИ qatori: «Сумма» - valyuta bir xil bo'lsa, «Сумма (сўм)» va «Сумма $» - doim.
+	Miqdor, narx, kurs bo'sh qoladi (har xil tovarni qo'shib bo'lmaydi), «0.000» ko'rinmasin."""
 	if not rows:
 		return rows
-	return [
-		*rows,
-		{
-			"oy": bold(_("ЖАМИ")),
-			"base_amount": sum(flt(r.base_amount) for r in rows),
-			"amount_usd": sum(flt(r.amount_usd) for r in rows),
-		},
-	]
+	currencies = {r.currency for r in rows}
+	total = {
+		"oy": bold(_("ЖАМИ")),
+		"base_amount": sum(flt(r.base_amount) for r in rows),
+		"amount_usd": sum(flt(r.amount_usd) for r in rows),
+		"qty": None,
+		"rate": None,
+		"kurs": None,
+	}
+	if len(currencies) == 1:
+		total.update(amount=sum(flt(r.amount) for r in rows), currency=currencies.pop())
+	return [*rows, total]
 
 
 def get_summary(rows, filters):

@@ -6,7 +6,7 @@
    "label": "Kunlik sotuv (oxirgi oy)"
   }
  ],
- "content": "[{\"id\": \"h_kpi\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Ko'rsatkichlar</b></span>\", \"col\": 12}}, {\"id\": \"nc_0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Bugungi sotuv\", \"col\": 4}}, {\"id\": \"nc_1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shu oy sotuv\", \"col\": 4}}, {\"id\": \"nc_2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shu oy mijozlardan tushum\", \"col\": 4}}, {\"id\": \"nc_3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Sotuvlar bo'yicha qarz\", \"col\": 4}}, {\"id\": \"nc_4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Mijozlar qarzi (jami)\", \"col\": 4}}, {\"id\": \"nc_ichki\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Firmalararo qarz\", \"col\": 4}}, {\"id\": \"nc_5\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Tasdiqlanmagan sotuvlar (Draft)\", \"col\": 4}}, {\"id\": \"nc_6\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Kassalarda pul\", \"col\": 4}}, {\"id\": \"nc_7\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shu oy xarajatlar\", \"col\": 4}}, {\"id\": \"nc_8\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shu oy qazib olindi\", \"col\": 4}}, {\"id\": \"ch_0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Kunlik sotuv (oxirgi oy)\", \"col\": 12}}, {\"id\": \"h_sc\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Tezkor kirish</b></span>\", \"col\": 12}}, {\"id\": \"sc_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Yangi sotuv\", \"col\": 3}}, {\"id\": \"sc_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sotuvlar\", \"col\": 3}}, {\"id\": \"sc_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Qazib olish\", \"col\": 3}}, {\"id\": \"sc_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kunlik otchet\", \"col\": 3}}, {\"id\": \"sc_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kassa\", \"col\": 3}}, {\"id\": \"sc_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Начисление\", \"col\": 3}}, {\"id\": \"sc_6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Akt sverka\", \"col\": 3}}, {\"id\": \"sc_7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Qarzdorlik\", \"col\": 3}}]",
+ "content": "[{\"id\": \"h_sec0\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Sotuv</b></span>\", \"col\": 12}}, {\"id\": \"nc_0_0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Bugungi sotuv\", \"col\": 4}}, {\"id\": \"nc_0_1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shu oy sotuv\", \"col\": 4}}, {\"id\": \"nc_0_2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Hali sotuv emas (Draft / tasdiq kutilmoqda)\", \"col\": 4}}, {\"id\": \"h_sec1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Pul</b></span>\", \"col\": 12}}, {\"id\": \"nc_1_0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Kassalarda pul\", \"col\": 4}}, {\"id\": \"nc_1_1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shu oy mijozlardan tushum\", \"col\": 4}}, {\"id\": \"nc_1_2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shu oy xarajatlar\", \"col\": 4}}, {\"id\": \"h_sec2\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Qarzlar</b></span>\", \"col\": 12}}, {\"id\": \"nc_2_0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Mijozlar bizga qarz\", \"col\": 4}}, {\"id\": \"nc_2_1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Bizning qarzimiz\", \"col\": 4}}, {\"id\": \"nc_2_2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Firmalararo hisob\", \"col\": 4}}, {\"id\": \"h_sec3\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Ombor va xarid</b></span>\", \"col\": 12}}, {\"id\": \"nc_3_0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shu oy qazib olindi\", \"col\": 4}}, {\"id\": \"nc_3_1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Tasdiq kutayotgan xaridlar\", \"col\": 4}}, {\"id\": \"ch_0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Kunlik sotuv (oxirgi oy)\", \"col\": 12}}, {\"id\": \"h_sc\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Tezkor kirish</b></span>\", \"col\": 12}}, {\"id\": \"sc_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Yangi sotuv\", \"col\": 3}}, {\"id\": \"sc_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sotuvlar\", \"col\": 3}}, {\"id\": \"sc_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Qazib olish\", \"col\": 3}}, {\"id\": \"sc_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kunlik otchet\", \"col\": 3}}, {\"id\": \"sc_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kassa\", \"col\": 3}}, {\"id\": \"sc_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Начисление\", \"col\": 3}}, {\"id\": \"sc_6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Akt sverka\", \"col\": 3}}, {\"id\": \"sc_7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Qarzdorlik\", \"col\": 3}}]",
  "creation": "2026-10-05 18:30:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -18,7 +18,7 @@
  "is_hidden": 0,
  "label": "Karer",
  "links": [],
- "modified": "2026-10-07 20:00:00.000000",
+ "modified": "2026-10-09 16:20:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Karer",
@@ -32,23 +32,7 @@
    "number_card_name": "Karer Oylik Sotuv"
   },
   {
-   "label": "Shu oy mijozlardan tushum",
-   "number_card_name": "Karer Oylik Tushum"
-  },
-  {
-   "label": "Sotuvlar bo'yicha qarz",
-   "number_card_name": "Karer Qarzga Sotuvlar"
-  },
-  {
-   "label": "Mijozlar qarzi (jami)",
-   "number_card_name": "Karer Mijozlar Qarzi"
-  },
-  {
-   "label": "Firmalararo qarz",
-   "number_card_name": "Karer Firmalararo Qarz"
-  },
-  {
-   "label": "Tasdiqlanmagan sotuvlar (Draft)",
+   "label": "Hali sotuv emas (Draft / tasdiq kutilmoqda)",
    "number_card_name": "Karer Tasdiqlanmagan Sotuv"
   },
   {
@@ -56,12 +40,32 @@
    "number_card_name": "Karer Kassa Qoldigi"
   },
   {
+   "label": "Shu oy mijozlardan tushum",
+   "number_card_name": "Karer Oylik Tushum"
+  },
+  {
    "label": "Shu oy xarajatlar",
    "number_card_name": "Karer Oylik Xarajat"
   },
   {
+   "label": "Mijozlar bizga qarz",
+   "number_card_name": "Karer Mijozlar Qarzi"
+  },
+  {
+   "label": "Bizning qarzimiz",
+   "number_card_name": "Karer Qarzlarimiz"
+  },
+  {
+   "label": "Firmalararo hisob",
+   "number_card_name": "Karer Firmalararo Qarz"
+  },
+  {
    "label": "Shu oy qazib olindi",
    "number_card_name": "Karer Qazib Olingan"
+  },
+  {
+   "label": "Tasdiq kutayotgan xaridlar",
+   "number_card_name": "Karer Kutilayotgan Xarid"
   }
  ],
  "owner": "Administrator",

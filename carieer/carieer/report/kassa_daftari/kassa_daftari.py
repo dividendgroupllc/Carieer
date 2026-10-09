@@ -21,6 +21,7 @@ def execute(filters=None):
 		currency = get_kassa_info(filters.mode_of_payment, filters.company).currency or currency
 	kassa_of = kassa_names(filters.company)
 	purpose = get_purposes(rows)
+	source = source_docs(rows)
 
 	data = [{"posting_date": filters.from_date, "nima": bold(_("Davr boshidagi qoldiq")), "qoldiq": opening, "currency": currency}]
 	balance = flt(opening)
@@ -39,8 +40,9 @@ def execute(filters=None):
 				"qoldiq": balance,
 				"kim": who(r),
 				"nima": escape_html(purpose.get((r["voucher_type"], r["voucher_no"])) or r.get("kategoriya") or r.get("remarks") or ""),
-				"hujjat_turi": r["voucher_type"],
-				"hujjat": r["voucher_no"],
+				# bosilganda asl hujjat ochiladi (Sotuv / Firmalararo To'lov / Kassa) - tovarlari bilan
+				"hujjat_turi": source.get((r["voucher_type"], r["voucher_no"]), (r["voucher_type"],))[0],
+				"hujjat": source.get((r["voucher_type"], r["voucher_no"]), (None, r["voucher_no"]))[1],
 				"currency": currency,
 			}
 		)
@@ -105,6 +107,25 @@ def who(r) -> str:
 	return text
 
 
+def source_docs(rows) -> dict:
+	"""Payment Entry / Journal Entry -> uni yaratgan asl hujjat: {(voucher_type, voucher_no): (doctype, name)}."""
+	out = {}
+	pe = list({r["voucher_no"] for r in rows if r["voucher_type"] == "Payment Entry"})
+	je = list({r["voucher_no"] for r in rows if r["voucher_type"] == "Journal Entry"})
+	for vt, names, field in (("Payment Entry", pe, "reference_no"), ("Journal Entry", je, "cheque_no")):
+		if not names:
+			continue
+		for d in frappe.get_all(vt, {"name": ["in", names]}, ["name", field]):
+			ref = d.get(field)
+			if not ref:
+				continue
+			for doctype in ("Firmalararo Tolov", "Sotuv", "Kassa", "Nachislenie"):
+				if frappe.db.exists(doctype, ref):
+					out[(vt, d.name)] = (doctype, ref)
+					break
+	return out
+
+
 def get_purposes(rows) -> dict:
 	"""Har bir pul harakati nima uchun: Sotuv / xarid tovarlari, Firmalararo to'lov izohi, Kassa kategoriyasi."""
 	out = {}
@@ -135,7 +156,7 @@ def get_purposes(rows) -> dict:
 			for f in frappe.get_all(
 				"Firmalararo Tolov",
 				{"name": ["in", [p.reference_no for p in info.values() if p.reference_no] or [""]]},
-				["name", "izoh", "tolovchi_firma", "oluvchi_firma"],
+				["name", "izoh", "tolovchi_firma", "oluvchi_firma", "nima_uchun"],
 			)
 		}
 		for name, p in info.items():
@@ -143,7 +164,10 @@ def get_purposes(rows) -> dict:
 			f = ft.get(p.reference_no)
 			if f:
 				parts.append(_("Firmalararo to'lov {0} → {1}").format(f.tolovchi_firma, f.oluvchi_firma))
-			if by_pe.get(name):
+			if f and f.nima_uchun:
+				# to'lovning o'zida yozilgan: qaysi sotuv, qanday tovar
+				parts.append(f.nima_uchun.replace("\n", "; "))
+			elif by_pe.get(name):
 				parts.append(_("tovar uchun: {0}").format("; ".join(by_pe[name])))
 			elif f:
 				parts.append(_("avans (tovar hali olinmagan)"))

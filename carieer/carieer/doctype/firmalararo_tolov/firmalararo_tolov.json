@@ -31,6 +31,8 @@
   "base_summa",
   "joriy_qarz",
   "izoh_section",
+  "nima_uchun",
+  "sotuv",
   "izoh",
   "tolovchi_payment_entry",
   "oluvchi_payment_entry",
@@ -63,12 +65,12 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Draft",
+   "default": "To'lov kutilmoqda",
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Holat",
    "no_copy": 1,
-   "options": "Draft\nTasdiqlangan\nBekor qilingan",
+   "options": "To'lov kutilmoqda\nTo'langan\nBekor qilingan",
    "read_only": 1
   },
   {
@@ -87,12 +89,13 @@
    "reqd": 1
   },
   {
+   "description": "Pul qaysi kassadan chiqadi (to'lovchi firma tanlaydi). Bo'sh qolsa - zavodning asosiy kassasi",
    "fieldname": "tolovchi_kassa",
    "fieldtype": "Link",
    "label": "To'lovchi kassa",
    "link_filters": "[[\"Mode of Payment\", \"firma\", \"like\", \"eval:doc.tolovchi_firma || '%'\"], [\"Mode of Payment\", \"enabled\", \"=\", 1]]",
    "options": "Mode of Payment",
-   "reqd": 1
+   "reqd": 0
   },
   {
    "fieldname": "tolovchi_valyuta",
@@ -209,7 +212,28 @@
   },
   {
    "fieldname": "izoh_section",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Nima uchun"
+  },
+  {
+   "allow_on_submit": 1,
+   "description": "Qaysi sotuv / xarid uchun: tovar, miqdor × narx. Tasdiqlangandan keyin to'lov qaysi hujjatlarni yopgani yoziladi",
+   "fieldname": "nima_uchun",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Nima uchun (qaysi tovar)",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "sotuv",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Qaysi sotuv uchun",
+   "options": "Sotuv",
+   "read_only": 1
   },
   {
    "fieldname": "izoh",
@@ -247,7 +271,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-06 14:00:00.000000",
+ "modified": "2026-10-09 18:30:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Firmalararo Tolov",
@@ -327,8 +351,12 @@
  "sort_order": "DESC",
  "states": [
   {
+   "color": "Orange",
+   "title": "To'lov kutilmoqda"
+  },
+  {
    "color": "Green",
-   "title": "Tasdiqlangan"
+   "title": "To'langan"
   },
   {
    "color": "Gray",

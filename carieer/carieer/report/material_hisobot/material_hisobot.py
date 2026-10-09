@@ -12,7 +12,7 @@ IN_COLS = [
 	("kirim_qazish", _("Qazib olindi")),
 	("kirim_ishlab", _("Ishlab chiqarildi")),
 	("kirim_xarid", _("Xarid")),
-	("kirim_kochirish", _("Ko'chirib kelindi")),
+	("kirim_kochirish", _("Boshqa ombordan keldi")),
 	("kirim_boshqa", _("Boshqa kirim")),
 ]
 OUT_COLS = [

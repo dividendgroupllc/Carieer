@@ -1,5 +1,6 @@
 # Qarzlarimiz: firma KIMGA qancha qarzdor, NIMA olgan va QACHON.
-# Ta'minotchilar (o'zimizning ikkinchi firmamiz ham - masalan Karer'dan olingan beton), xodimlar.
+# Ta'minotchilar (o'zimizning ikkinchi firmamiz ham - masalan Karer'dan olingan beton), xodimlar va kassa qarzi
+# (minusga kirgan kassa: bor puldan ko'p chiqarilgan - keyingi kirimlar bilan yopiladi).
 # Har bir kreditor ostida - qarzni tashkil qilgan hujjatlar: sana, nima olindi (tovar, miqdor × narx), qancha
 # to'landi, qancha qoldi, necha kun bo'ldi. Mijozlardan olingan avans (tovar berishimiz kerak) - alohida kartochka.
 # Hisob-kitob «Qarzdorlik» hisoboti bilan bir xil (GL, FIFO).
@@ -10,7 +11,7 @@ from frappe.utils import escape_html, flt, fmt_money
 
 from carieer.carieer.report.common import bold, prepare
 from carieer.carieer.report.qarzdorlik import qarzdorlik as qz
-from carieer.utils import get_internal_company
+from carieer.utils import get_internal_company, kassa_qarzlari
 
 SECTIONS = (("Supplier", _("Ta'minotchilarga")), ("Employee", _("Xodimlarga")))
 
@@ -36,14 +37,37 @@ def execute(filters=None):
 		data += [{**r, "indent": (r.get("indent") or 0) + 1} for r in rows]
 		parties += found
 
+	kassalar = kassa_qarzlari(filters.company, filters.to_date)
+	if kassalar:
+		data.append({"nomi": bold(_("Kassa qarzi (minusga kirgan kassalar)")), "indent": 0})
+		data += [
+			{
+				"nomi": bold(k.kassa),
+				"qoldiq": k.qarz,
+				"currency": currency,
+				"izoh": _("kassadan bor puldan ko'p chiqarilgan"),
+				"indent": 1,
+			}
+			for k in kassalar
+		]
+
 	totals = {}
 	for p in parties:
 		t = totals.setdefault(p.currency, {"jami": 0.0, "tolandi": 0.0, "qoldiq": 0.0, "d21": 0.0})
 		for k in t:
 			t[k] += flt(p.get(k))
+	if kassalar:
+		t = totals.setdefault(currency, {"jami": 0.0, "tolandi": 0.0, "qoldiq": 0.0, "d21": 0.0})
+		t["qoldiq"] += sum(k.qarz for k in kassalar)
 	for cur, t in totals.items():
 		data.append({"nomi": bold(_("JAMI QARZIMIZ")), "currency": cur, "indent": 0, **t})
-	return get_columns(), data, get_message(parties, filters, currency), None, get_summary(parties, filters, currency)
+	return (
+		get_columns(),
+		data,
+		get_message(parties, kassalar, filters, currency),
+		None,
+		get_summary(parties, kassalar, filters, currency),
+	)
 
 
 def get_columns():
@@ -60,17 +84,19 @@ def get_columns():
 	return cols
 
 
-def get_summary(parties, filters, currency):
+def get_summary(parties, kassalar, filters, currency):
 	mine = [p for p in parties if p.currency == currency]
+	kassa = sum(k.qarz for k in kassalar)
 
 	def card(label, value, indicator):
 		return {"label": label, "value": value, "datatype": "Currency", "currency": currency, "indicator": indicator}
 
 	out = [
-		card(_("Jami qarzimiz"), sum(p.qoldiq for p in mine), "Red"),
+		card(_("Jami qarzimiz"), sum(p.qoldiq for p in mine) + kassa, "Red"),
+		card(_("Kassa qarzi"), kassa, "Red"),
 		card(_("O'zimizning firmaga"), sum(p.qoldiq for p in mine if p.ichki), "Orange"),
 		card(_("Ta'minotchilarga"), sum(p.qoldiq for p in mine if p.party_type == "Supplier" and not p.ichki), "Orange"),
-		card(_("21 kundan eski"), sum(flt(p.d21) for p in mine), "Red"),
+		card(_("Xodimlarga"), sum(p.qoldiq for p in mine if p.party_type == "Employee"), "Orange"),
 	]
 	# mijoz oldindan pul bergan, tovar hali berilmagan - bu ham bizning majburiyatimiz
 	f = frappe._dict(filters, party_type="Customer")
@@ -81,9 +107,9 @@ def get_summary(parties, filters, currency):
 	return out
 
 
-def get_message(parties, filters, currency):
+def get_message(parties, kassalar, filters, currency):
 	date = frappe.format(filters.to_date, "Date")
-	if not parties:
+	if not parties and not kassalar:
 		return f"<div style='margin:4px 0 12px;color:var(--text-muted)'>{escape_html(_('{0} holatiga hech kimga qarzimiz yo‘q').format(date))}</div>"
 	lines = []
 	for p in sorted(parties, key=lambda p: -p.qoldiq)[:6]:
@@ -99,7 +125,11 @@ def get_message(parties, filters, currency):
 				p.kun,
 			)
 		)
-	total = sum(p.qoldiq for p in parties if p.currency == currency)
+	for k in kassalar:
+		lines.append(
+			_("<b>{0}</b> kassasi minusda: {1} (kassa qarzi)").format(escape_html(k.kassa), fmt_money(k.qarz, 0, currency))
+		)
+	total = sum(p.qoldiq for p in parties if p.currency == currency) + sum(k.qarz for k in kassalar)
 	headline = escape_html(_("{0} holatiga jami qarzimiz: {1}").format(date, fmt_money(total, 0, currency)))
 	items = "".join(f"<li style='margin:2px 0'>{line}</li>" for line in lines)
 	hint = escape_html(_("Har bir kreditor ostida - nima olganimiz, qachon, qancha to'laganimiz va qancha qolgani."))

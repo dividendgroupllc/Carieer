@@ -5,15 +5,20 @@
 #                         Payment Entry (kassaga kirim) + SMS
 #   Keyinroq to'lov    -> «Оплаты» jadvaliga qator qo'shib «Update» bosiladi -> yangi Payment Entry
 #
-# Mijoz o'zimizning ikkinchi firmamiz bo'lsa (ichki mijoz) bu - firmalararo sotuv / perexod:
-#   sotuvchida Sales Invoice, xaridor firmada avtomatik Purchase Invoice (tovar uning xomashyo omboriga kiradi).
-#   Bunday sotuvda pul «Firmalararo To'lov» orqali to'lanadi (ikkala kitobga yoziladi).
+# Mijoz o'zimizning ikkinchi firmamiz bo'lsa (ichki mijoz) bu - firmalararo sotuv / perexod (Click / Payme kabi):
+#   1. Sotuvchi tasdiqlaydi (Submit)  -> holat «Tasdiq kutilmoqda», xaridor firmaga bildirishnoma (qo'ng'iroqcha).
+#      Ombor va qarz hali o'zgarmaydi.
+#   2. Xaridor «Qabul qilish" bosadi  -> sotuvchida Sales Invoice (ombordan chiqim, xaridorning qarzi), xaridorda
+#      Purchase Invoice (omborga kirim, qarzi). Xohlasa shu zahoti to'laydi (Firmalararo To'lov), aks holda qarzga.
+#      Xaridor «Rad etish» bossa - sotuv bekor qilinadi, sotuvchiga xabar.
+#   3. Keyin pul «Firmalararo To'lov» orqali (ikkala kitobga). Sotuvchi «To'lov so'rash» bilan so'rov yuboradi.
 
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, fmt_money, formatdate, nowdate
+from frappe.utils import flt, fmt_money, formatdate, now_datetime, nowdate
 
+from carieer.permissions import check_company, get_allowed_companies
 from carieer.utils import (
 	apply_advances,
 	as_admin,
@@ -26,6 +31,7 @@ from carieer.utils import (
 	get_rate,
 	get_zavod,
 	make_inter_company_purchase_invoice,
+	notify,
 	send_sms,
 	validate_warehouse_company,
 )
@@ -50,9 +56,25 @@ def get_selling_price(item_code: str, uom: str | None, currency: str) -> float:
 
 class Sotuv(Document):
 	# ------------------------------------------------------------ validate
+	def onload(self):
+		"""Forma tugmalari (sotuv.js): xaridor firma - «Qabul qilish / Rad etish», sotuvchi - «To'lov so'rash»."""
+		if not self.ichki_firma or self.docstatus != 1:
+			return
+		self.set_onload(
+			"can_accept", self.qabul_holati == "Kutilmoqda" and check_company(self.ichki_firma, throw=False)
+		)
+		self.set_onload(
+			"can_request_payment",
+			self.qabul_holati == "Qabul qilindi"
+			and flt(self.outstanding_amount) > 0.01
+			and check_company(self.company, throw=False),
+		)
+
 	def validate(self):
 		if self.docstatus == 0:
 			self.company = company_for_tip(self.tip)
+			# «Тип» ro'yxatida ikkala zavod ko'rinadi (xaridor firma ham sotuvni ko'radi) - sotish faqat o'z firmasidan
+			check_company(self.company)
 			self.ichki_firma = get_internal_company("Customer", self.customer)
 			if self.ichki_firma == self.company:
 				frappe.throw(_("Firma o'ziga o'zi sotolmaydi"))
@@ -220,14 +242,17 @@ class Sotuv(Document):
 
 	def on_submit(self):
 		if self.ichki_firma:
-			with as_admin():
-				ensure_inter_company_parties(self.company, self.ichki_firma)
-				si = self.make_sales_invoice()
-				pi = self.make_purchase_invoice(si)
-				# xaridor firma oldindan pul bergan bo'lsa (Firmalararo To'lov avansi) - ikkala kitobda tovarga o'tadi
-				apply_advances(self.company, "Customer", self.customer, "Sales Invoice", si.name)
-				apply_advances(self.ichki_firma, "Supplier", pi.supplier, "Purchase Invoice", pi.name)
-			self.db_set({"sales_invoice": si.name, "purchase_invoice": pi.name})
+			# firmalararo: xaridor firma qabul qilguncha ombor va qarz o'zgarmaydi
+			self.db_set({"qabul_holati": "Kutilmoqda", "status": "Tasdiq kutilmoqda"})
+			notify(
+				self.ichki_firma,
+				_("{0} sizga tovar yubordi: {1} - {2}. Qabul qiling yoki rad eting").format(
+					self.company, self.items_text(), fmt_money(self.amount, 0, self.currency)
+				),
+				"Sotuv",
+				self.name,
+			)
+			return
 		else:
 			si = self.make_sales_invoice()
 			self.db_set("sales_invoice", si.name)
@@ -302,7 +327,88 @@ class Sotuv(Document):
 			if si.docstatus == 1:
 				si.flags.ignore_permissions = True
 				si.cancel()
+		if self.qabul_holati == "Rad etildi":
+			self.db_set("status", "Rad etildi")
+			return
+		if self.qabul_holati == "Kutilmoqda" and self.ichki_firma:
+			# sotuvchi o'zi bekor qildi - xaridor firma kutib qolmasin
+			self.db_set("qabul_holati", "")
+			notify(self.ichki_firma, _("{0} yuborgan tovarni bekor qildi: {1}").format(self.company, self.name), "Sotuv", self.name)
 		self.db_set("status", "Cancelled")
+
+	# ------------------------------------------------------------ firmalararo: xaridor tasdig'i
+	def items_text(self) -> str:
+		return ", ".join(f"{r.item_name or r.item_code} {flt(r.qty):g} {r.uom or ''}".strip() for r in self.items)
+
+	def check_buyer(self):
+		if not self.ichki_firma or self.docstatus != 1 or self.qabul_holati != "Kutilmoqda":
+			frappe.throw(_("Bu sotuv tasdiq kutmayapti (holati: {0})").format(self.qabul_holati or self.status))
+		# faqat xaridor firma xodimi (yoki ikkala firmaga ruxsati bor egasi)
+		check_company(self.ichki_firma)
+
+	def accept(self, kassa: str | None = None, summa: float = 0):
+		"""Xaridor firma qabul qildi: tovar omboridan omboriga o'tadi, qarz ikkala kitobga yoziladi.
+		kassa + summa berilsa - shu zahoti to'laydi (Firmalararo To'lov), aks holda qarzga."""
+		self.check_buyer()
+		self.check_stock()  # yuborilgandan keyin sotuvchi omborida tovar kamaygan bo'lishi mumkin
+		with as_admin():
+			ensure_inter_company_parties(self.company, self.ichki_firma)
+			si = self.make_sales_invoice()
+			pi = self.make_purchase_invoice(si)
+			# xaridor oldindan pul bergan bo'lsa (avans) - ikkala kitobda tovarga o'tadi
+			apply_advances(self.company, "Customer", self.customer, "Sales Invoice", si.name)
+			apply_advances(self.ichki_firma, "Supplier", pi.supplier, "Purchase Invoice", pi.name)
+			# avans shu tovarga o'tgan bo'lsa - to'lovlarning «Nima uchun» matni yangilanadi
+			from carieer.carieer.doctype.firmalararo_tolov.firmalararo_tolov import refresh_descriptions
+
+			refresh_descriptions(self.company, self.ichki_firma)
+		self.db_set(
+			{
+				"sales_invoice": si.name,
+				"purchase_invoice": pi.name,
+				"qabul_holati": "Qabul qilindi",
+				"qabul_qildi": frappe.session.user,
+				"qabul_vaqti": now_datetime(),
+			}
+		)
+		self.update_payment_status()
+		ft = None
+		summa = min(flt(summa), flt(frappe.db.get_value("Sotuv", self.name, "outstanding_amount")))
+		if kassa and summa > 0:
+			ft = make_firmalararo_tolov(self, summa, tolovchi_kassa=kassa, submit=True)
+			self.update_payment_status()
+		self.reload()
+		if self.outstanding_amount > 0.01:
+			# qarzga olindi: to'lov so'rovi o'zi yaratiladi («Firmalararo to'lov» ro'yxatida «To'lov kutilmoqda»)
+			make_firmalararo_tolov(self, self.outstanding_amount, submit=False)
+		if self.outstanding_amount <= 0.01:
+			holat = _("to'liq to'landi")
+		elif ft:
+			holat = _("{0} to'landi, qarz {1}").format(
+				fmt_money(summa, 0, self.currency), fmt_money(self.outstanding_amount, 0, self.currency)
+			)
+		else:
+			holat = _("qarzga olindi, qarz {0}").format(fmt_money(self.outstanding_amount, 0, self.currency))
+		notify(self.company, _("{0} tovarni qabul qildi: {1} - {2}").format(self.ichki_firma, self.name, holat), "Sotuv", self.name)
+		return ft
+
+	def reject(self, sabab: str):
+		"""Xaridor firma rad etdi: sotuv bekor qilinadi (ombor va qarz o'zgarmagan edi)."""
+		self.check_buyer()
+		if not (sabab or "").strip():
+			frappe.throw(_("Rad etish sababini yozing"))
+		self.db_set(
+			{
+				"qabul_holati": "Rad etildi",
+				"rad_sababi": sabab,
+				"qabul_qildi": frappe.session.user,
+				"qabul_vaqti": now_datetime(),
+			}
+		)
+		self.reload()
+		self.flags.ignore_permissions = True
+		self.cancel()
+		notify(self.company, _("{0} tovarni rad etdi: {1}. Sabab: {2}").format(self.ichki_firma, self.name, sabab), "Sotuv", self.name)
 
 	# ------------------------------------------------------------ hujjatlar
 	def make_sales_invoice(self):
@@ -418,6 +524,22 @@ class Sotuv(Document):
 			"To'langan" if outstanding <= 0.01 else ("Qisman to'langan" if total_paid > 0 else "To'lanmagan")
 		)
 		self.db_set({"outstanding_amount": outstanding, "total_paid": total_paid, "status": status})
+		if self.ichki_firma:
+			self.sync_payment_request(outstanding)
+
+	def sync_payment_request(self, outstanding: float):
+		"""Kutilayotgan to'lov so'rovi (Firmalararo To'lov, saqlangan) qarzga mos bo'lsin: qisman to'lansa summa
+		kamayadi, to'liq to'lansa so'rov olib tashlanadi."""
+		for name in frappe.get_all("Firmalararo Tolov", {"sotuv": self.name, "docstatus": 0}, pluck="name"):
+			with as_admin():
+				if outstanding <= 0.01:
+					frappe.delete_doc("Firmalararo Tolov", name, ignore_permissions=True, force=True)
+					continue
+				ft = frappe.get_doc("Firmalararo Tolov", name)
+				if abs(flt(ft.summa) - outstanding) >= 0.01:
+					ft.summa = outstanding
+					ft.flags.ignore_permissions = True
+					ft.save()
 
 	def send_notification(self):
 		settings = frappe.get_cached_doc("Karer Sozlamalari")
@@ -444,6 +566,58 @@ class Sotuv(Document):
 			frappe.log_error(title="Karer SMS shabloni noto'g'ri")
 			return
 		frappe.enqueue(send_sms, numbers=[self.mobile_no], message=msg, enqueue_after_commit=True)
+
+
+# ---------------------------------------------------------------- firmalararo (forma tugmalari, sotuv.js)
+@frappe.whitelist()
+def qabul_qilish(name: str, kassa: str | None = None, summa: float | None = None):
+	"""Xaridor firma: «Qabul qilish». kassa + summa - shu zahoti to'lash, bo'sh - qarzga."""
+	doc = frappe.get_doc("Sotuv", name)
+	ft = doc.accept(kassa=kassa, summa=flt(summa))
+	return {"status": frappe.db.get_value("Sotuv", name, "status"), "firmalararo_tolov": ft}
+
+
+@frappe.whitelist()
+def rad_etish(name: str, sabab: str):
+	frappe.get_doc("Sotuv", name).reject(sabab)
+	return frappe.db.get_value("Sotuv", name, "status")
+
+
+@frappe.whitelist()
+def tolov_sorash(name: str):
+	"""Sotuvchi firma: qabul qilingan, lekin to'lanmagan sotuv uchun xaridorga to'lov so'rovi (Click / Payme kabi):
+	«To'lov kutilmoqda» holatidagi Firmalararo To'lov yaratiladi, xaridorga bildirishnoma. Xaridor uni ochib to'laydi."""
+	doc = frappe.get_doc("Sotuv", name)
+	check_company(doc.company)
+	if not doc.ichki_firma or doc.qabul_holati != "Qabul qilindi" or flt(doc.outstanding_amount) <= 0.01:
+		frappe.throw(_("Bu sotuv bo'yicha to'lanmagan qarz yo'q"))
+	pending = frappe.db.get_value("Firmalararo Tolov", {"docstatus": 0, "sotuv": doc.name}, "name")
+	if pending:
+		return pending
+	return make_firmalararo_tolov(doc, flt(doc.outstanding_amount), submit=False)
+
+
+def make_firmalararo_tolov(doc, summa: float, tolovchi_kassa: str | None = None, submit: bool = False) -> str:
+	"""Xaridor (ichki_firma) -> sotuvchi (company) to'lov. submit=False - to'lov so'rovi (kutilmoqda)."""
+	ft = frappe.new_doc("Firmalararo Tolov")
+	ft.update(
+		{
+			"posting_date": nowdate(),
+			"tolovchi_firma": doc.ichki_firma,
+			"tolovchi_kassa": tolovchi_kassa or get_zavod(doc.ichki_firma).get("kassa"),
+			"oluvchi_firma": doc.company,
+			"oluvchi_kassa": get_zavod(doc.company).get("kassa"),
+			"summa": flt(summa, 2),
+			"valyuta": get_company_currency(doc.company),
+			"izoh": _("{0}: {1}").format(doc.name, doc.items_text()),
+		}
+	)
+	ft.sotuv = doc.name
+	ft.flags.tolov_sorovi = not submit
+	ft.insert()
+	if submit:
+		ft.submit()
+	return ft.name
 
 
 # ---------------------------------------------------------------- module level
@@ -534,3 +708,21 @@ def on_payment_entry_change(pe, method=None):
 			"Sotuv", filters={"sales_invoice": ref.reference_name, "docstatus": 1}, pluck="name"
 		):
 			frappe.get_doc("Sotuv", name).update_payment_status()
+
+
+# ---------------------------------------------------------------- ruxsat (hooks.py)
+# «Firma» va «Тип» maydonlarida User Permission o'chirilgan: xaridor firma unga yuborilgan sotuvni ko'radi.
+def get_permission_query_conditions(user=None):
+	allowed = get_allowed_companies(user)
+	if not allowed:
+		return ""
+	values = ", ".join(frappe.db.escape(c) for c in allowed)
+	return f"(`tabSotuv`.company in ({values}) or `tabSotuv`.ichki_firma in ({values}))"
+
+
+def has_permission(doc, ptype=None, user=None):
+	allowed = get_allowed_companies(user)
+	if not allowed or not doc.company or doc.company in allowed:
+		return True
+	# xaridor firma - faqat ko'radi (qabul qilish / rad etish - alohida metod, o'z tekshiruvi bilan)
+	return doc.ichki_firma in allowed and (ptype or "read") in ("read", "print", "email", "report", "export")

@@ -159,6 +159,28 @@ def account_balance(account: str, upto=None) -> float:
 	)
 
 
+def kassa_qarzlari(company: str, to_date=None) -> list[frappe._dict]:
+	"""Minusga kirgan kassalar (kassadan bor puldan ko'p chiqarilgan): [{kassa, qarz}] firma valyutasida.
+	Bu ham firmaning qarzi - keyingi kirimlar (sotuv) bilan yopiladi."""
+	cond = " and gl.posting_date <= %(to_date)s" if to_date else ""
+	rows = frappe.db.sql(
+		f"""select gl.account, sum(gl.debit) - sum(gl.credit) bal
+		from `tabGL Entry` gl join `tabAccount` a on a.name = gl.account
+		where gl.company = %(company)s and gl.is_cancelled = 0 and a.account_type in ('Cash', 'Bank'){cond}
+		group by gl.account having sum(gl.debit) - sum(gl.credit) < -0.005""",
+		{"company": company, "to_date": to_date},
+		as_dict=True,
+	)
+	names = dict(
+		frappe.db.sql(
+			"""select a.default_account, a.parent from `tabMode of Payment Account` a
+			join `tabMode of Payment` m on m.name = a.parent where a.company = %s order by m.enabled""",
+			company,
+		)
+	)
+	return [frappe._dict(kassa=names.get(r.account, r.account), account=r.account, qarz=-flt(r.bal, 2)) for r in rows]
+
+
 def check_kassa_balance(mode_of_payment: str, company: str, amount: float, sana=None):
 	"""Kassa nazorati: kassadagidan ko'p pul chiqarilsa.
 	Karer Sozlamalari -> «Kassada minus qoldiqqa ruxsat» yoqiq (standart): to'lov o'tadi, kassa minusga (qarzga)
@@ -454,6 +476,47 @@ def make_inter_company_purchase_invoice(sales_invoice: str):
 	from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_inter_company_purchase_invoice as fn
 
 	return fn(sales_invoice)
+
+
+# ------------------------------------------------------------------ Bildirishnomalar (qo'ng'iroqcha)
+def company_users(company: str) -> list[str]:
+	"""Shu firmada ishlaydigan foydalanuvchilar: firma cheklovi shu firma bo'lganlar, shu bo'lim rollari bor
+	xodimlar va System Manager'lar (egasi). Boshqa firmaga cheklangan xodim bu firmaning xabarini olmaydi."""
+	from carieer.permissions import BETON_ROLES, KARER_ROLES, get_allowed_companies
+
+	roles = ["System Manager"]
+	for bolim, bolim_roles in (("Karer", KARER_ROLES), ("Beton", BETON_ROLES)):
+		if company_for_bolim(bolim) == company:
+			roles += list(bolim_roles)
+	users = set(frappe.get_all("User Permission", {"allow": "Company", "for_value": company}, pluck="user"))
+	users |= set(frappe.get_all("Has Role", {"role": ["in", roles], "parenttype": "User"}, pluck="parent"))
+	users = frappe.get_all(
+		"User", {"name": ["in", list(users) or [""]], "enabled": 1, "user_type": "System User"}, pluck="name"
+	)
+	out = []
+	for user in users:
+		allowed = get_allowed_companies(user)
+		if not allowed or company in allowed:
+			out.append(user)
+	return out
+
+
+def notify(company: str, subject: str, doctype: str, name: str):
+	"""Firma xodimlariga bildirishnoma (o'ng yuqoridagi qo'ng'iroqcha, real vaqtda keladi).
+	Notification Log to'g'ridan-to'g'ri yoziladi: Administrator ikkala firma nomidan ishlaganda o'ziga ham keladi."""
+	for user in company_users(company):
+		frappe.get_doc(
+			{
+				"doctype": "Notification Log",
+				"for_user": user,
+				"from_user": frappe.session.user,
+				"type": "Alert",
+				"document_type": doctype,
+				"document_name": name,
+				"subject": subject,
+				"email_content": subject,
+			}
+		).insert(ignore_permissions=True)
 
 
 # ------------------------------------------------------------------ SMS

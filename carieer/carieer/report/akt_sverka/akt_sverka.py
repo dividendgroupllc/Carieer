@@ -7,8 +7,9 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-from carieer.carieer.report.common import PARTY_FILTERS, bold, prepare
-from carieer.carieer.report.firmalararo_qarzlar.firmalararo_qarzlar import party_condition
+from carieer.carieer.report.common import PARTY_FILTERS, blank_zeros, bold, prepare
+from carieer.carieer.report.firmalararo_qarzlar.firmalararo_qarzlar import internal_parties, party_condition
+from carieer.utils import get_internal_company
 
 GROUPS = {
 	"Sales Invoice": "goods",
@@ -23,6 +24,8 @@ def execute(filters=None):
 	if not resolve_parties(filters):
 		return get_columns(), [], _("Контрагентни танланг: Мижоз, Таъминотчи ёки Ходим")
 	data, summary = get_data(filters)
+	# tovar bo'lmagan qatorlarda (to'lov, nachislenie) «Кол-во / Цена» bo'sh ko'rinsin, «0.00» emas
+	data = blank_zeros(data, ("qty", "rate", "credit", "debit", "balance_credit", "balance_debit"))
 	return get_columns(), data, get_summary_html(summary, filters)
 
 
@@ -32,6 +35,14 @@ def resolve_parties(filters) -> bool:
 	chosen = [(dt, filters.get(f)) for f, dt in PARTY_FILTERS if filters.get(f)]
 	if not chosen:
 		return False
+	# o'zimizning ikkinchi firmamiz tanlansa (mijoz YOKI ta'minotchi sifatida) - ikkala tomoni birga:
+	# u bizdan olgan tovar (mijoz) ham, bizga to'lagan / bizdan olgan pul (ta'minotchi) ham bir aktda ko'rinadi
+	for dt, party in list(chosen):
+		firma = get_internal_company(dt, party)
+		if firma:
+			for pair in internal_parties(firma):
+				if pair not in chosen:
+					chosen.append(pair)
 	filters.party_type, filters.party = chosen[0]
 	filters.party_label = " + ".join(dict.fromkeys(p for _dt, p in chosen))
 	filters.party_cond, values = party_condition(chosen)
