@@ -122,6 +122,7 @@ LAVOZIM_PERMS = {
 		"Stock Ledger Entry": RR,  # Ombor qoldig'i / tarixi - faqat ko'rish (kassir Qabul ham qiladi)
 	},
 	"Menejer": {
+		"Accounts Settings": R,  # Hisoblar rejasi (Chart of Accounts) sahifasi
 		"Customer": CRW,
 		"Supplier": CRW,
 		"Employee": R,
