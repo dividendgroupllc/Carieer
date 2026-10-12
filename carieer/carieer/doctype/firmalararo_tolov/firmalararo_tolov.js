@@ -125,7 +125,11 @@ function show_kassa(frm) {
 			const money = (v) => format_currency(v, r.currency);
 			const minus = r.after < -0.005;
 			frm.set_intro(
-				minus
+				minus && !r.minus_ruxsat
+					? __("{0} kassasida {1} bor, {2} to'lanmoqda - <b>pul yetmaydi</b>. Summani {1} gacha kamaytiring: qolgan <b>{3}</b> qarz bo'lib qoladi (keyin Qarzlar bo'limidan to'laysiz).", [
+							d.tolovchi_kassa, money(Math.max(r.balance, 0)), money(r.amount), money(r.amount - Math.max(r.balance, 0)),
+					  ])
+					: minus
 					? __("{0} kassasida {1} bor, {2} to'lanmoqda. <b>{3} qarzga kiradi</b>: kassa <b>{4}</b> (minus) bo'ladi.", [
 							d.tolovchi_kassa, money(r.balance), money(r.amount), money(-r.after), money(r.after),
 					  ])

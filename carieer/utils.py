@@ -208,9 +208,12 @@ def check_kassa_balance(mode_of_payment: str, company: str, amount: float, sana=
 			"<b>{3}</b> qarzga kirdi: kassa <b>-{3}</b> (minus) bo'ladi. Bu kassa qarzi - keyingi kirimlar (sotuv, to'lov) bilan yopiladi."
 		).format(mode_of_payment, money(max(available, 0)), money(amount), money(qarz))
 	else:
-		msg = _("{0} kassasida {1} bor, {2} chiqarilmoqda. Avval kassaga kirim qiling.").format(
-			f"<b>{mode_of_payment}</b>", money(available), money(amount)
-		)
+		have = max(flt(available), 0)
+		msg = _(
+			"<b>{0}</b> kassasida {1} bor, {2} to'lanmoqda - pul yetmaydi.<br><br>"
+			"Summani <b>{1}</b> gacha kamaytiring: qolgan <b>{3}</b> qarz bo'lib qoladi va keyin Qarzlar bo'limidan "
+			"to'laysiz. Yoki avval kassaga kirim qiling."
+		).format(mode_of_payment, money(have), money(amount), money(flt(amount) - have))
 	if minus_ok:
 		# kassa minusga kirishi mumkin (Karer Sozlamalari): to'lov o'tadi, lekin ogohlantirish oynasi chiqadi
 		frappe.msgprint(msg, title=_("Kassa minusga (qarzga) kiradi"), indicator="orange")

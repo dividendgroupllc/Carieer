@@ -8,7 +8,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt
+from frappe.utils import cint, flt
 
 from carieer.utils import (
 	check_kassa_balance,
@@ -322,4 +322,9 @@ def kassa_holati(company: str, kassa: str, summa: float, turi: str = "Kirim") ->
 	balance = flt(info.balance, 2)
 	summa = flt(summa)
 	after = balance + summa if turi == "Kirim" else balance - summa
-	return {"balance": balance, "after": flt(after, 2), "currency": info.currency}
+	return {
+		"balance": balance,
+		"after": flt(after, 2),
+		"currency": info.currency,
+		"minus_ruxsat": cint(frappe.db.get_single_value("Karer Sozlamalari", "kassa_minus_ruxsat")),
+	}

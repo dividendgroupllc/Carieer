@@ -497,4 +497,5 @@ def kassa_preview(company: str, kassa: str, summa: float, valyuta: str | None = 
 		"amount": amount,
 		"after": flt(balance + amount if cint(kirim) else balance - amount, 2),
 		"currency": info.currency,
+		"minus_ruxsat": cint(frappe.db.get_single_value("Karer Sozlamalari", "kassa_minus_ruxsat")),
 	}

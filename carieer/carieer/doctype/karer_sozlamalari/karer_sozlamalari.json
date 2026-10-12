@@ -98,8 +98,8 @@
    "label": "Kassa nazorati"
   },
   {
-   "default": "1",
-   "description": "Yoqiq (standart): kassada pul yetmasa ham to'lov o'tadi, kassa minusga kiradi - bu kassa qarzi, keyingi kirimlar (sotuv) bilan yopiladi. O'chirilsa - kassada yo'q pulni chiqarib bo'lmaydi. Faqat System Manager o'zgartira oladi.",
+   "default": "0",
+   "description": "O'chiq (standart): kassada yo'q pulni chiqarib bo'lmaydi - yetmagan qismi qarz bo'lib qoladi va Qarzlar bo'limidan alohida to'lanadi. Yoqilsa - kassa minusga tushishi mumkin. Faqat System Manager o'zgartira oladi.",
    "fieldname": "kassa_minus_ruxsat",
    "fieldtype": "Check",
    "label": "Kassada minus qoldiqqa ruxsat berish",
