@@ -309,3 +309,17 @@ def allocate_to_invoices(pe):
 			{"reference_doctype": doctype, "reference_name": inv.name, "allocated_amount": allocated},
 		)
 		amount = flt(amount - allocated, 2)
+
+
+@frappe.whitelist()
+def kassa_holati(company: str, kassa: str, summa: float, turi: str = "Kirim") -> dict:
+	"""Forma uchun: kassada hozir qancha pul bor va shu yozuvdan keyin qancha bo'ladi (kassa valyutasida)."""
+	from carieer.utils import get_kassa_info
+
+	info = get_kassa_info(kassa, company)
+	if not info.account:
+		return {}
+	balance = flt(info.balance, 2)
+	summa = flt(summa)
+	after = balance + summa if turi == "Kirim" else balance - summa
+	return {"balance": balance, "after": flt(after, 2), "currency": info.currency}

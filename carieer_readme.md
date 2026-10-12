@@ -1,4 +1,4 @@
-# Carieer — Eko Karer va Beton Zavod (ERPNext v16 ustida)
+# Carieer — Eko Karer va Beton Zavod (ERPNext v16 / v17 ustida)
 
 Karer va beton zavodining hisob-kitobi: **sotuv posti, kassa, nachislenie, ombor, beton ishlab chiqarish,
 firmalararo oldi-sotdi, texnika (yoqilg'i, GPS) va Google Sheets'dagi barcha hisobotlar**.
@@ -9,22 +9,24 @@ firmalararo oldi-sotdi, texnika (yoqilg'i, GPS) va Google Sheets'dagi barcha his
 
 ---
 
-## 1. Bo'limlar (menyu)
+## 1. Bo'limlar (desktop ikonkalari)
 
-Desktop'da faqat **ikkita** ikonka: **Karer** va **Beton Zavod**. Har biri chap menyuli bo'lim.
-Menyudagi har bir punkt foydalanuvchining ruxsatiga qarab o'zi ko'rinadi / yashirinadi.
+Har bir vazifa — **alohida ikonka** (alohida modul, workspace va chap menyu). Kassir "Karer"ga kirib, ichidan "Kassa"ni
+qidirmaydi: desktop'da to'g'ridan-to'g'ri **Kassa** ikonkasi turadi. Xodim faqat o'z roliga tegishli ikonkalarni ko'radi.
 
-| Bo'lim (chap menyu) | Karer | Beton Zavod |
+| Ikonka | Ichida | Kimga |
 |---|---|---|
-| Bosh sahifa | ko'rsatkichlar (bugungi / oylik sotuv, qarz, kassa, qazib olingan), kunlik sotuv grafigi, tezkor tugmalar | xuddi shunday (ishlab chiqarilgan beton) |
-| Sotuv posti | Sotuv, Mijozlar | Sotuv, Mijozlar |
-| Ishlab chiqarish | — | Beton ishlab chiqarish, Retsept (BOM) |
-| Kassa va qarzlar | Kassa, Начисление, Firmalararo to'lov, **To'lovlar** (Payment Entry), **Provodkalar** (Journal Entry), Valyuta kursi | xuddi shunday |
-| Ombor | Qazib olish, **Ombor qoldig'i** (Stock Balance), **Ombor tarixi** (Stock Ledger), Инвентаризация, Ko'chirish / chiqim | xuddi shunday (qazib olishsiz) |
-| Xarid (Приход) | **Qabul** (Purchase Receipt), **Xarid fakturasi** (Purchase Invoice), Ta'minotchilar, Приход ОС | xuddi shunday |
-| Texnika | Texnikalar, **Texnikalar xaritasi**, Yoqilg'i va moy, GPS nuqtalar | xuddi shunday |
-| Hisobotlar | 11 ta hisobot (6-bo'lim), shu jumladan **Kontragent otchet** | xuddi shunday |
-| Sozlamalar | Zavodlar, Tovarlar, **Narxlar** (Item Price), Omborlar, Kassalar, Kategoriyalar, Xodimlar, Birliklar, Hisoblar rejasi, Karer sozlamalari | xuddi shunday |
+| **Karer** / **Beton Zavod** (modullar: Karer Panel / Beton Panel) | zavodning bosh sahifasi (dashboard) + **Sozlamalar** (Karer sozlamalari, Zavodlar, Tovarlar, Narxlar, Omborlar, Kassalar, Kategoriyalar, Xodimlar, Foydalanuvchilar, Birliklar, Hisoblar rejasi, Firmalar) | o'z zavodi xodimlari |
+| **Kassa** | Kassa (kirim / chiqim), Начисление, Firmalararo to'lov, To'lovlar, Provodkalar, Valyuta kursi, Kategoriyalar, hisobotlar: Kassa daftari, ДДС, Cash Flow, Qarzlarimiz | Kassir, Menejer |
+| **Sotuv** | Sotuv, firmalararo «qabul kutilmoqda», Mijozlar, Sales Invoice, Delivery Note, Mijoz to'lovlari, Narxlar, firmalararo xaridlar (Purchase Receipt / Invoice), hisobotlar: Kunlik otchet, Qarzdorlik, Акт сверка, Оборотка | Operator, Kassir, Menejer |
+| **Ta'minot** | Ta'minotchilar, Qabul (Purchase Receipt), Xarid fakturasi (Purchase Invoice), Приход ОС, Начисление, Ta'minotchiga to'lov, hisobotlar: Приход, Qarzlarimiz | Menejer |
+| **Ombor** | Ombor qoldig'i, Ombor tarixi, Инвентаризация, Ko'chirish / chiqim, Tovarlar, Omborlar, Материальный отчет | Operator, Kassir, Menejer |
+| **Ishlab chiqarish** | Qazib olish (karer), Beton ishlab chiqarish, Retsept (BOM), Beton xomashyo, Материальный отчет | Operator, Menejer |
+| **Texnika** | Texnikalar, **Texnikalar xaritasi**, Yoqilg'i va moy, GPS nuqtalar, Texnika xarajatlari | Operator, Menejer |
+| **Hisobotlar** | barcha 12+ hisobot (kundalik, kontragent va qarz, pul va moliya, ombor va texnika) | Operator, Kassir, Menejer |
+
+Har bir ikonkaning bosh sahifasida (workspace) o'z ko'rsatkichlari (**Mening ...** kartochkalari: xodimning o'z firmasi
+bo'yicha) va tezkor tugmalari bor. Menyudagi har bir punkt foydalanuvchining DocType ruxsatiga qarab o'zi ko'rinadi / yashirinadi.
 
 ## 2. Rollar va dostup
 
@@ -44,9 +46,14 @@ Har bir xodim faqat o'z firmasining ma'lumotini ko'radi (ERPNext **User Permissi
 | Akt sverka, Оборотка, Qarzdorlik, ДДС, Cash Flow, Firmalararo qarzlar | — | ✅ | ✅ |
 | P&L, Баланс, Texnika xarajatlari | — | — | ✅ |
 
-* Karer xodimi desktop'da faqat **Karer**, beton xodimi faqat **Beton Zavod** ikonkasini ko'radi
-  (ERPNext'ning Selling, Stock, Accounting ... ikonkalari ularga ko'rinmaydi).
-* **Sotuv posti operatori** ikkala zavod nomidan sotadi: ikkala bo'lim ham ko'rinadi, Sotuv'da «Тип» tanlaydi.
+* Modul profili zavod bo'yicha (Karer xodim / Beton xodim / Karer va Beton xodim): Beton xodimiga Karer paneli ko'rinmaydi va aksincha.
+* Xodim desktop'da faqat Carieer ikonkalarini ko'radi (ERPNext'ning Selling, Stock, Accounting ... papkalari ularga
+  ko'rinmaydi: «Karer xodim» modul profili + `permissions.hide_foreign_icons`).
+* **Qaysi ikonka kimga** — `desktop_icon/*.json` dagi `roles` (yuqoridagi jadval). Xodimni firmaga bog'lash: `setup_user`
+  yoki User'ga `Karer Kassir` kabi rol berish (User Permission -> Company / Zavod o'zi qo'yiladi).
+* **Sotuv posti operatori** (zavod «Ikkalasi») ikkala zavod nomidan sotadi, Sotuv'da «Тип» tanlaydi.
+* Xodim bitta zavodga bog'langan bo'lsa, yangi hujjatda firma, zavod va xarid ombori o'zi qo'yiladi (`carieer.js`).
+* Kirgandan keyin ochiladigan sahifa: Kassir -> Kassa, Operator -> Sotuv, Menejer -> Karer / Beton bosh sahifasi.
 * System Manager hamma narsani ko'radi.
 
 ## 3. Yangi sayt (WSL terminalida)
@@ -254,8 +261,8 @@ carieer/
 ├── events.py            Stock Reconciliation: karer tovari tan narxi 0
 ├── api.py               GPS: traccar(), gps_push(), xarita uchun get_live_positions(), get_track()
 ├── demo.py              test ma'lumotlari: make_demo()
-├── desktop_icon/        Karer, Beton Zavod ikonkalari (rol bo'yicha)
-├── workspace_sidebar/   chap menyu (Karer, Beton Zavod)
+├── desktop_icon/        ikonkalar: Karer, Beton Zavod, Kassa, Sotuv, Ta'minot, Ombor, Ishlab chiqarish, Texnika, Hisobotlar (rol bo'yicha)
+├── kassa_bolimi/ ... hisobotlar_bolimi/   har bir bo'lim = modul: workspace/ (bosh sahifa) + sidebar/ (chap menyu)
 ├── public/icons/        desktop ikonkalari (svg)
 └── carieer/
     ├── doctype/         sotuv(+tovar, xizmat, tolov), kassa, nachislenie, prixod_os, qazib_olish(+tovar),
@@ -263,8 +270,9 @@ carieer/
     │                    zavod, kassa_kategoriya, karer_sozlamalari
     ├── page/            texnika_xarita (GPS xarita sahifasi)
     ├── report/          11 ta hisobot (.py + .json filtrlar), common.py, moliya.py
-    ├── workspace/       Karer, Beton Zavod bosh sahifalari
-    ├── number_card/     ko'rsatkichlar
+    ├── sidebar/         Carieer moduli menyusi (Karer / Beton bosh sahifalari + Sozlamalar)
+    ├── workspace/       Karer, Beton Zavod bosh sahifalari (dashboard)
+    ├── number_card/     ko'rsatkichlar (karer_* / beton_* — dashboard; mening_* — bo'limlar, xodimning o'z firmasi)
     ├── dashboard_chart/ kunlik sotuv grafigi
     └── dashboard.py     kassa qoldig'i, mijozlar qarzi kartochkalari
 ```

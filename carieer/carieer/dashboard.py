@@ -1,6 +1,7 @@
 """Bo'lim (Karer / Beton Zavod) bosh sahifasidagi raqamli kartochkalar (Number Card, type = Custom).
 
-Kartochka filtri: {"tip": "Karer"} yoki {"tip": "Beton"} -> firma Zavod'dan olinadi (utils.company_for_bolim:
+Kartochka filtri: {"tip": "Mening"} -> xodimning o'z firmasi (Kassa, Sotuv ... bo'limlari bosh sahifasi);
+{"tip": "Karer"} yoki {"tip": "Beton"} -> firma Zavod'dan olinadi (utils.company_for_bolim:
 Zavod «Beton Zavod» deb nomlangan bo'lsa ham topiladi). Hamma kartochka FIRMA bo'yicha hisoblanadi - shuning uchun
 bir firmaning hujjati ikkinchi bo'lim kartochkasiga tushmaydi.
 Kassa va qarzlar GL Entry'dan hisoblanadi, shuning uchun faqat GL Entry'ni o'qiy oladigan rollar
@@ -11,7 +12,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, get_first_day, get_last_day, nowdate
 
-from carieer.permissions import check_company
+from carieer.permissions import check_company, get_allowed_companies
 from carieer.utils import company_for_bolim
 
 
@@ -19,7 +20,16 @@ def _company(filters) -> str | None:
 	"""Zavod hali sozlanmagan bo'lsa - None: kartochka 0 ko'rsatadi, xato chiqarmaydi."""
 	filters = frappe.parse_json(filters) or {}
 	tip = filters.get("tip") if isinstance(filters, dict) else None
-	company = company_for_bolim(tip or "Karer")
+	if tip == "Mening":
+		# funksional bo'limlar (Kassa, Sotuv ...) kartochkasi: xodimning o'z firmasi (Administrator - standart firma)
+		allowed = get_allowed_companies()
+		company = (
+			(allowed[0] if allowed else None)
+			or frappe.defaults.get_user_default("Company")
+			or frappe.db.get_single_value("Global Defaults", "default_company")
+		)
+	else:
+		company = company_for_bolim(tip or "Karer")
 	if not company or not check_company(company, throw=False):
 		return None
 	return company
@@ -312,12 +322,10 @@ def kassa_qoldigi(filters=None):
 	}
 
 
-def _text_card(text: str, route=None, route_options=None) -> dict:
-	"""Matnli kartochka (raqam emas), bosilganda hisobot ochiladi. Number Card qiymatni HTML sifatida chiqaradi."""
-	out = {"value": f"<span>{frappe.utils.escape_html(text)}</span>", "fieldtype": "Data"}
-	if route:
-		out.update({"route": route, "route_options": route_options or {}})
-	return out
+def _text_card(text: str, route=None, route_options=None) -> str:
+	"""Matnli kartochka (raqam emas). Frappe v17 Number Card obyekt ichidagi matnni raqam deb o'qib «N/A» chiqaradi,
+	shuning uchun oddiy HTML matn qaytariladi (ko'rinadi, lekin bosilganda hisobot ochilmaydi - tezkor tugmalar bor)."""
+	return f"<span>{frappe.utils.escape_html(text)}</span>"
 
 
 @frappe.whitelist()

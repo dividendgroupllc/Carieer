@@ -210,6 +210,10 @@ class Pair:
 		return _("Qarz yo'q")
 
 	def tekshiruv(self, ev):
+		if ev.key and ev.key[0] == "Firmalararo Tolov":
+			ft = frappe.db.get_value("Firmalararo Tolov", ev.key[1], ["tasdiq_holati", "oluvchi_firma", "docstatus"], as_dict=True)
+			if ft and ft.docstatus == 1 and ft.tasdiq_holati == "Kutilmoqda":
+				return _("⏳ {0} tasdig'i kutilmoqda").format(ft.oluvchi_firma)
 		a, b = ev.amounts.get(self.a), ev.amounts.get(self.b)
 		if a is None:
 			return _("⚠ faqat {0} kitobida").format(self.b)

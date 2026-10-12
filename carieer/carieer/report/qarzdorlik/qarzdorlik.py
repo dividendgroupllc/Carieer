@@ -6,7 +6,8 @@
 # Avans bo'lsa (oldindan to'lagan) - qaysi to'lov ortib qolgani ko'rsatiladi.
 #
 # Manba - GL (buxgalteriya daftari): sotuv, nachislenie, kassa, boshlang'ich qoldiq, to'lovlar hammasi hisobga olinadi.
-# Taqsimot FIFO: har bir to'lov eng eski to'lanmagan hujjatni yopadi; avans keyingi hujjatlarga ishlatiladi.
+# Taqsimot: to'lov aynan qaysi hujjatga yozilgan bo'lsa (Payment Ledger) - o'sha hujjat yopiladi. Hujjatga bog'lanmagan
+# to'lov (avans) eng eski ochiq hujjatlarga FIFO bilan taqsimlanadi. To'langan hujjatlar qarzga kirmaydi, lekin tarixda turadi.
 
 import frappe
 from frappe import _
@@ -111,38 +112,58 @@ def get_entries(filters):
 	)
 
 
-def fifo(rows, sign):
-	"""Xronologik FIFO: qarz oshiruvchi hujjatlar (increases) va to'lovlar (decreases) bir-birini yopadi.
+def get_allocations(filters):
+	"""Haqiqiy taqsimot (ERPNext Payment Ledger): qaysi to'lov QAYSI hujjatni yopgan.
+	Qaytaradi: ({(kontragent, hujjat turi, hujjat): yopilgan summa}, {(kontragent, to'lov turi, to'lov): hujjatlarga sarflangan summa}).
+	Shu tufayli to'liq to'langan hujjat qarzda ko'rinmaydi, qisman to'langani esa o'z qoldig'i bilan qoladi."""
+	cond = ""
+	if filters.get("party"):
+		cond = " and party = %(party)s"
+	rows = frappe.db.sql(
+		f"""select party, voucher_type, voucher_no, against_voucher_type, against_voucher_no, sum(amount) amount
+		from `tabPayment Ledger Entry`
+		where company = %(company)s and party_type = %(party_type)s and delinked = 0
+			and posting_date <= %(to_date)s and (voucher_type != against_voucher_type or voucher_no != against_voucher_no){cond}
+		group by party, voucher_type, voucher_no, against_voucher_type, against_voucher_no""",
+		filters,
+		as_dict=True,
+	)
+	to_doc, by_pay = {}, {}
+	for r in rows:
+		amount = abs(flt(r.amount))
+		to_doc[(r.party, r.against_voucher_type, r.against_voucher_no)] = to_doc.get((r.party, r.against_voucher_type, r.against_voucher_no), 0) + amount
+		by_pay[(r.party, r.voucher_type, r.voucher_no)] = by_pay.get((r.party, r.voucher_type, r.voucher_no), 0) + amount
+	return to_doc, by_pay
+
+
+def fifo(rows, sign, to_doc=None, by_pay=None, party=None):
+	"""Hujjatlar (qarzni oshiruvchi) va to'lovlar. Avval haqiqiy taqsimot (to'lov aynan qaysi hujjatga yozilgan bo'lsa),
+	hujjatga bog'lanmagan to'lov (avans, kassa) esa eng eski ochiq hujjatlarga FIFO bilan.
 	Qaytaradi: (hujjatlar ro'yxati [har birida paid, left], ortib qolgan to'lovlar [avans])."""
-	docs, open_inc, open_dec = [], [], []
+	to_doc, by_pay = to_doc or {}, by_pay or {}
+	docs, free = [], []
 	for r in rows:
 		amount = sign * flt(r.net)
 		if amount > 0:
-			doc = frappe._dict(row=r, amount=amount, paid=0.0, left=amount)
-			docs.append(doc)
-			while doc.left > 0.005 and open_dec:  # oldindan to'langan avans shu hujjatga ishlatiladi
-				d = open_dec[0]
-				used = min(doc.left, d.left)
-				doc.left -= used
-				doc.paid += used
-				d.left -= used
-				if d.left <= 0.005:
-					open_dec.pop(0)
-			if doc.left > 0.005:
-				open_inc.append(doc)
+			paid = min(amount, to_doc.get((party, r.voucher_type, r.voucher_no), 0))
+			docs.append(frappe._dict(row=r, amount=amount, paid=paid, left=amount - paid))
 		else:
-			dec = frappe._dict(row=r, amount=-amount, left=-amount)
-			while dec.left > 0.005 and open_inc:
-				doc = open_inc[0]
+			left = -amount - min(-amount, by_pay.get((party, r.voucher_type, r.voucher_no), 0))
+			if left > 0.005:
+				free.append(frappe._dict(row=r, amount=-amount, left=left))
+	advances = []
+	for dec in free:
+		for doc in docs:
+			if dec.left <= 0.005:
+				break
+			if doc.left > 0.005:
 				used = min(dec.left, doc.left)
 				doc.left -= used
 				doc.paid += used
 				dec.left -= used
-				if doc.left <= 0.005:
-					open_inc.pop(0)
-			if dec.left > 0.005:
-				open_dec.append(dec)
-	return docs, open_dec
+		if dec.left > 0.005:
+			advances.append(dec)
+	return docs, advances
 
 
 def get_data(filters, only_debt=False):
@@ -153,10 +174,11 @@ def get_data(filters, only_debt=False):
 	for e in entries:
 		by_party.setdefault((e.party, e.currency), []).append(e)
 	details = get_details(entries, filters.party_type)
+	to_doc, by_pay = get_allocations(filters)
 
 	parties = []
 	for (party, currency), rows in by_party.items():
-		docs, advances = fifo(rows, sign)
+		docs, advances = fifo(rows, sign, to_doc, by_pay, party)
 		jami = sum(d.amount for d in docs)
 		tolandi = sum(sign * -flt(r.net) for r in rows if sign * flt(r.net) < 0)
 		qoldiq = flt(sum(sign * flt(r.net) for r in rows), 2)

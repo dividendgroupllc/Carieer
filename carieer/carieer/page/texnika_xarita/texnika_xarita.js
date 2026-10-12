@@ -44,7 +44,12 @@ class KarerXarita {
 		this.make_filters();
 		this.make_layout();
 
-		const ready = window.L ? Promise.resolve() : frappe.require("libs.bundle.js");
+		// Frappe v17: Leaflet alohida bundle (leaflet.bundle.js + css); v16: libs.bundle.js ichida
+		const ready = window.L && window.L.tileLayer
+			? Promise.resolve()
+			: Promise.all([frappe.require("leaflet.bundle.js"), frappe.require("leaflet.bundle.css")]).catch(() =>
+					frappe.require("libs.bundle.js")
+			  );
 		ready.then(() => {
 			this.make_map();
 			this.load(true);

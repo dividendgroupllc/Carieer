@@ -4,7 +4,8 @@ Avtomatik (install-app va har bir migrate'dan keyin) - after_migrate():
   - 6 ta rol: Karer / Beton x Operator / Kassir / Menejer
   - Vehicle'ga maydonlar: texnika turi, GPS IMEI, oxirgi joy (latitude / longitude -> Vehicle «Map» ko'rinishi)
   - Rollar uchun ERPNext hujjatlariga kerakli minimal ruxsatlar
-  - «Karer xodim» modul profili, Item formasidagi keraksiz maydonlar yashiriladi
+  - «Karer xodim» modul profili (faqat Carieer + Kassa / Sotuv / Ta'minot / Ombor / Ishlab chiqarish / Texnika / Hisobotlar
+    bo'limlari ko'rinadi), Item formasidagi keraksiz maydonlar yashiriladi
 
 Bir marta, qo'lda (firmalar yaratilgandan keyin):
   bench --site SITE execute carieer.install.setup_karer --kwargs "{'karer_company': 'Eko Karer', 'beton_company': 'Eko Beton'}"
@@ -23,7 +24,29 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 from carieer.permissions import ALL_ROLES, BETON_ROLES, BETON_SECTION, KARER_ROLES, KARER_SECTION
 
-MODULE_PROFILE = "Karer xodim"
+
+# Funksional bo'limlar (modul = ikonka = sidebar): modules.txt dagi <Nomi> Bolimi - ikkala zavod xodimlari uchun umumiy.
+BOLIM_MODULLARI = (
+	"Kassa Bolimi",
+	"Sotuv Bolimi",
+	"Taminot Bolimi",
+	"Ombor Bolimi",
+	"Ishlab Chiqarish Bolimi",
+	"Texnika Bolimi",
+	"Hisobotlar Bolimi",
+	"Firmalararo Bolimi",
+)
+# Zavodning o'z moduli (bosh sahifa + sozlamalar). Karer xodimiga Beton moduli ko'rinmaydi va aksincha.
+ZAVOD_MODULLARI = {"Karer": "Karer Panel", "Beton": "Beton Panel"}
+# Modul profili: kimga qaysi modullar ochiq (qolganlari - ERPNext'ning Selling, Stock, ... va boshqa zavodniki - yopiq)
+MODULE_PROFILES = {
+	"Karer xodim": ("Karer",),
+	"Beton xodim": ("Beton",),
+	"Karer va Beton xodim": ("Karer", "Beton"),
+}
+
+# Lavozim -> kirgandan keyin ochiladigan birinchi bo'lim (User.default_workspace)
+LAVOZIM_BOSH_SAHIFA = {"Kassir": "Kassa Bolimi", "Operator": "Sotuv Bolimi"}
 
 
 def after_install():
@@ -38,6 +61,8 @@ def after_migrate():
 	hide_item_fields()
 	make_module_profile()
 	set_uzs_symbol()
+	set_icon_grid()
+	sync_staff_modules()
 
 
 # ============================================================================ rollar va ruxsatlar
@@ -176,22 +201,51 @@ def make_report_roles():
 
 
 def make_module_profile():
-	"""«Karer xodim» modul profili: ERPNext'ning boshqa bo'limlari (Selling, Stock, HR ...) xodimga ko'rinmaydi.
-	Faqat o'zgarish bo'lsa saqlanadi (Module Profile saqlanganda fon vazifasi barcha userlarni yangilaydi)."""
-	blocked = {m for m in frappe.get_all("Module Def", pluck="name") if m != "Carieer"}
-	if frappe.db.exists("Module Profile", MODULE_PROFILE):
-		doc = frappe.get_doc("Module Profile", MODULE_PROFILE)
-		if {d.module for d in doc.block_modules} == blocked:
-			return
-	else:
-		doc = frappe.new_doc("Module Profile")
-		doc.module_profile_name = MODULE_PROFILE
-	doc.set("block_modules", [{"module": m} for m in sorted(blocked)])
-	try:
-		doc.save(ignore_permissions=True)
-	except frappe.DocumentLockedError:
-		# oldingi yangilash hali navbatda - keyingi migrate'da qayta uriniladi
-		frappe.clear_last_message()
+	"""Modul profillari (Karer xodim / Beton xodim / Karer va Beton xodim): xodimga faqat o'z zavodi paneli va umumiy
+	bo'limlar ko'rinadi. Faqat o'zgarish bo'lsa saqlanadi (Module Profile saqlanganda fon vazifasi userlarni yangilaydi)."""
+	all_modules = set(frappe.get_all("Module Def", pluck="name"))
+	for profile, zavodlar in MODULE_PROFILES.items():
+		allowed = set(BOLIM_MODULLARI) | {ZAVOD_MODULLARI[z] for z in zavodlar}
+		blocked = all_modules - allowed
+		if frappe.db.exists("Module Profile", profile):
+			doc = frappe.get_doc("Module Profile", profile)
+			if {d.module for d in doc.block_modules} == blocked:
+				continue
+		else:
+			doc = frappe.new_doc("Module Profile")
+			doc.module_profile_name = profile
+		doc.set("block_modules", [{"module": m} for m in sorted(blocked)])
+		try:
+			doc.save(ignore_permissions=True)
+		except frappe.DocumentLockedError:
+			# oldingi yangilash hali navbatda - keyingi migrate'da qayta uriniladi
+			frappe.clear_last_message()
+
+
+def sync_staff_modules():
+	"""Mavjud xodimlarning modul profili o'z zavodiga mos bo'lsin (faqat farq bo'lsa saqlanadi)."""
+	from carieer.permissions import set_module_profile
+
+	for name in frappe.get_all("User", filters={"user_type": "System User", "enabled": 1}, pluck="name"):
+		user = frappe.get_doc("User", name)
+		before = (user.module_profile, sorted(d.module for d in user.block_modules))
+		set_module_profile(user)
+		if before != (user.module_profile, sorted(d.module for d in user.block_modules)):
+			user.save(ignore_permissions=True)
+
+
+def set_icon_grid():
+	"""Desktop - ikonkalar to'ri (Kassa, Sotuv, Ta'minot, Ombor ...). Frappe v17 «Apps» rejimida desktop_icon/*.json
+	fayllarini import qilmaydi, shuning uchun to'r har migrate'da qayta yoqiladi va ikonkalar yangilanadi."""
+	from frappe.desk.doctype.desktop_icon.desktop_icon import (
+		clear_every_users_desktop_icons,
+		import_desktop_icon_fixtures,
+	)
+
+	if frappe.db.get_single_value("Desktop Settings", "desktop_page") != "Desktop Icons":
+		frappe.db.set_single_value("Desktop Settings", "desktop_page", "Desktop Icons")
+	import_desktop_icon_fixtures("carieer", force=True)
+	clear_every_users_desktop_icons()
 
 
 # ============================================================================ maydonlar
@@ -811,7 +865,9 @@ def make_zavod(zavod: str, company: str, asosiy: str, xomashyo: str | None):
 	if xomashyo:
 		doc.xomashyo_ombori = doc.xomashyo_ombori or f"{xomashyo} - {abbr}"
 	doc.yoqilgi_ombori = doc.yoqilgi_ombori or f"Yoqilgi ombori - {abbr}"
-	doc.kassa = doc.kassa or "Наличные"
+	# kassalar (Mode of Payment) keyinroq - setup_kassalar() yaratadi va Zavod.kassa ni to'ldiradi
+	if not doc.kassa and frappe.db.exists("Mode of Payment", "Наличные"):
+		doc.kassa = "Наличные"
 	doc.save(ignore_permissions=True)
 
 
@@ -849,8 +905,8 @@ def setup_user(email: str, full_name: str, zavod: str, lavozim: str, password: s
 			"last_name": last,
 			"enabled": 1,
 			"user_type": "System User",
-			"module_profile": MODULE_PROFILE,
-			"default_workspace": KARER_SECTION if zavodlar[0] == "Karer" else BETON_SECTION,
+			"default_workspace": LAVOZIM_BOSH_SAHIFA.get(lavozim)
+			or (KARER_SECTION if zavodlar[0] == "Karer" else BETON_SECTION),
 		}
 	)
 	user.set("roles", [d for d in user.roles if d.role not in ALL_ROLES])

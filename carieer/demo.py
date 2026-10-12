@@ -52,6 +52,20 @@ YOL_KARER_SHAHAR = [
 QURILISH = (41.3260, 69.2870)
 
 
+# Eski (umumiy) kassa nomlari -> har bir zavodning o'z kassasi (install.setup_kassalar): «Karer naqd UZS», «Beton bank» ...
+KASSA_SUFFIX = {"Наличные": "naqd UZS", "Наличные $": "naqd USD", "Р/С": "bank", "Карта": "karta"}
+
+
+def mop(name: str, bolim_or_company: str) -> str:
+	"""bolim: Karer | Beton, yoki firma nomi."""
+	if name not in KASSA_SUFFIX:
+		return name
+	bolim = bolim_or_company
+	if bolim not in ("Karer", "Beton"):
+		bolim = "Karer" if bolim_or_company == frappe.db.get_value("Zavod", "Karer", "company") else "Beton"
+	return f"{bolim} {KASSA_SUFFIX[name]}"
+
+
 def day(n: int) -> str:
 	return add_days(nowdate(), -n)
 
@@ -99,7 +113,10 @@ def make_demo():
 			],
 		}
 	)
-	from erpnext.stock.doctype.purchase_receipt.purchase_receipt import make_purchase_invoice
+	try:  # ERPNext v17: mapper alohida modulga chiqarilgan
+		from erpnext.stock.doctype.purchase_receipt.mapper import make_purchase_invoice
+	except ImportError:  # ERPNext v16
+		from erpnext.stock.doctype.purchase_receipt.purchase_receipt import make_purchase_invoice
 
 	pi = make_purchase_invoice(pr.name)
 	pi.posting_date = day(6)
@@ -208,7 +225,7 @@ def make_demo():
 		karer, day(1), "Kirim", "Наличные", 1500000, "Customer", "Тошкент Қурилиш", "Клиент", "qarzdan to'lov"
 	)
 	kassa(
-		karer, day(2), "Chiqim", "Р/С", 3000000, "Xarajat", None, "Зарплата Производства", "ish haqi (avans)"
+		karer, day(2), "Chiqim", "Р/С", 900000, "Xarajat", None, "Зарплата Производства", "ish haqi (avans)"
 	)
 	kassa(karer, day(1), "Chiqim", "Наличные", 350000, "Xarajat", None, "Питание", "ishchilar ovqati")
 	kassa(karer, day(0), "Chiqim", "Наличные", 120000, "Xarajat", None, "Хоз.расход", "kanselyariya")
@@ -218,8 +235,8 @@ def make_demo():
 			"company": karer,
 			"sana": day(0),
 			"turi": "O'tkazma",
-			"mode_of_payment": "Наличные",
-			"mode_of_payment_to": "Р/С",
+			"mode_of_payment": mop("Наличные", karer),
+			"mode_of_payment_to": mop("Р/С", karer),
 			"amount": 1000000,
 			"izoh": DEMO,
 		}
@@ -255,9 +272,9 @@ def make_demo():
 			"doctype": "Firmalararo Tolov",
 			"posting_date": day(1),
 			"tolovchi_firma": beton,
-			"tolovchi_kassa": "Р/С",
+			"tolovchi_kassa": mop("Р/С", beton),
 			"oluvchi_firma": karer,
-			"oluvchi_kassa": "Р/С",
+			"oluvchi_kassa": mop("Р/С", karer),
 			"summa": 3000000,
 			"izoh": DEMO,
 		}
@@ -401,24 +418,27 @@ def sotuv(
 			"items": [{"item_code": i, "qty": q, "rate": r} for i, q, r in items],
 			"xizmatlar": [{"xizmat": x, "qty": q, "rate": r} for x, q, r in xizmatlar],
 			"tolovlar": [
-				{"mode_of_payment": m, "summa": s, "sana": date, "kim": customer} for m, s in tolovlar
+				{"mode_of_payment": mop(m, tip), "summa": s, "sana": date, "kim": customer} for m, s in tolovlar
 			],
 		}
 	)
 	doc.insert()
 	if submit_doc:
 		doc.submit()
+		if doc.get("qabul_holati") == "Kutilmoqda":
+			# firmalararo sotuv: xaridor firma qabul qiladi (qarzga) - shundan keyin tovar uning omboriga o'tadi
+			doc.accept()
 	return doc
 
 
-def kassa(company, date, turi, mop, amount, party_type, party, kategoriya, izoh):
+def kassa(company, date, turi, kassa_nomi, amount, party_type, party, kategoriya, izoh):
 	return submit(
 		{
 			"doctype": "Kassa",
 			"company": company,
 			"sana": date,
 			"turi": turi,
-			"mode_of_payment": mop,
+			"mode_of_payment": mop(kassa_nomi, company),
 			"amount": amount,
 			"party_type": party_type,
 			"party": party,

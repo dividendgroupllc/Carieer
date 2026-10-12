@@ -1,0 +1,32 @@
+{
+ "app": "carieer",
+ "creation": "2026-10-12 10:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon": "taminot",
+ "icon_type": "Link",
+ "idx": 5,
+ "label": "Ta'minot",
+ "link_to": "Taminot Bolimi",
+ "link_type": "Workspace Sidebar",
+ "logo_url": "",
+ "modified": "2026-10-12 10:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "Ta'minot",
+ "owner": "Administrator",
+ "parent_icon": "",
+ "restrict_removal": 1,
+ "roles": [
+  {
+   "role": "Karer Menejer"
+  },
+  {
+   "role": "Beton Menejer"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "standard": 1
+}

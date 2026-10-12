@@ -1,0 +1,134 @@
+{
+ "app": "carieer",
+ "charts": [],
+ "content": "[{\"id\": \"h_cards\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Sotuv va qarz</b></span>\", \"col\": 12}}, {\"id\": \"nc_0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Bugungi sotuv\", \"col\": 4}}, {\"id\": \"nc_1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Shu oy sotuv\", \"col\": 4}}, {\"id\": \"nc_2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Tasdiq kutayotgan sotuvlar\", \"col\": 4}}, {\"id\": \"nc_3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Qarzga sotuvlar\", \"col\": 4}}, {\"id\": \"nc_4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Mijozlar bizga qarz\", \"col\": 4}}, {\"id\": \"nc_5\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Firmalararo hisob\", \"col\": 4}}, {\"id\": \"h_short\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Tezkor kirish</b></span>\", \"col\": 12}}, {\"id\": \"sc_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Yangi sotuv\", \"col\": 3}}, {\"id\": \"sc_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sotuvlar\", \"col\": 3}}, {\"id\": \"sc_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Mijozlar\", \"col\": 3}}, {\"id\": \"sc_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sales Invoice\", \"col\": 3}}, {\"id\": \"sc_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Delivery Note\", \"col\": 3}}, {\"id\": \"sc_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kunlik otchet\", \"col\": 3}}, {\"id\": \"sc_6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Qarzdorlik\", \"col\": 3}}, {\"id\": \"sc_7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Akt sverka\", \"col\": 3}}]",
+ "creation": "2026-10-12 10:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "shopping-cart",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Sotuv",
+ "modified": "2026-10-12 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Sotuv Bolimi",
+ "name": "Sotuv Bolimi",
+ "number_cards": [
+  {
+   "label": "Bugungi sotuv",
+   "number_card_name": "Mening Bugungi Sotuv"
+  },
+  {
+   "label": "Shu oy sotuv",
+   "number_card_name": "Mening Oylik Sotuv"
+  },
+  {
+   "label": "Tasdiq kutayotgan sotuvlar",
+   "number_card_name": "Mening Tasdiqlanmagan Sotuv"
+  },
+  {
+   "label": "Qarzga sotuvlar",
+   "number_card_name": "Mening Qarzga Sotuvlar"
+  },
+  {
+   "label": "Mijozlar bizga qarz",
+   "number_card_name": "Mening Mijozlar Qarzi"
+  },
+  {
+   "label": "Firmalararo hisob",
+   "number_card_name": "Mening Firmalararo Qarz"
+  }
+ ],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "Karer Operator"
+  },
+  {
+   "role": "Karer Kassir"
+  },
+  {
+   "role": "Karer Menejer"
+  },
+  {
+   "role": "Beton Operator"
+  },
+  {
+   "role": "Beton Kassir"
+  },
+  {
+   "role": "Beton Menejer"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "sequence_id": 3.0,
+ "shortcuts": [
+  {
+   "color": "Green",
+   "doc_view": "New",
+   "label": "Yangi sotuv",
+   "link_to": "Sotuv",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Sotuvlar",
+   "link_to": "Sotuv",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Mijozlar",
+   "link_to": "Customer",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Sales Invoice",
+   "link_to": "Sales Invoice",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Delivery Note",
+   "link_to": "Delivery Note",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "label": "Kunlik otchet",
+   "link_to": "Kontrol Hisobot",
+   "report_ref_doctype": "Sotuv",
+   "type": "Report"
+  },
+  {
+   "color": "Red",
+   "label": "Qarzdorlik",
+   "link_to": "Qarzdorlik",
+   "report_ref_doctype": "GL Entry",
+   "type": "Report"
+  },
+  {
+   "color": "Blue",
+   "label": "Akt sverka",
+   "link_to": "Akt Sverka",
+   "report_ref_doctype": "GL Entry",
+   "type": "Report"
+  }
+ ],
+ "title": "Sotuv",
+ "type": "Workspace"
+}

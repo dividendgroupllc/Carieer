@@ -1,0 +1,44 @@
+{
+ "app": "carieer",
+ "creation": "2026-10-12 10:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon": "ombor",
+ "icon_type": "Link",
+ "idx": 6,
+ "label": "Ombor",
+ "link_to": "Ombor Bolimi",
+ "link_type": "Workspace Sidebar",
+ "logo_url": "",
+ "modified": "2026-10-12 10:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "Ombor",
+ "owner": "Administrator",
+ "parent_icon": "",
+ "restrict_removal": 1,
+ "roles": [
+  {
+   "role": "Karer Operator"
+  },
+  {
+   "role": "Karer Kassir"
+  },
+  {
+   "role": "Karer Menejer"
+  },
+  {
+   "role": "Beton Operator"
+  },
+  {
+   "role": "Beton Kassir"
+  },
+  {
+   "role": "Beton Menejer"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "standard": 1
+}

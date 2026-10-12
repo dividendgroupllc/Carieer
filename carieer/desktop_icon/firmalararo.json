@@ -1,0 +1,38 @@
+{
+ "app": "carieer",
+ "creation": "2026-10-12 10:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon": "firmalararo",
+ "icon_type": "Link",
+ "idx": 10,
+ "label": "Firmalararo",
+ "link_to": "Firmalararo Bolimi",
+ "link_type": "Workspace Sidebar",
+ "logo_url": "",
+ "modified": "2026-10-12 10:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "Firmalararo",
+ "owner": "Administrator",
+ "parent_icon": "",
+ "restrict_removal": 1,
+ "roles": [
+  {
+   "role": "Karer Kassir"
+  },
+  {
+   "role": "Karer Menejer"
+  },
+  {
+   "role": "Beton Kassir"
+  },
+  {
+   "role": "Beton Menejer"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "standard": 1
+}

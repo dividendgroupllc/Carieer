@@ -22,6 +22,7 @@ app_include_js = f"/assets/carieer/js/carieer.js?v={int(_os.path.getmtime(_js))}
 
 # Menyuni tozalash: Karer xodimi faqat «Karer», beton xodimi faqat «Beton Zavod» bo'limini ko'radi
 boot_session = "carieer.permissions.boot_session"
+extend_bootinfo = "carieer.permissions.hide_foreign_icons"
 
 # O'rnatish / migrate
 after_install = "carieer.install.after_install"
@@ -31,7 +32,10 @@ doc_events = {
 	# Tashqaridan (Kassa, Payment Entry) kiritilgan to'lovlar ham Sotuv'dagi qarz va holatni yangilasin
 	"Payment Entry": {
 		# ichki firmaga to'lov faqat Firmalararo To'lov orqali (ikkala kitobga)
-		"validate": "carieer.utils.validate_internal_payment",
+		"validate": [
+			"carieer.utils.validate_internal_payment",
+			"carieer.utils.validate_payment_kassa",
+		],
 		"on_submit": "carieer.carieer.doctype.sotuv.sotuv.on_payment_entry_change",
 		"on_cancel": "carieer.carieer.doctype.sotuv.sotuv.on_payment_entry_change",
 	},
@@ -46,6 +50,7 @@ doc_events = {
 	},
 	# Karer / Beton roli berilsa - faqat o'z firmasi va zavodi ko'rinadi (User Permission o'zi qo'yiladi)
 	"User": {
+		"validate": "carieer.permissions.set_module_profile",
 		"on_update": "carieer.permissions.sync_user_companies",
 	},
 	# Yangi xarajat / daromad kategoriyasi -> ikkala firmada shu modda hisobi
@@ -79,5 +84,5 @@ has_permission = {
 
 # GPS Malumot jadvali cheksiz o'smasin: eski nuqtalar har kuni o'chiriladi
 scheduler_events = {
-	"daily": ["carieer.api.cleanup_gps"],
+	"daily": ["carieer.api.cleanup_gps", "carieer.carieer.doctype.sotuv.sotuv.remind_overdue"],
 }

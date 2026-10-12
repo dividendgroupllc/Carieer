@@ -416,3 +416,23 @@ def cleanup_gps():
 	"""hooks.py -> scheduler (har kuni): eski GPS nuqtalarni o'chiradi (Karer Sozlamalari -> necha kun saqlansin)."""
 	days = cint(frappe.db.get_single_value("Karer Sozlamalari", "gps_saqlash_kun")) or 90
 	frappe.db.delete("GPS Malumot", {"vaqt": ("<", add_days(now_datetime(), -days))})
+
+
+@frappe.whitelist()
+def internal_companies() -> list[str]:
+	"""Firmalararo to'lov faqat o'zimizning firmalar o'rtasida (Karer <-> Beton): ichki mijoz sifatida ro'yxatga olingan firmalar."""
+	return frappe.get_all("Customer", {"is_internal_customer": 1}, pluck="represents_company")
+
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def kassa_query(doctype, txt, searchfield, start, page_len, filters):
+	"""Firmaning kassalari (Mode of Payment, shu firmada hisobi bor): naqd UZS, naqd USD, karta, bank ..."""
+	company = (filters or {}).get("company")
+	return frappe.db.sql(
+		"""select m.name, m.type from `tabMode of Payment` m
+		join `tabMode of Payment Account` a on a.parent = m.name
+		where a.company = %(company)s and m.enabled = 1 and m.name like %(txt)s
+		order by m.name limit %(page_len)s offset %(start)s""",
+		{"company": company, "txt": f"%{txt}%", "page_len": cint(page_len), "start": cint(start)},
+	)

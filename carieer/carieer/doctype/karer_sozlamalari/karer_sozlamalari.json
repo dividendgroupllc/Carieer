@@ -17,7 +17,9 @@
   "gps_cb",
   "gps_saqlash_kun",
   "kassa_section",
-  "kassa_minus_ruxsat"
+  "kassa_minus_ruxsat",
+  "firmalararo_section",
+  "qarz_muddati_kun"
  ],
  "fields": [
   {
@@ -102,6 +104,18 @@
    "fieldtype": "Check",
    "label": "Kassada minus qoldiqqa ruxsat berish",
    "permlevel": 1
+  },
+  {
+   "fieldname": "firmalararo_section",
+   "fieldtype": "Section Break",
+   "label": "Firmalararo qarz eslatmasi"
+  },
+  {
+   "fieldname": "qarz_muddati_kun",
+   "fieldtype": "Int",
+   "label": "Qarz muddati (kun)",
+   "default": "7",
+   "description": "Firmalararo sotuv qarzga olingan va shuncha kundan keyin ham to'lanmagan bo'lsa, xaridor firmaga BIR MARTA eslatma bildirishnomasi boradi (bosib to'lash mumkin). 0 - eslatma o'chiq."
   }
  ],
  "index_web_pages_for_search": 0,

@@ -16,7 +16,8 @@ OPERATOR_ROLES = ("Karer Operator", "Beton Operator")
 KASSIR_ROLES = ("Karer Kassir", "Beton Kassir")
 MENEJER_ROLES = ("Karer Menejer", "Beton Menejer")
 
-# Bo'lim (Workspace / Workspace Sidebar / Desktop Icon) nomlari
+# Bosh sahifa (dashboard) workspace nomlari: har bir zavodning o'zi. Funksional bo'limlar (Kassa, Sotuv, Ta'minot, Ombor,
+# Ishlab chiqarish, Texnika, Hisobotlar) alohida modul / ikonka (desktop_icon/*.json, <modul>/sidebar, <modul>/workspace).
 KARER_SECTION = "Karer"
 BETON_SECTION = "Beton Zavod"
 
@@ -94,84 +95,85 @@ def sync_user_companies(doc, method=None):
 	set_user_permissions(doc.name, "Zavod", zavodlar)
 
 
+def set_module_profile(doc, method=None):
+	"""hooks.py: User -> validate. Karer / Beton rollari bo'yicha modul profili: Beton xodimiga Karer paneli (va ERPNext'ning
+	Selling, Stock ... bo'limlari) ko'rinmaydi, Karer xodimiga - Beton paneli. Katta (ERPNext) rollari bor foydalanuvchiga tegilmaydi."""
+	roles = {r.role for r in doc.roles}
+	if doc.name in ("Administrator", "Guest") or roles & POWER_ROLES or not roles & set(ALL_ROLES):
+		return
+	karer, beton = bool(roles & set(KARER_ROLES)), bool(roles & set(BETON_ROLES))
+	profile = "Karer va Beton xodim" if karer and beton else "Karer xodim" if karer else "Beton xodim"
+	if not frappe.db.exists("Module Profile", profile):
+		return
+	doc.module_profile = profile
+	doc.set("block_modules", [{"module": d.module} for d in frappe.get_doc("Module Profile", profile).block_modules])
+
+
 def sync_all_users():
 	"""Mavjud xodimlar uchun bir marta: bench --site SITE execute carieer.permissions.sync_all_users"""
 	for name in frappe.get_all("User", filters={"user_type": "System User", "enabled": 1}, pluck="name"):
-		sync_user_companies(frappe.get_doc("User", name))
+		user = frappe.get_doc("User", name)
+		if {r.role for r in user.roles} & set(ALL_ROLES):
+			user.save(ignore_permissions=True)  # validate: modul profili, on_update: firma ruxsati
+		else:
+			sync_user_companies(user)
 	frappe.db.commit()
 
 
-def user_sections(roles=None) -> set[str]:
-	roles = set(roles if roles is not None else frappe.get_roles())
-	sections = set()
-	if roles & set(KARER_ROLES):
-		sections.add(KARER_SECTION)
-	if roles & set(BETON_ROLES):
-		sections.add(BETON_SECTION)
-	return sections
+def get_allowed_zavodlar(user: str | None = None) -> list[str]:
+	"""Xodim bog'langan zavodlar (User Permission -> Zavod). Bo'sh ro'yxat = cheklov yo'q."""
+	from frappe.core.doctype.user_permission.user_permission import get_permitted_documents
+
+	if user and user != frappe.session.user:
+		return [
+			d.for_value
+			for d in frappe.get_all("User Permission", filters={"user": user, "allow": "Zavod"}, fields=["for_value"])
+		]
+	return get_permitted_documents("Zavod")
 
 
 def boot_session(bootinfo):
-	"""Menyuni tozalash (JS siz, server tomonda):
-	- Frappe avtomatik yaratadigan "Carieer" modul sidebar'i hech kimga kerak emas (bo'limlar: Karer, Beton Zavod).
-	- Karer / Beton xodimi (ERPNext'ning boshqa rollari bo'lmasa) desktop'da faqat o'z bo'limini ko'radi."""
-	sidebars = bootinfo.get("workspace_sidebar_item") or {}
-	sidebars.pop("carieer", None)
+	"""Xodim bitta zavodga bog'langan bo'lsa - yangi hujjatlarda firma / zavod / xarid ombori o'zi qo'yiladi
+	(public/js/carieer.js). Menyu esa Desktop Icon / Sidebar rollari bilan boshqariladi (hooks: extend_bootinfo)."""
+	bootinfo.carieer_form_defaults = user_form_defaults()
 
-	# bo'lim -> firma (public/js/carieer.js: Beton Zavod menyusidan ochilgan hisobot Eko Beton bilan ochiladi)
-	from carieer.utils import company_for_bolim
 
-	bootinfo.carieer_bolim = {
-		KARER_SECTION.lower(): company_for_bolim("Karer"),
-		BETON_SECTION.lower(): company_for_bolim("Beton"),
-	}
-	bootinfo.carieer_route_options, bootinfo.carieer_form_defaults = section_route_options()
-
+def hide_foreign_icons(bootinfo):
+	"""hooks.py: extend_bootinfo. Karer / Beton xodimi (ERPNext'ning boshqa rollari bo'lmasa) desktop'da faqat Carieer
+	ikonkalarini ko'radi: Karer yoki Beton Zavod, Kassa, Sotuv, Ta'minot, Ombor, Ishlab chiqarish, Texnika, Hisobotlar.
+	ERPNext'ning Accounting, Stock, Selling ... papkalari ularga ko'rinmaydi. System Manager hammasini ko'radi."""
 	roles = set(frappe.get_roles())
 	if roles & POWER_ROLES or not roles & set(ALL_ROLES):
 		return
-
-	keep = user_sections(roles)
-	keep_keys = {s.lower() for s in keep} | {"my workspaces"}
-	bootinfo.workspace_sidebar_item = {k: v for k, v in sidebars.items() if k in keep_keys}
-	bootinfo.desktop_icons = [i for i in (bootinfo.get("desktop_icons") or []) if i.get("label") in keep]
+	icons = bootinfo.get("desktop_icons")
+	if icons:
+		bootinfo.desktop_icons = [i for i in icons if i.get("app") == "carieer"]
 
 
-def section_route_options() -> tuple[dict, dict]:
-	"""Bo'lim (Karer / Beton Zavod) ichida ochilgan hujjat shu bo'lim firmasida bo'lsin (public/js/carieer.js).
-	Aks holda ikkala firmaga ruxsati bor foydalanuvchida (Administrator, menejer) standart firma - masalan Eko Karer -
-	qo'yiladi: Beton Zavod -> Qabul -> tovar Karer omboriga tushib qoladi.
-	Qaytaradi:
-	  ro'yxat filtri / yangi forma qiymatlari: {"Purchase Receipt": {"beton zavod": {"company": "Eko Beton"}},
-	                                            "Sotuv": {"karer": {"tip": "Karer", "company": "Eko Karer"}}}
-	  faqat yangi forma uchun (ro'yxat filtri emas): {"Purchase Receipt": {"beton zavod": {"set_warehouse": ...}}}"""
-	from carieer.utils import find_zavod
+def user_form_defaults() -> dict:
+	"""{"Purchase Receipt": {"company": "Eko Beton", "set_warehouse": "..."}, "Sotuv": {"tip": "Beton", ...}}
+	Faqat bitta zavodga bog'langan xodim uchun (ikkala zavodga ruxsati bor xodim / Administrator - o'zi tanlaydi)."""
+	from carieer.utils import find_zavod  # noqa: F401
 
-	options_out, defaults_out = {}, {}
-	for section, bolim in ((KARER_SECTION, "Karer"), (BETON_SECTION, "Beton")):
-		zavod = find_zavod(bolim)
-		z = zavod and frappe.db.get_value(
-			"Zavod", zavod, ["company", "xomashyo_ombori", "asosiy_ombor"], as_dict=True
-		)
-		if not z or not z.company:
-			continue
-		doctypes = frappe.get_all(
-			"Workspace Sidebar Item", filters={"parent": section, "link_type": "DocType"}, pluck="link_to"
-		)
-		for doctype in set(doctypes):
-			if not frappe.db.exists("DocType", doctype):
-				continue
-			meta = frappe.get_meta(doctype)
-			options = {}
-			for df in meta.get("fields", {"fieldtype": "Link"}):
-				if df.options == "Company" and df.fieldname == "company":
-					options["company"] = z.company
-				elif df.options == "Zavod":
-					options[df.fieldname] = zavod
-			if options:
-				options_out.setdefault(doctype, {})[section.lower()] = options
-			# xarid: tovar shu bo'lim omboriga (Beton - xomashyo ombori)
-			warehouse = z.xomashyo_ombori or z.asosiy_ombor
-			if warehouse and doctype in ("Purchase Receipt", "Purchase Invoice") and meta.has_field("set_warehouse"):
-				defaults_out.setdefault(doctype, {})[section.lower()] = {"set_warehouse": warehouse}
-	return options_out, defaults_out
+	zavodlar = get_allowed_zavodlar()
+	if len(zavodlar) != 1:
+		return {}
+	zavod = zavodlar[0]
+	z = frappe.db.get_value("Zavod", zavod, ["company", "xomashyo_ombori", "asosiy_ombor"], as_dict=True)
+	if not z or not z.company:
+		return {}
+	out = {}
+	for doctype in frappe.get_all("DocType", filters={"module": "Carieer", "istable": 0, "issingle": 0}, pluck="name"):
+		options = {}
+		for df in frappe.get_meta(doctype).get("fields", {"fieldtype": "Link"}):
+			if df.options == "Company" and df.fieldname == "company":
+				options["company"] = z.company
+			elif df.options == "Zavod":
+				options[df.fieldname] = zavod
+		if options:
+			out[doctype] = options
+	# xarid: tovar o'z zavodi omboriga (Beton - xomashyo ombori)
+	warehouse = z.xomashyo_ombori or z.asosiy_ombor
+	for doctype in ("Purchase Receipt", "Purchase Invoice"):
+		out[doctype] = {"company": z.company, **({"set_warehouse": warehouse} if warehouse else {})}
+	return out

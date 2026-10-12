@@ -1,0 +1,49 @@
+{
+ "app": "carieer",
+ "creation": "2026-10-12 10:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Sidebar",
+ "header_icon": "factory",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "doctype": "Sidebar Item",
+   "icon": "home",
+   "idx": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Karer: bosh sahifa",
+   "link_to": "Karer",
+   "link_type": "Workspace",
+   "parentfield": "items",
+   "parenttype": "Sidebar",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "doctype": "Sidebar Item",
+   "icon": "factory",
+   "idx": 2,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Beton Zavod: bosh sahifa",
+   "link_to": "Beton Zavod",
+   "link_type": "Workspace",
+   "parentfield": "items",
+   "parenttype": "Sidebar",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-10-12 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Carieer",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Carieer"
+}

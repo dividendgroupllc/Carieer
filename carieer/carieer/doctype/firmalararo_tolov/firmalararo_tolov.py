@@ -10,7 +10,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, fmt_money
+from frappe.utils import flt, fmt_money, now_datetime
 
 from carieer.permissions import check_company, get_allowed_companies
 from carieer.utils import (
@@ -52,6 +52,7 @@ class FirmalararoTolov(Document):
 			frappe.throw(_("Ikkala firmaning asosiy valyutasi bir xil bo'lishi kerak"))
 		if flt(self.summa) <= 0:
 			frappe.throw(_("Summa 0 dan katta bo'lishi kerak"))
+		self.check_sotuv_qarzi()
 		self.set_amounts()
 		self.set_joriy_qarz()
 		if self.docstatus == 0:
@@ -71,6 +72,20 @@ class FirmalararoTolov(Document):
 				),
 				self.doctype,
 				self.name,
+			)
+
+	def check_sotuv_qarzi(self):
+		"""Aniq sotuv uchun to'lov shu sotuv qarzidan ko'p bo'lmasin: ortiqchasi boshqa (eski) qarzlarga o'tib ketmasin."""
+		if not self.sotuv or self.docstatus != 0:
+			return
+		qarz = flt(frappe.db.get_value("Sotuv", self.sotuv, "outstanding_amount"))
+		kurs = flt(self.kurs) or 1
+		if flt(self.summa) * kurs > qarz + 0.01:
+			frappe.throw(
+				_(
+					"{0} bo'yicha qarz {1}. Bundan ko'p ({2}) to'lab bo'lmaydi: ortiqcha pul boshqa qarzlarga o'tib ketadi. "
+					"Summani kamaytiring yoki «Qaysi sotuv uchun» ni bo'sh qoldiring."
+				).format(self.sotuv, fmt_money(qarz, 0, self.currency), fmt_money(flt(self.summa) * kurs, 0, self.currency))
 			)
 
 	def set_joriy_qarz(self):
@@ -131,11 +146,13 @@ class FirmalararoTolov(Document):
 	def on_submit(self):
 		with as_admin():
 			self.make_documents()
-		# endi to'lov qaysi hujjatlarni yopgani aniq - shu yoziladi
 		self.db_set("nima_uchun", describe(self), update_modified=False)
 		notify(
 			self.oluvchi_firma,
-			_("{0} {1} to'ladi{2}").format(
+			_(
+				"{0} {1} to'ladi{2}. Pul tushganini tekshiring va ochib «Pulni qabul qildim» bosing: "
+				"qaysi kassaga (naqd, USD, karta, bank) tushganini tanlang - shundan keyin qarz yopiladi"
+			).format(
 				self.tolovchi_firma,
 				fmt_money(self.summa, 0, self.valyuta or self.currency),
 				f" ({self.sotuv})" if self.sotuv else "",
@@ -145,26 +162,80 @@ class FirmalararoTolov(Document):
 		)
 
 	def make_documents(self):
-		if self.is_refund():
+		"""To'lovchi firma kitobiga darhol yoziladi (kassadan chiqim, oluvchiga qarz kamayadi). Oluvchi firma kitobiga -
+		pulni haqiqatan olganini tasdiqlagandan keyin (tasdiqlash): qaysi kassaga tushgani (naqd / USD / karta / bank) o'sha paytda tanlanadi."""
+		refund = self.is_refund()
+		self.db_set("qaytarish", int(refund))
+		if refund:
 			# Qaytarish: oluvchi ilgari ortiqcha to'lagan, to'lovchi uning avansini qaytaryapti.
-			# to'lovchida - mijozga (oluvchi) pul qaytarildi, oluvchida - ta'minotchidan (to'lovchi) pul qaytdi.
-			# Ikkala kitobda avans yopiladi; aks holda bir tomonda «mijoz avansi», ikkinchisida «ta'minotchiga avans»
-			# bo'lib osilib qoladi va keyingi sotuv qaytarilgan avansdan «to'langan» bo'lib ketadi.
-			customer, supplier = ensure_inter_company_parties(self.tolovchi_firma, self.oluvchi_firma)
+			# To'lovchida - mijozga (oluvchi) pul qaytarildi, oluvchida - ta'minotchidan (to'lovchi) pul qaytdi.
+			customer, _supplier = ensure_inter_company_parties(self.tolovchi_firma, self.oluvchi_firma)
 			pay = self.make_payment_entry("Pay", self.tolovchi_firma, self.tolovchi_kassa, "Customer", customer)
-			receive = self.make_payment_entry(
-				"Receive", self.oluvchi_firma, self.oluvchi_kassa, "Supplier", supplier
-			)
 		else:
 			# oluvchi = "sotuvchi" (unda to'lovchi firma ichki mijoz), to'lovchi = "xaridor" (unda oluvchi ichki yetkazib beruvchi)
-			customer, supplier = ensure_inter_company_parties(self.oluvchi_firma, self.tolovchi_firma)
+			_customer, supplier = ensure_inter_company_parties(self.oluvchi_firma, self.tolovchi_firma)
 			pay = self.make_payment_entry("Pay", self.tolovchi_firma, self.tolovchi_kassa, "Supplier", supplier)
-			receive = self.make_payment_entry(
-				"Receive", self.oluvchi_firma, self.oluvchi_kassa, "Customer", customer
-			)
-		self.db_set(
-			{"tolovchi_payment_entry": pay, "oluvchi_payment_entry": receive, "status": "To'langan"}
+		self.db_set({"tolovchi_payment_entry": pay, "status": "Tasdiq kutilmoqda", "tasdiq_holati": "Kutilmoqda"})
+
+	def make_receive_entry(self) -> str:
+		if self.qaytarish:
+			_customer, supplier = ensure_inter_company_parties(self.tolovchi_firma, self.oluvchi_firma)
+			return self.make_payment_entry("Receive", self.oluvchi_firma, self.oluvchi_kassa, "Supplier", supplier)
+		customer, _supplier = ensure_inter_company_parties(self.oluvchi_firma, self.tolovchi_firma)
+		return self.make_payment_entry("Receive", self.oluvchi_firma, self.oluvchi_kassa, "Customer", customer)
+
+	def onload(self):
+		self.set_onload(
+			"can_confirm",
+			self.docstatus == 1
+			and self.tasdiq_holati == "Kutilmoqda"
+			and check_company(self.oluvchi_firma, throw=False),
 		)
+
+	@frappe.whitelist()
+	def tasdiqlash(self, kassa: str | None = None):
+		"""Oluvchi firma: pul tushganini tasdiqlaydi va qaysi kassaga tushganini tanlaydi (naqd UZS / naqd USD / karta / bank).
+		Shundan keyin oluvchi kitobiga kirim yoziladi va qarz (sotuv) yopiladi."""
+		if self.docstatus != 1 or self.tasdiq_holati != "Kutilmoqda":
+			frappe.throw(_("Bu to'lov tasdiq kutmayapti"))
+		check_company(self.oluvchi_firma)
+		kassa = kassa or self.oluvchi_kassa
+		info = get_kassa_info(kassa, self.oluvchi_firma)
+		if not info.account:
+			frappe.throw(_("{0} kassasi uchun {1} firmasida hisob ko'rsatilmagan").format(kassa, self.oluvchi_firma))
+		who = frappe.session.user
+		self.db_set(
+			{
+				"oluvchi_kassa": kassa,
+				"oluvchi_valyuta": info.currency,
+				"oluvchi_kassa_summa": self.kassa_amount(info.currency),
+			}
+		)
+		with as_admin():
+			receive = self.make_receive_entry()
+		self.db_set(
+			{
+				"oluvchi_payment_entry": receive,
+				"status": "To'langan",
+				"tasdiq_holati": "Tasdiqlandi",
+				"tasdiq_qildi": who,
+				"tasdiq_vaqti": now_datetime(),
+			}
+		)
+		self.db_set("nima_uchun", describe(self), update_modified=False)
+		notify(
+			self.tolovchi_firma,
+			_("{0} to'lovni tasdiqladi: {1} {2} ga ({3}) tushdi{4}").format(
+				self.oluvchi_firma,
+				fmt_money(self.kassa_amount(info.currency), 2, info.currency),
+				kassa,
+				who,
+				f" - {self.sotuv}" if self.sotuv else "",
+			),
+			self.doctype,
+			self.name,
+		)
+		return receive
 
 	def is_refund(self) -> bool:
 		"""To'lovchi kitobida: oluvchiga tovar uchun qarzi yo'q, lekin oluvchidan olgan ishlatilmagan avansi bor ->
@@ -243,7 +314,7 @@ class FirmalararoTolov(Document):
 			first = self.sotuv and frappe.db.get_value(
 				"Sotuv", self.sotuv, "purchase_invoice" if pay else "sales_invoice"
 			)
-			allocate(pe, voucher_type, party_type, party, company, base, first=first)
+			allocate(pe, voucher_type, party_type, party, company, base, first=first, only=bool(self.sotuv))
 		pe.flags.ignore_permissions = True
 		pe.setup_party_account_field()
 		pe.set_missing_values()
@@ -256,7 +327,7 @@ class FirmalararoTolov(Document):
 		return pe.name
 
 
-def allocate(pe, voucher_type, party_type, party, company, amount, first=None):
+def allocate(pe, voucher_type, party_type, party, company, amount, first=None, only=False):
 	"""To'lovni to'lanmagan hisob-fakturalarga taqsimlaydi: avval `first` (to'lov aynan shu sotuv uchun), keyin
 	eng eskilaridan (FIFO). Ortib qolgani avans bo'lib qoladi."""
 	party_field = "supplier" if party_type == "Supplier" else "customer"
@@ -268,6 +339,8 @@ def allocate(pe, voucher_type, party_type, party, company, amount, first=None):
 		order_by="posting_date asc, creation asc",
 	)
 	invoices.sort(key=lambda inv: inv.name != first)  # barqaror: qolganlari FIFO tartibida
+	if only and first:
+		invoices = [inv for inv in invoices if inv.name == first]  # aniq sotuv uchun to'lov: boshqa qarzlarga tegmaydi
 	for inv in invoices:
 		if left <= 0:
 			break
@@ -327,13 +400,38 @@ def sotuv_line(name: str, summa: float | None = None) -> str:
 	return line
 
 
+def fifo_preview(doc) -> str:
+	"""Sotuv tanlanmagan to'lov: qaysi (eng eski) qarzlar yopilishini oldindan ko'rsatadi."""
+	_customer, supplier = ensure_inter_company_parties(doc.oluvchi_firma, doc.tolovchi_firma)
+	left = flt(doc.base_summa) or flt(doc.summa)
+	lines = [_("Sotuv tanlanmagan - eng eski qarzlar yopiladi:")]
+	for inv in frappe.get_all(
+		"Purchase Invoice",
+		{"company": doc.tolovchi_firma, "supplier": supplier, "docstatus": 1, "outstanding_amount": [">", 0]},
+		["name", "posting_date", "outstanding_amount"],
+		order_by="posting_date asc, creation asc",
+	):
+		if left <= 0:
+			break
+		part = min(left, flt(inv.outstanding_amount))
+		lines.append(f"{inv.name} ({inv.posting_date}): {fmt_qty(part)} / qarz {fmt_qty(inv.outstanding_amount)}")
+		left -= part
+	if left > 0.01:
+		lines.append(_("Avans (keyingi tovar uchun): {0}").format(fmt_qty(left)))
+	return "\n".join(lines)
+
+
 def describe(doc) -> str:
 	"""To'lov nima uchun. Saqlanganda - bog'langan sotuv; tasdiqlangandan keyin - to'lov aslida yopgan hujjatlar
 	(oluvchi kitobidagi Sales Invoice -> Sotuv), ortib qolgani avans; qaytarish bo'lsa - shu yoziladi."""
 	if doc.docstatus == 0:
 		if doc.sotuv:
 			return sotuv_line(doc.sotuv)
-		return _("Qarzni to'lash: eng eski to'lanmagan xaridlarga yoziladi (tasdiqlangandan keyin shu yerda ko'rinadi)")
+		return fifo_preview(doc)
+	if not doc.oluvchi_payment_entry:
+		# pul oluvchi tasdig'ini kutmoqda: hali oluvchi kitobiga yozilmagan
+		base = sotuv_line(doc.sotuv) if doc.sotuv else _("Qarzni to'lash")
+		return base + "\n" + _("⏳ {0} pulni tasdiqlashi kutilmoqda").format(doc.oluvchi_firma)
 	if frappe.db.get_value("Payment Entry", doc.tolovchi_payment_entry, "party_type") == "Customer":
 		return _("Ortiqcha to'lovni qaytarish ({0} → {1})").format(doc.tolovchi_firma, doc.oluvchi_firma)
 	lines, used = [], 0.0
@@ -374,3 +472,29 @@ def refresh_descriptions(company_a: str, company_b: str):
 		text = describe(doc)
 		if text != doc.nima_uchun:
 			doc.db_set("nima_uchun", text, update_modified=False)
+
+
+@frappe.whitelist()
+def kassa_preview(company: str, kassa: str, summa: float, valyuta: str | None = None, kirim: int = 0, posting_date=None):
+	"""Forma uchun: kassada hozir qancha pul bor va shu to'lovdan keyin qancha qoladi (minus bo'lsa - qarzga kiradi)."""
+	from frappe.utils import cint, nowdate
+
+	info = get_kassa_info(kassa, company)
+	if not info.account:
+		return {}
+	company_currency = get_company_currency(company)
+	tmp = frappe.new_doc("Firmalararo Tolov")
+	tmp.currency = company_currency
+	tmp.valyuta = valyuta or company_currency
+	tmp.posting_date = posting_date or nowdate()
+	tmp.summa = flt(summa)
+	tmp.kurs = 1 if tmp.valyuta == company_currency else get_rate(tmp.valyuta, company_currency, tmp.posting_date)
+	tmp.base_summa = flt(tmp.summa * tmp.kurs, 2)
+	amount = tmp.kassa_amount(info.currency)
+	balance = flt(info.balance, 2)
+	return {
+		"balance": balance,
+		"amount": amount,
+		"after": flt(balance + amount if cint(kirim) else balance - amount, 2),
+		"currency": info.currency,
+	}

@@ -36,9 +36,10 @@
   {
    "fieldname": "hammasi",
    "fieldtype": "Check",
-   "label": "Тўланган ҳужжатлар ҳам",
+   "label": "To'langan hujjatlar ham (tarix)",
    "mandatory": 0,
-   "wildcard_filter": 0
+   "wildcard_filter": 0,
+   "default": "1"
   },
   {
    "fieldname": "ichki_firma",

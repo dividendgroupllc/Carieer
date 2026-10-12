@@ -49,7 +49,7 @@
    "description": "Bo'sh qoldirilsa tovarning sotuv birligi",
    "fieldname": "uom",
    "fieldtype": "Link",
-   "in_list_view": 1,
+   "in_list_view": 0,
    "label": "Ед.изм",
    "options": "UOM"
   },

@@ -202,17 +202,18 @@ def check_kassa_balance(mode_of_payment: str, company: str, amount: float, sana=
 		# boshqa firmaning kassa qoldig'i ko'rsatilmaydi
 		msg = _("{0} kassasida pul yetarli emas - kassa minusga (qarzga) kiradi.").format(f"<b>{mode_of_payment}</b>")
 	elif minus_ok:
+		qarz = flt(amount) - max(flt(available), 0)
 		msg = _(
-			"{0} kassasida {1} bor, {2} chiqarilmoqda. Kassa minusga kiradi: qoldiq {3} bo'ladi - "
-			"bu kassa qarzi, keyingi kirimlar (sotuv) bilan yopiladi."
-		).format(f"<b>{mode_of_payment}</b>", money(available), money(amount), money(flt(available) - flt(amount)))
+			"<b>{0}</b> kassasida {1} bor, {2} chiqarilmoqda.<br><br>"
+			"<b>{3}</b> qarzga kirdi: kassa <b>-{3}</b> (minus) bo'ladi. Bu kassa qarzi - keyingi kirimlar (sotuv, to'lov) bilan yopiladi."
+		).format(mode_of_payment, money(max(available, 0)), money(amount), money(qarz))
 	else:
 		msg = _("{0} kassasida {1} bor, {2} chiqarilmoqda. Avval kassaga kirim qiling.").format(
 			f"<b>{mode_of_payment}</b>", money(available), money(amount)
 		)
 	if minus_ok:
-		# kassa minusga kirishi mumkin (Karer Sozlamalari): to'lov o'tadi, faqat ogohlantiriladi
-		frappe.msgprint(msg, indicator="orange", alert=True)
+		# kassa minusga kirishi mumkin (Karer Sozlamalari): to'lov o'tadi, lekin ogohlantirish oynasi chiqadi
+		frappe.msgprint(msg, title=_("Kassa minusga (qarzga) kiradi"), indicator="orange")
 	else:
 		frappe.throw(msg, title=_("Kassada pul yetarli emas"))
 
@@ -332,6 +333,20 @@ def validate_internal_payment(doc, method=None):
 		).format(doc.party),
 		title=_("Ichki firma"),
 	)
+
+
+def validate_payment_kassa(doc, method=None):
+	"""hooks.py: Payment Entry -> validate. Hisob-fakturadan «To'lov» (Create -> Payment) yoki qo'lda kiritilgan har qanday
+	chiqim ham kassa nazoratidan o'tadi: kassada pul yo'q bo'lsa (Karer Sozlamalari: minusga ruxsat o'chiq) bloklanadi."""
+	if doc.payment_type not in ("Pay", "Internal Transfer") or flt(doc.paid_amount) <= 0 or not doc.paid_from:
+		return
+	if frappe.get_cached_value("Account", doc.paid_from, "account_type") not in ("Cash", "Bank"):
+		return
+	kassa = frappe.db.get_value(
+		"Mode of Payment Account", {"company": doc.company, "default_account": doc.paid_from}, "parent"
+	)
+	if kassa:
+		check_kassa_balance(kassa, doc.company, doc.paid_amount, doc.posting_date)
 
 
 def validate_mode_of_payment(doc, method=None):
@@ -473,7 +488,10 @@ def ensure_inter_company_parties(seller: str, buyer: str) -> tuple[str, str]:
 
 
 def make_inter_company_purchase_invoice(sales_invoice: str):
-	from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_inter_company_purchase_invoice as fn
+	try:  # ERPNext v17: mapper alohida modulga chiqarilgan
+		from erpnext.accounts.doctype.sales_invoice.mapper import make_inter_company_purchase_invoice as fn
+	except ImportError:  # ERPNext v16
+		from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_inter_company_purchase_invoice as fn
 
 	return fn(sales_invoice)
 

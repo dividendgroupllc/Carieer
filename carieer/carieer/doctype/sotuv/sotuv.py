@@ -16,7 +16,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, fmt_money, formatdate, now_datetime, nowdate
+from frappe.utils import add_days, cint, date_diff, flt, fmt_money, formatdate, now_datetime, nowdate
 
 from carieer.permissions import check_company, get_allowed_companies
 from carieer.utils import (
@@ -62,6 +62,12 @@ class Sotuv(Document):
 			return
 		self.set_onload(
 			"can_accept", self.qabul_holati == "Kutilmoqda" and check_company(self.ichki_firma, throw=False)
+		)
+		self.set_onload(
+			"can_pay",
+			self.qabul_holati == "Qabul qilindi"
+			and flt(self.outstanding_amount) > 0.01
+			and check_company(self.ichki_firma, throw=False),
 		)
 		self.set_onload(
 			"can_request_payment",
@@ -350,7 +356,8 @@ class Sotuv(Document):
 		"""Xaridor firma qabul qildi: tovar omboridan omboriga o'tadi, qarz ikkala kitobga yoziladi.
 		kassa + summa berilsa - shu zahoti to'laydi (Firmalararo To'lov), aks holda qarzga."""
 		self.check_buyer()
-		self.check_stock()  # yuborilgandan keyin sotuvchi omborida tovar kamaygan bo'lishi mumkin
+		with as_admin():  # sotuvchi firma ombori: xaridor xodimining ombor ruxsati yo'q
+			self.check_stock()  # yuborilgandan keyin sotuvchi omborida tovar kamaygan bo'lishi mumkin
 		with as_admin():
 			ensure_inter_company_parties(self.company, self.ichki_firma)
 			si = self.make_sales_invoice()
@@ -523,9 +530,20 @@ class Sotuv(Document):
 		status = (
 			"To'langan" if outstanding <= 0.01 else ("Qisman to'langan" if total_paid > 0 else "To'lanmagan")
 		)
+		was_debt = flt(self.outstanding_amount) > 0.01
 		self.db_set({"outstanding_amount": outstanding, "total_paid": total_paid, "status": status})
 		if self.ichki_firma:
 			self.sync_payment_request(outstanding)
+			if was_debt and outstanding <= 0.01 and self.qabul_holati == "Qabul qilindi":
+				# sotuvchi firma qarz yopilganini ko'radi: sotuv «To'langan»
+				notify(
+					self.company,
+					_("{0} {1} bo'yicha qarzni to'liq to'ladi ({2}). Sotuv «To'langan» deb belgilandi").format(
+						self.ichki_firma, self.name, fmt_money(self.amount, 0, self.currency)
+					),
+					"Sotuv",
+					self.name,
+				)
 
 	def sync_payment_request(self, outstanding: float):
 		"""Kutilayotgan to'lov so'rovi (Firmalararo To'lov, saqlangan) qarzga mos bo'lsin: qisman to'lansa summa
@@ -570,6 +588,24 @@ class Sotuv(Document):
 
 # ---------------------------------------------------------------- firmalararo (forma tugmalari, sotuv.js)
 @frappe.whitelist()
+def get_item_defaults(item_code: str, tip: str, currency: str | None = None) -> dict:
+	"""Forma: tovar tanlanganda birlik, narx (Item Price) va sotuvchi firma ombori o'zi to'ldiriladi."""
+	frappe.has_permission("Sotuv", "read", throw=True)
+	company = company_for_tip(tip)
+	stock_uom, sales_uom, item_name = frappe.get_cached_value(
+		"Item", item_code, ["stock_uom", "sales_uom", "item_name"]
+	)
+	uom = sales_uom or stock_uom
+	currency = currency or get_company_currency(company)
+	return {
+		"item_name": item_name,
+		"uom": uom,
+		"rate": get_selling_price(item_code, uom, currency),
+		"warehouse": get_item_warehouse(item_code, company),
+	}
+
+
+@frappe.whitelist()
 def qabul_qilish(name: str, kassa: str | None = None, summa: float | None = None):
 	"""Xaridor firma: «Qabul qilish». kassa + summa - shu zahoti to'lash, bo'sh - qarzga."""
 	doc = frappe.get_doc("Sotuv", name)
@@ -581,6 +617,17 @@ def qabul_qilish(name: str, kassa: str | None = None, summa: float | None = None
 def rad_etish(name: str, sabab: str):
 	frappe.get_doc("Sotuv", name).reject(sabab)
 	return frappe.db.get_value("Sotuv", name, "status")
+
+
+@frappe.whitelist()
+def qarzni_tolash(name: str):
+	"""Xaridor firma: shu sotuv uchun qarzni to'lash - tayyor «Firmalararo To'lov» ochiladi (kassani tanlab Submit)."""
+	doc = frappe.get_doc("Sotuv", name)
+	check_company(doc.ichki_firma)
+	if not doc.ichki_firma or doc.qabul_holati != "Qabul qilindi" or flt(doc.outstanding_amount) <= 0.01:
+		frappe.throw(_("Bu sotuv bo'yicha to'lanmagan qarz yo'q"))
+	pending = frappe.db.get_value("Firmalararo Tolov", {"docstatus": 0, "sotuv": doc.name}, "name")
+	return pending or make_firmalararo_tolov(doc, flt(doc.outstanding_amount), submit=False, notify_buyer=False)
 
 
 @frappe.whitelist()
@@ -597,7 +644,9 @@ def tolov_sorash(name: str):
 	return make_firmalararo_tolov(doc, flt(doc.outstanding_amount), submit=False)
 
 
-def make_firmalararo_tolov(doc, summa: float, tolovchi_kassa: str | None = None, submit: bool = False) -> str:
+def make_firmalararo_tolov(
+	doc, summa: float, tolovchi_kassa: str | None = None, submit: bool = False, notify_buyer: bool = True
+) -> str:
 	"""Xaridor (ichki_firma) -> sotuvchi (company) to'lov. submit=False - to'lov so'rovi (kutilmoqda)."""
 	ft = frappe.new_doc("Firmalararo Tolov")
 	ft.update(
@@ -613,7 +662,7 @@ def make_firmalararo_tolov(doc, summa: float, tolovchi_kassa: str | None = None,
 		}
 	)
 	ft.sotuv = doc.name
-	ft.flags.tolov_sorovi = not submit
+	ft.flags.tolov_sorovi = not submit and notify_buyer
 	ft.insert()
 	if submit:
 		ft.submit()
@@ -722,7 +771,73 @@ def get_permission_query_conditions(user=None):
 
 def has_permission(doc, ptype=None, user=None):
 	allowed = get_allowed_companies(user)
-	if not allowed or not doc.company or doc.company in allowed:
+	company = doc.company
+	if doc.docstatus == 0 and doc.get("tip"):
+		# qoralama: firma «Тип» (zavod) dan aniqlanadi; formadagi standart firma (masalan Karer) Beton xodimini to'sib qo'ymasin
+		company = frappe.db.get_value("Zavod", doc.tip, "company") or company
+	if not allowed or not company or company in allowed:
 		return True
 	# xaridor firma - faqat ko'radi (qabul qilish / rad etish - alohida metod, o'z tekshiruvi bilan)
 	return doc.ichki_firma in allowed and (ptype or "read") in ("read", "print", "email", "report", "export")
+
+
+# ---------------------------------------------------------------- qarz muddati eslatmasi
+def remind_overdue():
+	"""hooks.py -> scheduler (har kuni): firmalararo sotuv qarzga olingan va muddat (Karer Sozlamalari -> Qarz muddati)
+	o'tib ketgan bo'lsa - xaridor firmaga BIR MARTA eslatma: qachon, nima olgan, qancha qarz. Bildirishnomani bosib
+	«Firmalararo to'lov» ochiladi (Submit - pul kassadan o'tadi). Karer ham, Beton ham: sotuvchi firma kim bo'lsa, xaridorga boradi."""
+	days = frappe.db.get_single_value("Karer Sozlamalari", "qarz_muddati_kun")
+	days = 7 if days is None else cint(days)
+	if days <= 0:
+		return
+	for name in frappe.get_all(
+		"Sotuv",
+		filters={
+			"docstatus": 1,
+			"qabul_holati": "Qabul qilindi",
+			"outstanding_amount": [">", 0.01],
+			"eslatma_vaqti": ["is", "not set"],
+			"posting_date": ["<=", add_days(nowdate(), -days)],
+		},
+		pluck="name",
+	):
+		try:
+			send_debt_reminder(frappe.get_doc("Sotuv", name))
+			frappe.db.commit()
+		except Exception:
+			frappe.db.rollback()
+			frappe.log_error(title=f"Qarz eslatmasi yuborilmadi: {name}")
+
+
+def send_debt_reminder(doc: "Sotuv"):
+	ft = frappe.db.get_value("Firmalararo Tolov", {"docstatus": 0, "sotuv": doc.name}, "name")
+	if not ft:
+		ft = make_firmalararo_tolov(doc, flt(doc.outstanding_amount), submit=False, notify_buyer=False)
+	kun = date_diff(nowdate(), doc.posting_date)
+	notify(
+		doc.ichki_firma,
+		_(
+			"Eslatma: {0} sizga {1} sanada {2} bergan ({3}). Qarzingiz {4} (jami {5}, to'langan {6}), {7} kun o'tdi. "
+			"Iltimos, qarzni o'z vaqtida to'lang: bosib «Submit» qiling - pul kassangizdan o'tkaziladi."
+		).format(
+			doc.company,
+			formatdate(doc.posting_date),
+			doc.items_text(),
+			doc.name,
+			fmt_money(doc.outstanding_amount, 0, doc.currency),
+			fmt_money(doc.amount, 0, doc.currency),
+			fmt_money(doc.total_paid, 0, doc.currency),
+			kun,
+		),
+		"Firmalararo Tolov",
+		ft,
+	)
+	notify(
+		doc.company,
+		_("{0} ga qarz eslatmasi yuborildi: {1}, qarz {2}, {3} kun o'tdi").format(
+			doc.ichki_firma, doc.name, fmt_money(doc.outstanding_amount, 0, doc.currency), kun
+		),
+		"Sotuv",
+		doc.name,
+	)
+	doc.db_set("eslatma_vaqti", now_datetime(), update_modified=False)
