@@ -95,6 +95,10 @@ class Kassa(Document):
 			self.hisob = frappe.db.get_value(
 				"Account", {"company": self.company, "account_name": "Dividends Paid", "is_group": 0}, "name"
 			)
+		if self.hisob and self.kategoriya:
+			# qo'lda tanlangan hisob turga mos kelmasa (masalan kassaning o'z hisobi) - kategoriyadan topiladi
+			if frappe.get_cached_value("Account", self.hisob, "root_type") != root_type:
+				self.hisob = None
 		if not self.hisob and self.kategoriya:
 			self.hisob = get_kategoriya_account(self.kategoriya, self.company, root_type)
 		if not self.hisob:
@@ -113,9 +117,10 @@ class Kassa(Document):
 			frappe.throw(_("{0} guruh hisob. Oxirgi darajadagi hisobni tanlang").format(self.hisob))
 		if acc.root_type != root_type:
 			frappe.throw(
-				_("{0} uchun {1} turidagi hisob kerak (tanlangan: {2})").format(
-					self.party_type, root_type, acc.root_type
-				)
+				_(
+					"«Hisob (modda)» noto'g'ri: {0} uchun {1} turidagi hisob kerak, {2} esa {3}. "
+					"Hisobni bo'sh qoldiring - kategoriyadan o'zi topiladi"
+				).format(self.party_type, root_type, self.hisob, acc.root_type)
 			)
 		self.party = None
 		self.party_name = acc.account_name

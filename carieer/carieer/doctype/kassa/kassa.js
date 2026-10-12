@@ -9,6 +9,11 @@ frappe.ui.form.on("Kassa", {
 			if (!kirim && !chiqim) return {};
 			return { filters: { turi: ["in", [kirim ? "Kirim" : "Chiqim", "Ikkalasi"]] } };
 		});
+		// «Hisob (modda)»: faqat yozuv turiga mos hisob (Daromad - Income, Xarajat - Expense, Dividend - Equity)
+		frm.set_query("hisob", () => {
+			const root = { Xarajat: "Expense", Daromad: "Income", Dividend: "Equity" }[frm.doc.party_type];
+			return { filters: { company: frm.doc.company, is_group: 0, ...(root ? { root_type: root } : {}) } };
+		});
 		frm.set_query("party", () => {
 			if (frm.doc.party_type === "Customer") return { filters: { is_internal_customer: 0 } };
 			if (frm.doc.party_type === "Supplier") return { filters: { is_internal_supplier: 0 } };
@@ -17,7 +22,14 @@ frappe.ui.form.on("Kassa", {
 	refresh: (frm) => kassa_intro(frm),
 	amount: (frm) => kassa_intro(frm),
 	mode_of_payment: (frm) => kassa_intro(frm),
+	party_type(frm) {
+		if (frm.doc.hisob) frm.set_value("hisob", null); // oldingi tur hisobi yangi turga mos kelmaydi
+	},
+	kategoriya(frm) {
+		if (frm.doc.hisob) frm.set_value("hisob", null); // hisob kategoriyadan o'zi topiladi
+	},
 	turi(frm) {
+		if (frm.doc.hisob) frm.set_value("hisob", null);
 		if (frm.doc.kategoriya) frm.set_value("kategoriya", null); // oldingi tur kategoriyasi yangi turga mos kelmaydi
 		kassa_intro(frm);
 	},
