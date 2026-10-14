@@ -3,7 +3,7 @@
  "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2026-10-05 18:00:00.000000",
- "description": "Sotuv posti: Тип, Валюта, Доставка, Клиент, Номер машины, Товары, Услуги, Оплаты",
+ "description": "Продажа карьер: Дата, Клиент, Номер машины, Товары (Наименование, Кол-во, Ед.изм, Цена), Валюта, Курс, Услуги, Оплаты",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -12,23 +12,22 @@
   "posting_date",
   "posting_time",
   "cb_1",
-  "tip",
-  "company",
-  "cb_2",
-  "currency",
-  "conversion_rate",
-  "dostavka",
-  "cb_3",
-  "status",
-  "mijoz_section",
   "customer",
   "customer_name",
   "mobile_no",
-  "ichki_firma",
-  "cb_4",
+  "cb_2",
   "mashina_raqami",
   "haydovchi",
   "vehicle",
+  "dostavka",
+  "tsex",
+  "cb_3",
+  "currency",
+  "conversion_rate",
+  "summa_usd",
+  "status",
+  "tip",
+  "company",
   "tovar_section",
   "items",
   "xizmat_section",
@@ -44,16 +43,13 @@
   "cb_6",
   "total_paid",
   "outstanding_amount",
-  "qabul_section",
-  "qabul_holati",
-  "qabul_qildi",
-  "qabul_cb",
-  "qabul_vaqti",
-  "rad_sababi",
-  "eslatma_vaqti",
+  "korrektirovka_section",
+  "korrektirovka",
+  "korrektirovka_summa",
+  "tovarlar",
   "hujjat_section",
   "sales_invoice",
-  "purchase_invoice",
+  "journal_entry",
   "cb_7",
   "izoh",
   "amended_from"
@@ -98,9 +94,11 @@
    "ignore_user_permissions": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Тип (Karer / Beton)",
+   "label": "Тип",
    "options": "Zavod",
-   "reqd": 1
+   "reqd": 1,
+   "default": "Karer",
+   "hidden": 1
   },
   {
    "fetch_from": "tip.company",
@@ -110,7 +108,8 @@
    "in_standard_filter": 1,
    "label": "Firma",
    "options": "Company",
-   "read_only": 1
+   "read_only": 1,
+   "hidden": 0
   },
   {
    "fieldname": "cb_2",
@@ -129,7 +128,7 @@
    "depends_on": "eval:doc.conversion_rate && doc.conversion_rate != 1",
    "fieldname": "conversion_rate",
    "fieldtype": "Float",
-   "label": "Курс (firma valyutasiga)",
+   "label": "Курс",
    "precision": "4",
    "read_only": 1
   },
@@ -152,13 +151,8 @@
    "in_standard_filter": 1,
    "label": "Holat",
    "no_copy": 1,
-   "options": "Draft\nTasdiq kutilmoqda\nTo'lanmagan\nQisman to'langan\nTo'langan\nRad etildi\nCancelled",
+   "options": "Draft\nTo'lanmagan\nQisman to'langan\nTo'langan\nKorrektirovka\nCancelled",
    "read_only": 1
-  },
-  {
-   "fieldname": "mijoz_section",
-   "fieldtype": "Section Break",
-   "label": "Клиент"
   },
   {
    "fieldname": "customer",
@@ -186,25 +180,11 @@
    "options": "Phone"
   },
   {
-   "depends_on": "ichki_firma",
-   "description": "Mijoz o'zimizning firma: tasdiqlanganda unda avtomatik Purchase Invoice (kirim) yaratiladi",
-   "fieldname": "ichki_firma",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "label": "Ichki firma (firmalararo)",
-   "no_copy": 1,
-   "options": "Company",
-   "read_only": 1
-  },
-  {
-   "fieldname": "cb_4",
-   "fieldtype": "Column Break"
-  },
-  {
    "fieldname": "mashina_raqami",
    "fieldtype": "Data",
    "in_standard_filter": 1,
-   "label": "Номер машины"
+   "label": "Номер машины",
+   "in_list_view": 1
   },
   {
    "fieldname": "haydovchi",
@@ -228,7 +208,8 @@
    "fieldtype": "Table",
    "label": "Товары",
    "options": "Sotuv Tovar",
-   "reqd": 1
+   "reqd": 0,
+   "depends_on": "eval:!doc.korrektirovka"
   },
   {
    "fieldname": "xizmat_section",
@@ -239,7 +220,8 @@
    "fieldname": "xizmatlar",
    "fieldtype": "Table",
    "label": "Услуги",
-   "options": "Sotuv Xizmat"
+   "options": "Sotuv Xizmat",
+   "depends_on": "eval:!doc.korrektirovka"
   },
   {
    "description": "Yakunlangandan (Submit) keyin ham to'lov qo'shish mumkin: qator qo'shing va «Update» bosing",
@@ -252,7 +234,8 @@
    "fieldname": "tolovlar",
    "fieldtype": "Table",
    "label": "Оплаты",
-   "options": "Sotuv Tolov"
+   "options": "Sotuv Tolov",
+   "depends_on": "eval:!doc.korrektirovka"
   },
   {
    "fieldname": "jami_section",
@@ -288,7 +271,7 @@
   {
    "fieldname": "base_amount",
    "fieldtype": "Currency",
-   "label": "Общий (firma valyutasida)",
+   "label": "Сумма (so'mda)",
    "options": "Company:company:default_currency",
    "read_only": 1
   },
@@ -314,54 +297,6 @@
    "read_only": 1
   },
   {
-   "collapsible": 0,
-   "depends_on": "ichki_firma",
-   "fieldname": "qabul_section",
-   "fieldtype": "Section Break",
-   "label": "Xaridor firma tasdig'i"
-  },
-  {
-   "allow_on_submit": 1,
-   "description": "Firmalararo sotuv: xaridor firma qabul qilgandan keyin tovar uning omboriga kiradi va qarz yoziladi",
-   "fieldname": "qabul_holati",
-   "fieldtype": "Select",
-   "in_standard_filter": 1,
-   "label": "Tasdiq holati",
-   "no_copy": 1,
-   "options": "\nKutilmoqda\nQabul qilindi\nRad etildi",
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "qabul_qildi",
-   "fieldtype": "Link",
-   "label": "Kim tasdiqladi",
-   "no_copy": 1,
-   "options": "User",
-   "read_only": 1
-  },
-  {
-   "fieldname": "qabul_cb",
-   "fieldtype": "Column Break"
-  },
-  {
-   "allow_on_submit": 1,
-   "fieldname": "qabul_vaqti",
-   "fieldtype": "Datetime",
-   "label": "Qachon",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "depends_on": "rad_sababi",
-   "fieldname": "rad_sababi",
-   "fieldtype": "Small Text",
-   "label": "Rad etish sababi",
-   "no_copy": 1,
-   "read_only": 1
-  },
-  {
    "collapsible": 1,
    "fieldname": "hujjat_section",
    "fieldtype": "Section Break",
@@ -373,16 +308,6 @@
    "label": "Sales Invoice",
    "no_copy": 1,
    "options": "Sales Invoice",
-   "read_only": 1
-  },
-  {
-   "depends_on": "purchase_invoice",
-   "fieldname": "purchase_invoice",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "label": "Purchase Invoice (ichki firma)",
-   "no_copy": 1,
-   "options": "Purchase Invoice",
    "read_only": 1
   },
   {
@@ -404,13 +329,54 @@
    "read_only": 1
   },
   {
-   "allow_on_submit": 1,
-   "description": "Qarz muddati o'tgani haqida xaridorga eslatma yuborilgan vaqt (bir marta)",
-   "fieldname": "eslatma_vaqti",
-   "fieldtype": "Datetime",
-   "label": "Eslatma yuborilgan",
+   "fieldname": "tsex",
+   "fieldtype": "Data",
+   "label": "Цех"
+  },
+  {
+   "fieldname": "summa_usd",
+   "fieldtype": "Float",
+   "label": "Сумма $",
+   "precision": "2",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "tovarlar",
+   "fieldtype": "Data",
+   "label": "Наименование",
+   "read_only": 1,
    "no_copy": 1,
-   "read_only": 1
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "korrektirovka_section",
+   "fieldtype": "Section Break",
+   "label": "Корректировка (tovarsiz)",
+   "collapsible": 1,
+   "description": "Mijozning qarzini tovarsiz tuzatish: musbat summa - qarz oshadi, manfiy - kamayadi. Выручка (P&L) ga kirmaydi."
+  },
+  {
+   "fieldname": "korrektirovka",
+   "fieldtype": "Check",
+   "label": "Корректировка",
+   "no_copy": 1
+  },
+  {
+   "fieldname": "korrektirovka_summa",
+   "fieldtype": "Currency",
+   "label": "Сумма корректировки (+/-)",
+   "options": "currency",
+   "depends_on": "korrektirovka",
+   "no_copy": 1
+  },
+  {
+   "fieldname": "journal_entry",
+   "fieldtype": "Link",
+   "label": "Journal Entry",
+   "options": "Journal Entry",
+   "read_only": 1,
+   "no_copy": 1
   }
  ],
  "index_web_pages_for_search": 0,
@@ -456,38 +422,11 @@
    "amend": 1,
    "cancel": 1,
    "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Beton Menejer",
-   "share": 1,
-   "submit": 1,
-   "write": 1
-  },
-  {
-   "amend": 1,
-   "cancel": 1,
-   "create": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Karer Kassir",
-   "submit": 1,
-   "write": 1
-  },
-  {
-   "amend": 1,
-   "cancel": 1,
-   "create": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Beton Kassir",
    "submit": 1,
    "write": 1
   },
@@ -499,15 +438,6 @@
    "role": "Karer Operator",
    "submit": 1,
    "write": 1
-  },
-  {
-   "create": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Beton Operator",
-   "submit": 1,
-   "write": 1
   }
  ],
  "search_fields": "customer_name,mashina_raqami",
@@ -515,10 +445,6 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [
-  {
-   "color": "Blue",
-   "title": "Tasdiq kutilmoqda"
-  },
   {
    "color": "Red",
    "title": "To'lanmagan"
@@ -532,8 +458,8 @@
    "title": "To'langan"
   },
   {
-   "color": "Gray",
-   "title": "Rad etildi"
+   "color": "Blue",
+   "title": "Korrektirovka"
   },
   {
    "color": "Gray",

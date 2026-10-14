@@ -7,7 +7,7 @@ from frappe import _
 from frappe.utils import flt
 
 
-# ------------------------------------------------------------------ Zavod (Karer / Beton)
+# ------------------------------------------------------------------ Zavod (Karer)
 def get_zavod(company: str | None) -> frappe._dict:
 	"""Firma -> Zavod yozuvi (omborlar, standart kassa). Topilmasa bo'sh dict."""
 	if not company:
@@ -17,8 +17,8 @@ def get_zavod(company: str | None) -> frappe._dict:
 
 
 def find_zavod(bolim: str | None) -> str | None:
-	"""Bo'lim («Karer» / «Beton») -> Zavod nomi. Zavod boshqacha nomlangan bo'lsa ham topiladi
-	(masalan «Beton Zavod»): avval aniq nom, keyin nomida, keyin firmasi nomida shu so'z bo'lgan zavod."""
+	"""Bo'lim («Karer») -> Zavod nomi. Zavod boshqacha nomlangan bo'lsa ham topiladi:
+	avval aniq nom, keyin nomida, keyin firmasi nomida shu so'z bo'lgan zavod."""
 	if not bolim:
 		return None
 	if frappe.db.exists("Zavod", bolim):
@@ -88,30 +88,9 @@ def validate_warehouse_company(warehouse: str | None, company: str, label: str |
 		)
 
 
-def get_internal_company(party_type: str | None, party: str | None) -> str | None:
-	"""Kontragent o'zimizning boshqa firmamiz bo'lsa - o'sha firma nomi (ichki mijoz / ichki ta'minotchi)."""
-	field = {"Customer": "is_internal_customer", "Supplier": "is_internal_supplier"}.get(party_type)
-	if not field or not party:
-		return None
-	values = frappe.db.get_value(party_type, party, [field, "represents_company"], as_dict=True)
-	return values.represents_company if values and values.get(field) else None
-
-
-def validate_not_internal(party_type: str | None, party: str | None, tavsiya: str):
-	"""Ichki firma faqat bitta kitobga yozilsa, ikki firma qarzi bir-biriga mos kelmay qoladi."""
-	if get_internal_company(party_type, party):
-		frappe.throw(
-			_(
-				"{0} - o'zimizning firmamiz. U bilan hisob-kitobni <b>{1}</b> orqali qiling (ikkala firma kitobiga yoziladi)."
-			).format(party, tavsiya),
-			title=_("Ichki firma"),
-		)
-
-
 @contextmanager
 def as_admin():
-	"""Firmalararo hujjat ikkinchi firma kitobiga ham yozadi, xodimda esa u firmaga ruxsat yo'q (User Permission).
-	Faqat shu ichki qism tizim nomidan bajariladi."""
+	"""Xodimda ruxsati yo'q ichki amallar (masalan avansni hisob-fakturaga o'tkazish) tizim nomidan bajariladi."""
 	if frappe.session.user == "Administrator":
 		yield
 		return
@@ -159,6 +138,23 @@ def account_balance(account: str, upto=None) -> float:
 	)
 
 
+def kassalar_jami(company: str, upto=None) -> float:
+	"""Barcha kassalar (yoqilgan Mode of Payment hisoblari) qoldig'i firma valyutasida: USD kassalar kun kursi bilan so'mga
+	o'tkaziladi (jadvaldagi «Сумма в Сум» / Cash Flow «Денег на конец месяца»)."""
+	base = get_company_currency(company)
+	total = 0
+	for (account,) in frappe.db.sql(
+		"""select distinct a.default_account from `tabMode of Payment Account` a
+		join `tabMode of Payment` m on m.name = a.parent
+		where a.company = %s and m.enabled = 1 and ifnull(a.default_account, '') != ''""",
+		company,
+	):
+		currency = frappe.get_cached_value("Account", account, "account_currency")
+		balance = account_balance(account, upto)
+		total += balance if currency == base else balance * get_rate(currency, base, upto)
+	return flt(total, 2)
+
+
 def kassa_qarzlari(company: str, to_date=None) -> list[frappe._dict]:
 	"""Minusga kirgan kassalar (kassadan bor puldan ko'p chiqarilgan): [{kassa, qarz}] firma valyutasida.
 	Bu ham firmaning qarzi - keyingi kirimlar (sotuv) bilan yopiladi."""
@@ -182,9 +178,8 @@ def kassa_qarzlari(company: str, to_date=None) -> list[frappe._dict]:
 
 
 def check_kassa_balance(mode_of_payment: str, company: str, amount: float, sana=None):
-	"""Kassa nazorati: kassadagidan ko'p pul chiqarilsa.
-	Karer Sozlamalari -> «Kassada minus qoldiqqa ruxsat» yoqiq (standart): to'lov o'tadi, kassa minusga (qarzga)
-	kiradi va ogohlantiriladi; o'chirilsa - bloklanadi.
+	"""Kassa nazorati: kassadagidan ko'p pul chiqarilsa BLOKLANMAYDI - kassa minusga tushadi (qarzga kirdi) va
+	operator ogohlantiriladi. Kassani operator o'zi tanlaydi (hech qanday kassadan o'zi pul olinmaydi).
 	Orqa sana bilan kiritilsa ham tekshiriladi: o'sha kundagi va bugungi qoldiqdan kichigi olinadi."""
 	info = get_kassa_info(mode_of_payment, company)
 	if not info.account or flt(amount) <= 0:
@@ -192,38 +187,24 @@ def check_kassa_balance(mode_of_payment: str, company: str, amount: float, sana=
 	available = min(account_balance(info.account, sana), info.balance) if sana else info.balance
 	if flt(amount) <= flt(available) + 0.005:
 		return
-	from carieer.permissions import check_company
 
 	def money(value):
 		return frappe.format_value(value, {"fieldtype": "Currency", "options": info.currency})
 
-	minus_ok = frappe.db.get_single_value("Karer Sozlamalari", "kassa_minus_ruxsat")
-	if not check_company(company, throw=False):
-		# boshqa firmaning kassa qoldig'i ko'rsatilmaydi
-		msg = _("{0} kassasida pul yetarli emas - kassa minusga (qarzga) kiradi.").format(f"<b>{mode_of_payment}</b>")
-	elif minus_ok:
-		qarz = flt(amount) - max(flt(available), 0)
-		msg = _(
-			"<b>{0}</b> kassasida {1} bor, {2} chiqarilmoqda.<br><br>"
-			"<b>{3}</b> qarzga kirdi: kassa <b>-{3}</b> (minus) bo'ladi. Bu kassa qarzi - keyingi kirimlar (sotuv, to'lov) bilan yopiladi."
-		).format(mode_of_payment, money(max(available, 0)), money(amount), money(qarz))
-	else:
-		have = max(flt(available), 0)
-		msg = _(
-			"<b>{0}</b> kassasida {1} bor, {2} to'lanmoqda - pul yetmaydi.<br><br>"
-			"Summani <b>{1}</b> gacha kamaytiring: qolgan <b>{3}</b> qarz bo'lib qoladi va keyin Qarzlar bo'limidan "
-			"to'laysiz. Yoki avval kassaga kirim qiling."
-		).format(mode_of_payment, money(have), money(amount), money(flt(amount) - have))
-	if minus_ok:
-		# kassa minusga kirishi mumkin (Karer Sozlamalari): to'lov o'tadi, lekin ogohlantirish oynasi chiqadi
-		frappe.msgprint(msg, title=_("Kassa minusga (qarzga) kiradi"), indicator="orange")
-	else:
-		frappe.throw(msg, title=_("Kassada pul yetarli emas"))
+	frappe.msgprint(
+		_(
+			"Kassada pul yetarli emas: <b>{0}</b> da {1} bor, to'lanmoqda {2}. "
+			"Kassa minusga tushadi (qarzga kirdi): <b>-{3}</b>. Keyingi kirimlar bilan yopiladi."
+		).format(mode_of_payment, money(max(available, 0)), money(amount), money(flt(amount) - max(flt(available), 0))),
+		title=_("Kassa minusga (qarzga) kiradi"),
+		indicator="orange",
+		alert=True,
+	)
 
 
 def apply_advances(company: str, party_type: str, party: str, invoice_type: str, invoice_name: str) -> float:
 	"""Kontragentning ishlatilmagan avanslari (oldindan to'langan Payment Entry) shu hisob-fakturaga o'tkaziladi
-	(ERPNext Payment Reconciliation). Masalan: Beton Karer'ga 6 mln avans bergan, keyin 1,96 mln tovar oldi ->
+	(ERPNext Payment Reconciliation). Masalan: mijoz 6 mln avans bergan, keyin 1,96 mln tovar oldi ->
 	tovar avansdan yopiladi, Sotuv «To'langan» bo'ladi. Qaytaradi: o'tkazilgan summa."""
 	if flt(frappe.db.get_value(invoice_type, invoice_name, "outstanding_amount")) <= 0:
 		return 0
@@ -280,71 +261,19 @@ def reconcile(
 	return sum(flt(a.allocated_amount) for a in pr.allocation)
 
 
-def validate_inter_company_document(doc, method=None):
-	"""hooks.py: Sales Invoice, Delivery Note, Purchase Invoice, Purchase Receipt -> before_validate
-	(ERPNext'ning o'z tekshiruvlaridan oldin - xabar o'zbekcha va tushunarli bo'lsin).
-	O'zimizning ikkinchi firmamiz bilan oldi-sotdi faqat «Sotuv» orqali: sotuvchida Sales Invoice va xaridorda unga
-	bog'langan Purchase Invoice birga yaratiladi. Qo'lda kiritilgan hujjat faqat bitta firma kitobiga yoziladi:
-	masalan Beton'da «Eko Karer'dan» Purchase Receipt - Beton omboriga tovar kiradi, Beton Karer'ga qarzdor bo'ladi,
-	lekin Karer ombori kamaymaydi va Karer kitobida bu qarz yo'q (Firmalararo qarzlar: «Kitoblar mos emas»)."""
-	if doc.doctype in ("Sales Invoice", "Delivery Note"):
-		seller, buyer = doc.company, get_internal_company("Customer", doc.customer)
-		linked = doc.flags.get("carieer_sotuv")
-	else:
-		seller, buyer = get_internal_company("Supplier", doc.supplier), doc.company
-		# ERPNext'ning o'z firmalararo hujjati (Sales Invoice / Delivery Note dan yaratilgan) - ikkinchi kitobda jufti bor
-		linked = not doc.get("is_return") and (
-			doc.get("inter_company_invoice_reference") or doc.get("inter_company_reference")
-		)
-	if not seller or not buyer or linked:
-		return
-	if seller == buyer:
-		# masalan Beton Zavod bo'limida Qabul ochilgan, lekin «Firma» maydonida Eko Karer qolib ketgan va
-		# ta'minotchi ham Eko Karer (ERPNext: «Internal Sales Reference Missing»)
-		frappe.throw(
-			_(
-				"Firma ({0}) va kontragent ({1}) - bitta firma: firma o'zidan o'zi xarid qila olmaydi / o'ziga sotolmaydi."
-				"<br><br>Hujjatdagi <b>Firma (Company)</b> maydonini tekshiring. Boshqa firmamizdan tovar olinsa - "
-				"sotuvchi firma bo'limida <b>Sotuv</b> qilinadi, bu yerda hech narsa kiritilmaydi."
-			).format(doc.company, doc.get("customer") or doc.get("supplier")),
-			title=_("Firma noto'g'ri tanlangan"),
-		)
-	frappe.throw(
-		_(
-			"{0} va {1} - o'zimizning firmalarimiz. Ular o'rtasidagi oldi-sotdi qo'lda kiritilmaydi: "
-			"<b>{0}</b> bo'limida <b>Sotuv</b> qiling (Клиент = {1}). Shunda {0} da Sales Invoice (ombordan chiqim, "
-			"{1} ning qarzi) va {1} da Purchase Invoice (omborga kirim, qarzimiz) birga yaratiladi - ikkala kitob mos keladi."
-			"<br><br>Qaytarish bo'lsa - o'sha Sotuv'ni bekor qilib (Cancel) to'g'ri miqdor bilan qayta kiriting."
-		).format(seller, buyer),
-		title=_("Firmalararo oldi-sotdi"),
-	)
-
-
-def validate_internal_payment(doc, method=None):
-	"""hooks.py: Payment Entry -> validate. O'zimizning ikkinchi firmamizga to'lov faqat «Firmalararo To'lov» orqali:
-	oddiy Payment Entry faqat bitta firma kitobiga yoziladi va ikki firma qarzi bir-biriga mos kelmay qoladi."""
-	if not (doc.is_new() or doc.docstatus == 0) or doc.flags.get("firmalararo"):
-		return
-	if not get_internal_company(doc.party_type, doc.party):
-		return
-	if doc.reference_no and frappe.db.exists("Firmalararo Tolov", doc.reference_no):
-		return
-	frappe.throw(
-		_(
-			"{0} - o'zimizning firmamiz. Unga to'lov <b>Firmalararo To'lov</b> orqali kiritiladi "
-			"(ikkala firma kitobiga birdan yoziladi). Oldindan berilgan avans bo'lsa - u tovarga avtomatik o'tadi."
-		).format(doc.party),
-		title=_("Ichki firma"),
-	)
-
-
 def validate_payment_kassa(doc, method=None):
 	"""hooks.py: Payment Entry -> validate. Hisob-fakturadan «To'lov» (Create -> Payment) yoki qo'lda kiritilgan har qanday
-	chiqim ham kassa nazoratidan o'tadi: kassada pul yo'q bo'lsa (Karer Sozlamalari: minusga ruxsat o'chiq) bloklanadi."""
+	chiqim ham kassa nazoratidan o'tadi: kassada pul yo'q bo'lsa bloklanmaydi, kassa minusga tushadi va ogohlantiriladi."""
 	if doc.payment_type not in ("Pay", "Internal Transfer") or flt(doc.paid_amount) <= 0 or not doc.paid_from:
 		return
 	if frappe.get_cached_value("Account", doc.paid_from, "account_type") not in ("Cash", "Bank"):
 		return
+	if doc.payment_type == "Pay" and not doc.mode_of_payment:
+		# kassa o'zi tanlanmaydi (standart «Cash» hisobidan pul olinmasin): operator kassani tanlasin
+		frappe.throw(
+			_("Qaysi kassadan to'lanishini tanlang (Mode of Payment). Kassa o'zi tanlanmaydi."),
+			title=_("Kassa tanlanmagan"),
+		)
 	kassa = frappe.db.get_value(
 		"Mode of Payment Account", {"company": doc.company, "default_account": doc.paid_from}, "parent"
 	)
@@ -392,7 +321,7 @@ def validate_mode_of_payment(doc, method=None):
 
 
 def kassa_currency_hint(name: str) -> str | None:
-	"""Kassa nomidan valyuta: «Karer naqd USD», «Наличные $» -> USD."""
+	"""Kassa nomidan valyuta: «naqd USD», «Наличные $» -> USD."""
 	low = (name or "").lower()
 	if "usd" in low or "$" in low or "dollar" in low:
 		return "USD"
@@ -459,85 +388,6 @@ def get_item_warehouse(item_code: str, company: str) -> str | None:
 		or (preferred[0] if preferred else None)
 		or frappe.db.get_value("Item Default", {"parent": item_code, "company": company}, "default_warehouse")
 	)
-
-
-# ------------------------------------------------------------------ Firmalararo
-def ensure_inter_company_parties(seller: str, buyer: str) -> tuple[str, str]:
-	"""Sotuvchi kitobida ichki mijoz (= xaridor firma), xaridor kitobida ichki ta'minotchi (= sotuvchi firma).
-	Bo'lmasa yaratiladi. ERPNext'ning inter-company mexanizmi shu kontragentlar orqali ishlaydi."""
-
-	def ensure(doctype, flag, represents, allowed_company, name_field, type_field):
-		name = frappe.db.get_value(doctype, {flag: 1, "represents_company": represents}, "name")
-		if name:
-			doc = frappe.get_doc(doctype, name)
-			if not any(r.company == allowed_company for r in doc.companies):
-				doc.append("companies", {"company": allowed_company})
-				doc.flags.ignore_permissions = True
-				doc.save()
-			return name
-		doc = frappe.new_doc(doctype)
-		doc.set(name_field, represents)
-		doc.set(type_field, "Company")
-		doc.set(flag, 1)
-		doc.represents_company = represents
-		doc.append("companies", {"company": allowed_company})
-		doc.flags.ignore_permissions = True
-		doc.insert()
-		return doc.name
-
-	customer = ensure("Customer", "is_internal_customer", buyer, seller, "customer_name", "customer_type")
-	supplier = ensure("Supplier", "is_internal_supplier", seller, buyer, "supplier_name", "supplier_type")
-	return customer, supplier
-
-
-def make_inter_company_purchase_invoice(sales_invoice: str):
-	try:  # ERPNext v17: mapper alohida modulga chiqarilgan
-		from erpnext.accounts.doctype.sales_invoice.mapper import make_inter_company_purchase_invoice as fn
-	except ImportError:  # ERPNext v16
-		from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_inter_company_purchase_invoice as fn
-
-	return fn(sales_invoice)
-
-
-# ------------------------------------------------------------------ Bildirishnomalar (qo'ng'iroqcha)
-def company_users(company: str) -> list[str]:
-	"""Shu firmada ishlaydigan foydalanuvchilar: firma cheklovi shu firma bo'lganlar, shu bo'lim rollari bor
-	xodimlar va System Manager'lar (egasi). Boshqa firmaga cheklangan xodim bu firmaning xabarini olmaydi."""
-	from carieer.permissions import BETON_ROLES, KARER_ROLES, get_allowed_companies
-
-	roles = ["System Manager"]
-	for bolim, bolim_roles in (("Karer", KARER_ROLES), ("Beton", BETON_ROLES)):
-		if company_for_bolim(bolim) == company:
-			roles += list(bolim_roles)
-	users = set(frappe.get_all("User Permission", {"allow": "Company", "for_value": company}, pluck="user"))
-	users |= set(frappe.get_all("Has Role", {"role": ["in", roles], "parenttype": "User"}, pluck="parent"))
-	users = frappe.get_all(
-		"User", {"name": ["in", list(users) or [""]], "enabled": 1, "user_type": "System User"}, pluck="name"
-	)
-	out = []
-	for user in users:
-		allowed = get_allowed_companies(user)
-		if not allowed or company in allowed:
-			out.append(user)
-	return out
-
-
-def notify(company: str, subject: str, doctype: str, name: str):
-	"""Firma xodimlariga bildirishnoma (o'ng yuqoridagi qo'ng'iroqcha, real vaqtda keladi).
-	Notification Log to'g'ridan-to'g'ri yoziladi: Administrator ikkala firma nomidan ishlaganda o'ziga ham keladi."""
-	for user in company_users(company):
-		frappe.get_doc(
-			{
-				"doctype": "Notification Log",
-				"for_user": user,
-				"from_user": frappe.session.user,
-				"type": "Alert",
-				"document_type": doctype,
-				"document_name": name,
-				"subject": subject,
-				"email_content": subject,
-			}
-		).insert(ignore_permissions=True)
 
 
 # ------------------------------------------------------------------ SMS

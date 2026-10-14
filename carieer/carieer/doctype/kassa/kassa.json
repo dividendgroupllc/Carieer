@@ -26,6 +26,7 @@
   "cb_4",
   "kassa_valyutasi_to",
   "qoldiq_to",
+  "qabul_summa",
   "kontragent_section",
   "party_type",
   "party",
@@ -36,8 +37,12 @@
   "cost_center",
   "summa_section",
   "amount",
+  "kurs",
+  "summa_sum",
   "cb_6",
   "izoh",
+  "izoh2",
+  "taqsimot",
   "hujjat_section",
   "linked_doctype",
   "cb_7",
@@ -72,7 +77,7 @@
    "fieldtype": "Date",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Sana",
+   "label": "Дата",
    "reqd": 1
   },
   {
@@ -80,13 +85,13 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Kirim: kassaga pul keldi. Chiqim: kassadan pul ketdi. O'tkazma: kassadan kassaga",
+   "description": "Kirim = Приход, Chiqim = Расход, O'tkazma = Перевод, Konvertatsiya = Конвертация",
    "fieldname": "turi",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Turi",
-   "options": "Kirim\nChiqim\nO'tkazma",
+   "label": "Тип расчёта",
+   "options": "Kirim\nChiqim\nO'tkazma\nKonvertatsiya",
    "reqd": 1
   },
   {
@@ -113,7 +118,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Kassa (to'lov turi)",
+   "label": "Счёт (Тип завод)",
    "link_filters": "[[\"Mode of Payment\", \"firma\", \"like\", \"eval:doc.company || '%'\"], [\"Mode of Payment\", \"enabled\", \"=\", 1]]",
    "options": "Mode of Payment",
    "reqd": 1
@@ -132,9 +137,10 @@
   {
    "fieldname": "kassa_valyutasi",
    "fieldtype": "Link",
-   "label": "Kassa valyutasi",
+   "label": "Валюта",
    "options": "Currency",
-   "read_only": 1
+   "read_only": 1,
+   "in_list_view": 1
   },
   {
    "fieldname": "qoldiq",
@@ -145,7 +151,7 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.turi==\"O'tkazma\"",
+   "depends_on": "eval:['O\\'tkazma','Konvertatsiya'].includes(doc.turi)",
    "fieldname": "otkazma_section",
    "fieldtype": "Section Break",
    "label": "Qaysi kassaga"
@@ -185,25 +191,33 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval:doc.turi!=\"O'tkazma\"",
+   "fieldname": "qabul_summa",
+   "fieldtype": "Currency",
+   "label": "Qabul qilinadigan summa (Konvertatsiya)",
+   "options": "kassa_valyutasi_to",
+   "depends_on": "eval:doc.turi=='Konvertatsiya'",
+   "description": "Bo'sh qoldirilsa kurs bo'yicha o'zi hisoblanadi"
+  },
+  {
+   "depends_on": "eval:!['O\\'tkazma','Konvertatsiya'].includes(doc.turi)",
    "fieldname": "kontragent_section",
    "fieldtype": "Section Break",
    "label": "Kim / nima uchun"
   },
   {
-   "description": "Customer / Supplier / Employee - qarz hisobi (Payment Entry). Xarajat / Daromad / Dividend - kontragentsiz (Journal Entry)",
+   "description": "Kategoriyadan o'zi qo'yiladi (Клиент, Поставщик, xarajat moddasi ...); kerak bo'lsa o'zgartiring",
    "fieldname": "party_type",
    "fieldtype": "Select",
    "in_standard_filter": 1,
-   "label": "Kontragent turi",
+   "label": "Тип контрагента",
    "mandatory_depends_on": "eval:doc.turi!=\"O'tkazma\"",
-   "options": "Customer\nSupplier\nEmployee\nXarajat\nDaromad\nDividend"
+   "options": "\nCustomer\nSupplier\nEmployee\nXarajat\nDaromad\nDividend\nKapital"
   },
   {
    "depends_on": "eval:['Customer','Supplier','Employee'].includes(doc.party_type)",
    "fieldname": "party",
    "fieldtype": "Dynamic Link",
-   "label": "Kontragent",
+   "label": "Контрагент",
    "mandatory_depends_on": "eval:doc.turi!=\"O'tkazma\" && ['Customer','Supplier','Employee'].includes(doc.party_type)",
    "options": "party_type"
   },
@@ -211,7 +225,7 @@
    "fieldname": "party_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Kontragent nomi",
+   "label": "Контрагент / модда",
    "read_only": 1
   },
   {
@@ -224,11 +238,11 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Kategoriya (DDS)",
+   "label": "Категория 1",
    "options": "Kassa Kategoriya"
   },
   {
-   "depends_on": "eval:['Xarajat','Daromad','Dividend'].includes(doc.party_type)",
+   "depends_on": "eval:['Xarajat','Daromad','Dividend','Kapital'].includes(doc.party_type)",
    "description": "Bo'sh qoldirilsa kategoriyadan o'zi topiladi",
    "fieldname": "hisob",
    "fieldtype": "Link",
@@ -253,9 +267,25 @@
    "fieldname": "amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Summa (kassa valyutasida)",
+   "label": "Сумма",
    "options": "kassa_valyutasi",
    "reqd": 1
+  },
+  {
+   "fieldname": "kurs",
+   "fieldtype": "Float",
+   "label": "Курс",
+   "precision": "2",
+   "description": "Kun kursi (USD -> UZS). Bo'sh qoldirilsa Currency Exchange dan olinadi"
+  },
+  {
+   "fieldname": "summa_sum",
+   "fieldtype": "Currency",
+   "label": "Сумма со знаком в сум",
+   "options": "Company:company:default_currency",
+   "read_only": 1,
+   "in_list_view": 1,
+   "description": "Kirim +, Chiqim -, O'tkazma va Konvertatsiya 0 (jadvaldagi M ustuni)"
   },
   {
    "fieldname": "cb_6",
@@ -264,7 +294,19 @@
   {
    "fieldname": "izoh",
    "fieldtype": "Small Text",
-   "label": "Izoh (Примечание)"
+   "label": "Примечание"
+  },
+  {
+   "fieldname": "izoh2",
+   "fieldtype": "Data",
+   "label": "Доп примечание"
+  },
+  {
+   "fieldname": "taqsimot",
+   "fieldtype": "Data",
+   "label": "Распределение",
+   "read_only": 1,
+   "fetch_from": "kategoriya.taqsimot"
   },
   {
    "collapsible": 1,
@@ -305,7 +347,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-06 14:00:00.000000",
+ "modified": "2026-10-13 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Kassa",
@@ -345,38 +387,11 @@
    "amend": 1,
    "cancel": 1,
    "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Beton Menejer",
-   "share": 1,
-   "submit": 1,
-   "write": 1
-  },
-  {
-   "amend": 1,
-   "cancel": 1,
-   "create": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Karer Kassir",
-   "submit": 1,
-   "write": 1
-  },
-  {
-   "amend": 1,
-   "cancel": 1,
-   "create": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Beton Kassir",
    "submit": 1,
    "write": 1
   }

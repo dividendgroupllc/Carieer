@@ -30,6 +30,8 @@
   "currency",
   "kurs",
   "base_amount",
+  "summa_sum",
+  "taqsimot",
   "izoh_section",
   "izoh",
   "journal_entry",
@@ -63,7 +65,7 @@
    "fieldtype": "Date",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Sana",
+   "label": "Дата",
    "reqd": 1
   },
   {
@@ -76,7 +78,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Turi (Категория)",
+   "label": "Категория",
    "options": "Закуп услуга\nПродажа услуга",
    "reqd": 1
   },
@@ -85,7 +87,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Modda (kategoriya)",
+   "label": "Статья (тип услуги)",
    "options": "Kassa Kategoriya"
   },
   {
@@ -111,7 +113,7 @@
    "description": "Закуп услуга -> Supplier, Продажа услуга -> Customer",
    "fieldname": "party_type",
    "fieldtype": "Select",
-   "label": "Kontragent turi",
+   "label": "Тип контрагента",
    "options": "Supplier\nCustomer",
    "reqd": 1
   },
@@ -119,7 +121,7 @@
    "fieldname": "party",
    "fieldtype": "Dynamic Link",
    "in_standard_filter": 1,
-   "label": "Kontragent",
+   "label": "Контрагент",
    "options": "party_type",
    "reqd": 1
   },
@@ -187,13 +189,14 @@
    "fieldtype": "Link",
    "label": "Валюта",
    "options": "Currency",
-   "reqd": 1
+   "reqd": 1,
+   "in_list_view": 1
   },
   {
-   "description": "Bo'sh = Currency Exchange kursi",
+   "description": "Valyuta kursi (UZS bo'lsa 1)",
    "fieldname": "kurs",
    "fieldtype": "Float",
-   "label": "Курс (firma valyutasiga)",
+   "label": "Курс",
    "precision": "4"
   },
   {
@@ -202,6 +205,22 @@
    "label": "Summa (firma valyutasida)",
    "options": "Company:company:default_currency",
    "read_only": 1
+  },
+  {
+   "fieldname": "summa_sum",
+   "fieldtype": "Currency",
+   "label": "Сумма со знаком (K)",
+   "options": "Company:company:default_currency",
+   "read_only": 1,
+   "in_list_view": 1,
+   "description": "Закуп услуга +, Продажа услуга - (jadvaldagi K ustuni, so'mda)"
+  },
+  {
+   "fieldname": "taqsimot",
+   "fieldtype": "Data",
+   "label": "Распределение",
+   "read_only": 1,
+   "fetch_from": "kategoriya.taqsimot"
   },
   {
    "fieldname": "izoh_section",
@@ -233,7 +252,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-05 18:00:00.000000",
+ "modified": "2026-10-13 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Nachislenie",
@@ -273,38 +292,11 @@
    "amend": 1,
    "cancel": 1,
    "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Beton Menejer",
-   "share": 1,
-   "submit": 1,
-   "write": 1
-  },
-  {
-   "amend": 1,
-   "cancel": 1,
-   "create": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Karer Kassir",
-   "submit": 1,
-   "write": 1
-  },
-  {
-   "amend": 1,
-   "cancel": 1,
-   "create": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Beton Kassir",
    "submit": 1,
    "write": 1
   }

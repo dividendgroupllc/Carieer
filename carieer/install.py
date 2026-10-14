@@ -1,20 +1,18 @@
-"""O'rnatish va boshlang'ich sozlash.
+"""O'rnatish va boshlang'ich sozlash (Eko Karer).
 
 Avtomatik (install-app va har bir migrate'dan keyin) - after_migrate():
-  - 6 ta rol: Karer / Beton x Operator / Kassir / Menejer
-  - Vehicle'ga maydonlar: texnika turi, GPS IMEI, oxirgi joy (latitude / longitude -> Vehicle «Map» ko'rinishi)
-  - Rollar uchun ERPNext hujjatlariga kerakli minimal ruxsatlar
-  - «Karer xodim» modul profili (faqat Carieer + Kassa / Sotuv / Ta'minot / Ombor / Ishlab chiqarish / Texnika / Hisobotlar
-    bo'limlari ko'rinadi), Item formasidagi keraksiz maydonlar yashiriladi
+  - 3 ta rol: Karer Operator / Kassir / Menejer
+  - Mode of Payment'ga «Firma» maydoni
+  - Rollar uchun ERPNext hujjatlariga kerakli minimal ruxsatlar, ombor hisobotlari uchun rollar
+  - Item formasidagi keraksiz maydonlar yashiriladi
 
-Bir marta, qo'lda (firmalar yaratilgandan keyin):
-  bench --site SITE execute carieer.install.setup_karer --kwargs "{'karer_company': 'Eko Karer', 'beton_company': 'Eko Beton'}"
-    -> omborlar, kassalar (Karer naqd UZS / USD, karta, bank - har biri o'z hisobida), Zavod yozuvlari, tovarlar, xizmatlar, birliklar,
-       xarajat kategoriyalari va hisoblar rejasidagi moddalar, firmalararo kontragentlar
+Bir marta, qo'lda (firma yaratilgandan keyin):
+  bench --site SITE execute carieer.install.setup_karer --kwargs "{'karer_company': 'Eko Karer'}"
+    -> omborlar, kassalar (Karer naqd UZS / USD, karta, bank - har biri o'z hisobida), Zavod yozuvi, tovarlar, xizmatlar,
+       birliklar, xarajat kategoriyalari va hisoblar rejasidagi moddalar
 
-Xodim qo'shish (rol + faqat o'z firmasi + o'z bo'limi):
-  bench --site SITE execute carieer.install.setup_user --kwargs "{'email': 'kassir@karer.uz', 'full_name': 'Ali Valiyev', 'zavod': 'Karer', 'lavozim': 'Kassir', 'password': 'Parol123!'}"
-    zavod: Karer | Beton | Ikkalasi (sotuv posti operatori ikkala zavod nomidan sotadi)
+Xodim qo'shish (rol + faqat o'z firmasi):
+  bench --site SITE execute carieer.install.setup_user --kwargs "{'email': 'kassir@karer.uz', 'full_name': 'Ali Valiyev', 'lavozim': 'Kassir', 'password': 'Parol123!'}"
     lavozim: Operator | Kassir | Menejer
 """
 
@@ -22,31 +20,7 @@ import frappe
 from frappe import _
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
-from carieer.permissions import ALL_ROLES, BETON_ROLES, BETON_SECTION, KARER_ROLES, KARER_SECTION
-
-
-# Funksional bo'limlar (modul = ikonka = sidebar): modules.txt dagi <Nomi> Bolimi - ikkala zavod xodimlari uchun umumiy.
-BOLIM_MODULLARI = (
-	"Kassa Bolimi",
-	"Sotuv Bolimi",
-	"Taminot Bolimi",
-	"Ombor Bolimi",
-	"Ishlab Chiqarish Bolimi",
-	"Texnika Bolimi",
-	"Hisobotlar Bolimi",
-	"Firmalararo Bolimi",
-)
-# Zavodning o'z moduli (bosh sahifa + sozlamalar). Karer xodimiga Beton moduli ko'rinmaydi va aksincha.
-ZAVOD_MODULLARI = {"Karer": "Karer Panel", "Beton": "Beton Panel"}
-# Modul profili: kimga qaysi modullar ochiq (qolganlari - ERPNext'ning Selling, Stock, ... va boshqa zavodniki - yopiq)
-MODULE_PROFILES = {
-	"Karer xodim": ("Karer",),
-	"Beton xodim": ("Beton",),
-	"Karer va Beton xodim": ("Karer", "Beton"),
-}
-
-# Lavozim -> kirgandan keyin ochiladigan birinchi bo'lim (User.default_workspace)
-LAVOZIM_BOSH_SAHIFA = {"Kassir": "Kassa Bolimi", "Operator": "Sotuv Bolimi"}
+from carieer.permissions import ALL_ROLES
 
 
 def after_install():
@@ -54,15 +28,11 @@ def after_install():
 
 
 def after_migrate():
+	# Ruxsatlar bu yerda qayta qo'yilmaydi: ular ERPNext'ning «Role Permission Manager» orqali boshqariladi
 	make_roles()
 	make_custom_fields()
-	make_standard_permissions()
-	make_report_roles()
 	hide_item_fields()
-	make_module_profile()
 	set_uzs_symbol()
-	set_icon_grid()
-	sync_staff_modules()
 
 
 # ============================================================================ rollar va ruxsatlar
@@ -176,14 +146,14 @@ REPORT_ROLES = {
 
 
 def make_report_roles():
-	# ERPNext v16 da «Stock Balance» fon hisoboti (har safar «Generate» bosish kerak). Karer/beton omborida
+	# ERPNext v16 da «Stock Balance» fon hisoboti (har safar «Generate» bosish kerak). Karer omborida
 	# tovar kam - hisobot darhol ochilsin.
 	# (Frappe'ning «Role Permission for Page and Report» ham shunday qiladi.)
 	frappe.db.sql("update `tabReport` set prepared_report = 0 where name = 'Stock Balance'")
 	for report, lavozimlar in REPORT_ROLES.items():
 		if not frappe.db.exists("Report", report):
 			continue
-		roles = {f"{zavod} {lavozim}" for zavod in ("Karer", "Beton") for lavozim in lavozimlar}
+		roles = {f"Karer {lavozim}" for lavozim in lavozimlar}
 		name = frappe.db.get_value("Custom Role", {"report": report}, "name")
 		if name:
 			doc = frappe.get_doc("Custom Role", name)
@@ -201,118 +171,12 @@ def make_report_roles():
 		doc.save(ignore_permissions=True)
 
 
-def make_module_profile():
-	"""Modul profillari (Karer xodim / Beton xodim / Karer va Beton xodim): xodimga faqat o'z zavodi paneli va umumiy
-	bo'limlar ko'rinadi. Faqat o'zgarish bo'lsa saqlanadi (Module Profile saqlanganda fon vazifasi userlarni yangilaydi)."""
-	all_modules = set(frappe.get_all("Module Def", pluck="name"))
-	for profile, zavodlar in MODULE_PROFILES.items():
-		allowed = set(BOLIM_MODULLARI) | {ZAVOD_MODULLARI[z] for z in zavodlar}
-		blocked = all_modules - allowed
-		if frappe.db.exists("Module Profile", profile):
-			doc = frappe.get_doc("Module Profile", profile)
-			if {d.module for d in doc.block_modules} == blocked:
-				continue
-		else:
-			doc = frappe.new_doc("Module Profile")
-			doc.module_profile_name = profile
-		doc.set("block_modules", [{"module": m} for m in sorted(blocked)])
-		try:
-			doc.save(ignore_permissions=True)
-		except frappe.DocumentLockedError:
-			# oldingi yangilash hali navbatda - keyingi migrate'da qayta uriniladi
-			frappe.clear_last_message()
-
-
-def sync_staff_modules():
-	"""Mavjud xodimlarning modul profili o'z zavodiga mos bo'lsin (faqat farq bo'lsa saqlanadi)."""
-	from carieer.permissions import set_module_profile
-
-	for name in frappe.get_all("User", filters={"user_type": "System User", "enabled": 1}, pluck="name"):
-		user = frappe.get_doc("User", name)
-		before = (user.module_profile, sorted(d.module for d in user.block_modules))
-		set_module_profile(user)
-		if before != (user.module_profile, sorted(d.module for d in user.block_modules)):
-			user.save(ignore_permissions=True)
-
-
-def set_icon_grid():
-	"""Desktop - ikonkalar to'ri (Kassa, Sotuv, Ta'minot, Ombor ...). Frappe v17 «Apps» rejimida desktop_icon/*.json
-	fayllarini import qilmaydi, shuning uchun to'r har migrate'da qayta yoqiladi va ikonkalar yangilanadi."""
-	from frappe.desk.doctype.desktop_icon.desktop_icon import (
-		clear_every_users_desktop_icons,
-		import_desktop_icon_fixtures,
-	)
-
-	if frappe.db.get_single_value("Desktop Settings", "desktop_page") != "Desktop Icons":
-		frappe.db.set_single_value("Desktop Settings", "desktop_page", "Desktop Icons")
-	import_desktop_icon_fixtures("carieer", force=True)
-	clear_every_users_desktop_icons()
-
-
 # ============================================================================ maydonlar
 def make_custom_fields():
 	create_custom_fields(
 		{
-			"Vehicle": [
-				{
-					"fieldname": "karer_section",
-					"fieldtype": "Section Break",
-					"label": "Texnika va GPS",
-					"insert_after": "employee",
-				},
-				{
-					"fieldname": "texnika_turi",
-					"fieldtype": "Select",
-					"label": "Texnika turi",
-					"options": "\nSamosval\nBetonovoz (mikser)\nEkskavator\nBuldozer\nPogruzchik\nKran\nYengil mashina\nBoshqa",
-					"insert_after": "karer_section",
-					"in_list_view": 1,
-					"in_standard_filter": 1,
-				},
-				{
-					"fieldname": "gps_imei",
-					"fieldtype": "Data",
-					"label": "GPS qurilma IMEI",
-					"insert_after": "texnika_turi",
-					"unique": 1,
-					"search_index": 1,
-					"description": "Traccar Client'dagi «Device identifier» yoki trekker IMEI",
-				},
-				{"fieldname": "karer_cb", "fieldtype": "Column Break", "insert_after": "gps_imei"},
-				{
-					"fieldname": "gps_vaqt",
-					"fieldtype": "Datetime",
-					"label": "Oxirgi GPS vaqti",
-					"insert_after": "karer_cb",
-					"read_only": 1,
-					"in_list_view": 1,
-				},
-				{
-					"fieldname": "latitude",
-					"fieldtype": "Float",
-					"label": "Latitude",
-					"precision": "7",
-					"insert_after": "gps_vaqt",
-					"read_only": 1,
-				},
-				{
-					"fieldname": "longitude",
-					"fieldtype": "Float",
-					"label": "Longitude",
-					"precision": "7",
-					"insert_after": "latitude",
-					"read_only": 1,
-				},
-				{
-					"fieldname": "gps_tezlik",
-					"fieldtype": "Float",
-					"label": "Tezlik (km/soat)",
-					"insert_after": "longitude",
-					"read_only": 1,
-				},
-			],
 			# Kassa qaysi firmaniki: kassa tanlash ro'yxatlari shu bo'yicha filtrlanadi
-			# (Karer xodimi Beton kassalarini ko'rmaydi). Hisoblar jadvalidan o'zi qo'yiladi.
+			# Hisoblar jadvalidan o'zi qo'yiladi.
 			"Mode of Payment": [
 				{
 					"fieldname": "firma",
@@ -323,8 +187,6 @@ def make_custom_fields():
 					"read_only": 1,
 					"in_list_view": 1,
 					"in_standard_filter": 1,
-					# Firmalararo to'lovda oluvchi firma kassasi ham tanlanadi
-					"ignore_user_permissions": 1,
 				},
 			],
 		},
@@ -532,37 +394,31 @@ DDS_KATEGORIYALARI = [
 	("Дивиденд", "Chiqim"),
 	("Перемещение", "Ikkalasi"),
 	("Конвертация", "Ikkalasi"),
-	("Займ", "Ikkalasi"),
+	("Наличные2", "Ikkalasi"),
+	("Наличные кассир", "Ikkalasi"),
+	("Карта кассир", "Ikkalasi"),
 ]
 
 
-def setup_karer(karer_company: str, beton_company: str | None = None):
-	"""Ikkala firma uchun bir martalik sozlash (qayta ishga tushirsa ham xavfsiz - borlari o'zgarmaydi)."""
+def setup_karer(karer_company: str):
+	"""Firma uchun bir martalik sozlash (qayta ishga tushirsa ham xavfsiz - borlari o'zgarmaydi)."""
 	frappe.only_for("System Manager")
-	companies = [c for c in (karer_company, beton_company) if c]
-	for company in companies:
-		if not frappe.db.exists("Company", company):
-			frappe.throw(
-				_("Firma topilmadi: {0}. Avval Setup Wizard yoki Company orqali yarating").format(company)
-			)
+	if not frappe.db.exists("Company", karer_company):
+		frappe.throw(
+			_("Firma topilmadi: {0}. Avval Setup Wizard yoki Company orqali yarating").format(karer_company)
+		)
 
 	make_masters()
-	for company in companies:
-		setup_company(company)
+	# boshlang'ich ruxsatlar (bir marta): keyin ular Role Permission Manager'da o'zgartiriladi
+	make_standard_permissions()
+	make_report_roles()
+	setup_company(karer_company)
+	make_zavod("Karer", karer_company, asosiy="Karer ombori")
 
-	make_zavod("Karer", karer_company, asosiy="Karer ombori", xomashyo=None)
-	if beton_company:
-		make_zavod("Beton", beton_company, asosiy="Beton ombori", xomashyo="Beton xomashyo")
-		from carieer.utils import ensure_inter_company_parties
-
-		ensure_inter_company_parties(karer_company, beton_company)
-		ensure_inter_company_parties(beton_company, karer_company)
-		from carieer.carieer.doctype.sotuv.sotuv import get_inter_company_price_list
-
-		get_inter_company_price_list(frappe.get_cached_value("Company", karer_company, "default_currency"))
-
-	# kassalar: har bir bo'lim uchun «Karer naqd UZS», «Karer naqd USD», «Karer karta», «Karer bank»
+	# kassalar: «Karer naqd UZS», «Karer naqd USD», «Karer karta», «Karer bank»
 	setup_kassalar()
+	# «Диспетчер» varag'idagi ro'yxatlar: tovarlar, schyotlar, kurs, kategoriyalar, kontragentlar
+	seed_dispetcher(karer_company)
 
 	# so'm hisobidagi mijozga dollarda ham sotish / to'lov olish mumkin bo'lsin
 	frappe.db.set_single_value(
@@ -655,7 +511,7 @@ def setup_company(company: str):
 	parent_wh = frappe.db.get_value(
 		"Warehouse", {"company": company, "is_group": 1}, "name", order_by="lft asc"
 	)
-	for name in ("Karer ombori", "Beton ombori", "Beton xomashyo", "Yoqilgi ombori"):
+	for name in ("Karer ombori", "Yoqilgi ombori"):
 		if not frappe.db.exists("Warehouse", f"{name} - {abbr}"):
 			frappe.get_doc(
 				{
@@ -669,7 +525,7 @@ def setup_company(company: str):
 	make_moddalar(company)
 
 
-# Har bir bo'lim (Zavod) uchun bir xil kassalar to'plami: «Karer naqd UZS», «Beton karta» ...
+# Zavod uchun kassalar to'plami: «Karer naqd UZS», «Karer karta» ...
 # (nom qo'shimchasi, hisob turi, valyuta: None = firma valyutasi). Birinchisi - asosiy kassa (Zavod.kassa).
 KASSA_TURLARI = [
 	("naqd UZS", "Cash", None),
@@ -680,9 +536,9 @@ KASSA_TURLARI = [
 
 
 def bolim_nomi(zavod: str) -> str:
-	"""Zavod nomi -> kassa nomidagi bo'lim: «karer zavod» -> «Karer», «Beton Zavod» -> «Beton»."""
+	"""Zavod nomi -> kassa nomidagi bo'lim: «karer zavod» -> «Karer»."""
 	low = (zavod or "").lower()
-	return "Karer" if "karer" in low else "Beton" if "beton" in low else zavod
+	return "Karer" if "karer" in low else zavod
 
 
 def setup_kassalar():
@@ -720,7 +576,7 @@ def ensure_kassa(name: str, company: str, account_type: str, currency: str, prim
 	)
 	mop.type = account_type
 	mop.enabled = 1
-	# «Beton naqd USD» faqat Beton firmasiniki: boshqa firma hisobi ulangan bo'lsa olib tashlanadi
+	# kassa faqat shu firmaniki: boshqa firma hisobi ulangan bo'lsa olib tashlanadi
 	mop.accounts = [a for a in mop.accounts if a.company == company]
 	row = next((a for a in mop.accounts if a.company == company), None)
 	account = row.default_account if row else None
@@ -790,7 +646,7 @@ def make_moddalar(company: str):
 			"Account", {"company": company, "root_type": root_type, "is_group": 1}, "name", order_by="lft asc"
 		)
 
-	def ensure(account_name, parent_account, root_type, is_group=0):
+	def ensure(account_name, parent_account, root_type, is_group=0, report_type="Profit and Loss"):
 		name = find(account_name)
 		if name:
 			return name
@@ -803,7 +659,7 @@ def make_moddalar(company: str):
 					"parent_account": parent_account,
 					"is_group": is_group,
 					"root_type": root_type,
-					"report_type": "Profit and Loss",
+					"report_type": report_type,
 				}
 			)
 			.insert(ignore_permissions=True)
@@ -826,10 +682,16 @@ def make_moddalar(company: str):
 	standard = {k for k, *_r in XARAJAT_KATEGORIYALARI} | {k for k, _h in DAROMAD_KATEGORIYALARI}
 	for k in frappe.get_all(
 		"Kassa Kategoriya",
-		filters={"turi": ["in", ["Kirim", "Chiqim"]], "name": ["not in", list(standard)]},
+		filters={"turi": ["in", ["Kirim", "Chiqim", "Ikkalasi"]], "name": ["not in", list(standard)]},
 		fields=["name", "turi", "guruh_1", "guruh_2", "hisob_nomi"],
 	):
-		if not (k.guruh_1 or k.hisob_nomi):
+		if k.guruh_1 == KAPITAL_GURUH:
+			# Инвестиция, Сальдo, Фин займ: kapital moddasi (Equity), Kirim ham Chiqim ham bo'ladi
+			ensure(
+				k.hisob_nomi or k.name, root("Equity", "Equity"), "Equity", report_type="Balance Sheet"
+			)
+			continue
+		if k.turi == "Ikkalasi" or not (k.guruh_1 or k.hisob_nomi):
 			continue  # faqat pul oqimi kategoriyasi (Клиент, Поставщик ...) - hisob kerak emas
 		account_name = k.hisob_nomi or k.name
 		if k.turi == "Kirim":
@@ -848,13 +710,14 @@ def make_moddalar(company: str):
 def make_kategoriya_accounts(doc=None, method=None):
 	"""Kassa Kategoriya saqlanganda (hooks) - har bir zavod firmasida shu modda hisobi ochiladi,
 	shunda Kassa / Nachislenie / P&L darhol ishlaydi."""
+	if frappe.flags.get("skip_kategoriya_accounts"):
+		return  # seed_dispetcher oxirida bir marta ishlatadi
 	for company in set(frappe.get_all("Zavod", pluck="company")):
 		make_moddalar(company)
 
 
-def make_zavod(zavod: str, company: str, asosiy: str, xomashyo: str | None):
+def make_zavod(zavod: str, company: str, asosiy: str):
 	abbr = frappe.get_cached_value("Company", company, "abbr")
-	# Firmaning zavodi boshqa nom bilan yaratilgan bo'lsa (masalan «Beton Zavod») - o'shani to'ldiramiz, ikkinchisini ochmaymiz
 	existing = frappe.db.get_value("Zavod", {"company": company}, "name") or (
 		zavod if frappe.db.exists("Zavod", zavod) else None
 	)
@@ -863,8 +726,6 @@ def make_zavod(zavod: str, company: str, asosiy: str, xomashyo: str | None):
 		doc.zavod = zavod
 	doc.company = company
 	doc.asosiy_ombor = doc.asosiy_ombor or f"{asosiy} - {abbr}"
-	if xomashyo:
-		doc.xomashyo_ombori = doc.xomashyo_ombori or f"{xomashyo} - {abbr}"
 	doc.yoqilgi_ombori = doc.yoqilgi_ombori or f"Yoqilgi ombori - {abbr}"
 	# kassalar (Mode of Payment) keyinroq - setup_kassalar() yaratadi va Zavod.kassa ni to'ldiradi
 	if not doc.kassa and frappe.db.exists("Mode of Payment", "Наличные"):
@@ -872,28 +733,232 @@ def make_zavod(zavod: str, company: str, asosiy: str, xomashyo: str | None):
 	doc.save(ignore_permissions=True)
 
 
-# ============================================================================ xodimlar
-def setup_user(email: str, full_name: str, zavod: str, lavozim: str, password: str | None = None):
-	"""Xodim yaratadi / yangilaydi.
-	zavod: Karer | Beton | Ikkalasi;  lavozim: Operator | Kassir | Menejer.
-	Beriladi: lavozim roli, faqat o'z firmasi (User Permission -> Company va Zavod), o'z bo'limi (default workspace),
-	«Karer xodim» modul profili. Boshqa karer/beton rollari olib tashlanadi."""
+
+# ============================================================================ «Диспетчер» ma'lumotlari
+KAPITAL_GURUH = "Капитал"
+# Kapital moddalari (Kassa Kategoriya.guruh_1 = «Капитал»): kategoriya -> hisob (Equity) nomi
+KAPITAL_KATEGORIYALARI = {
+	"Инвестиция": "Инвестиция учредителя",
+	"Сальдо": "Начальный остаток (Сальдо)",
+	"Фин займ": "Фин займ",
+}
+OBOROT = {
+	"прибыль": "Прибыль",
+	"произв": "Произв",
+	"долг": "Долг",
+	"инвестиция": "Инвестиция",
+	"дивиденд": "Дивиденд",
+	"на ос": "На ОС",
+	"конвертация": "Конвертация",
+	"не имеется": "Не имеется",
+}
+SHEET_UOM = {"куба": "Куб", "куб": "Куб", "тонна": "Тонна", "литр": "Литр", "шт": "Шт", "кг": "Кг"}
+KASH_SCHYOTLARI = ("Наличные", "Наличные2", "Наличка-3", "Наличные кассир")  # qolganlari - Bank turi
+
+
+def load_dispetcher() -> dict:
+	import json
+
+	with open(frappe.get_app_path("carieer", "data", "dispetcher.json"), encoding="utf-8") as f:
+		return json.load(f)
+
+
+def seed_dispetcher(company: str | None = None):
+	"""Google Sheets «Эко Карьер» -> «Диспетчер» varag'idagi ro'yxatlar (carieer/data/dispetcher.json) bazaga:
+	tovarlar va xizmatlar, 9 ta schyot (kassa), USD kursi, kategoriyalar (Оборот bilan), 160 kontragent.
+	Qayta ishga tushirish xavfsiz: bor yozuvlar o'chirilmaydi va takrorlanmaydi (faqat kategoriya «Распределение» yangilanadi).
+	  bench --site SITE execute carieer.install.seed_dispetcher"""
 	frappe.only_for("System Manager")
-	if zavod not in ("Karer", "Beton", "Ikkalasi"):
-		frappe.throw(_("zavod: Karer, Beton yoki Ikkalasi"))
+	data = load_dispetcher()
+	company = company or frappe.db.get_value("Zavod", "Karer", "company") or frappe.db.get_value("Company", {}, "name")
+	make_masters()
+	out = {
+		"moliyaviy_yillar": seed_fiscal_years(company),
+		"tovarlar": seed_tovarlar(data),
+		"kurs": seed_kurs(data, company),
+		"schyotlar": seed_schyotlar(data, company),
+		"kategoriyalar": seed_kategoriyalar(data, company),
+		"kontragentlar": seed_kontragentlar(data, company),
+	}
+	frappe.db.commit()
+	return out
+
+
+def seed_fiscal_years(company: str, years=(2024, 2025, 2026)) -> dict:
+	"""Jadvaldagi operatsiyalar 01.09.2024 dan boshlanadi: shu yillar uchun moliyaviy yil bo'lmasa ERPNext hujjatni qabul qilmaydi."""
+	created = []
+	for year in years:
+		name = str(year)
+		if not frappe.db.exists("Fiscal Year", name):
+			frappe.get_doc(
+				{"doctype": "Fiscal Year", "year": name, "year_start_date": f"{year}-01-01", "year_end_date": f"{year}-12-31"}
+			).insert(ignore_permissions=True)
+			created.append(name)
+		fy = frappe.get_doc("Fiscal Year", name)
+		if company not in [c.company for c in fy.companies]:
+			fy.append("companies", {"company": company})
+			fy.save(ignore_permissions=True)
+	return {"yangi": created}
+
+
+def seed_tovarlar(data: dict) -> dict:
+	created = 0
+	for row in data["nomenklatura"]:
+		group = {"ГПнеизменный": "ГП неизменный"}.get(row["turi"], row["turi"])
+		if group not in TOVAR_GURUHLARI or frappe.db.exists("Item", row["nomi"]):
+			continue
+		uom = SHEET_UOM.get((row["birlik"] or "").lower(), "Шт")
+		make_item(row["nomi"], uom, group, is_stock=int(group != "Услуга"), is_sales=int(group != "Расходник"))
+		created += 1
+	for name in data["xizmatlar"]:
+		if not frappe.db.exists("Item", name):
+			make_item(name, "Шт", "Услуга", is_stock=0, is_sales=1)
+			created += 1
+	return {"yangi": created}
+
+
+def seed_kurs(data: dict, company: str) -> dict:
+	created = 0
+	base = frappe.get_cached_value("Company", company, "default_currency")
+	for date, rate in data["kurs_usd"]:
+		if frappe.db.exists("Currency Exchange", {"date": date, "from_currency": "USD", "to_currency": base}):
+			continue
+		frappe.get_doc(
+			{
+				"doctype": "Currency Exchange",
+				"date": date,
+				"from_currency": "USD",
+				"to_currency": base,
+				"exchange_rate": rate,
+				"for_buying": 1,
+				"for_selling": 1,
+			}
+		).insert(ignore_permissions=True)
+		created += 1
+	return {"yangi": created}
+
+
+def seed_schyotlar(data: dict, company: str) -> dict:
+	"""Касса.C dagi 9 ta schyot - har biri o'z hisobli kassa (Mode of Payment)."""
+	currency = frappe.get_cached_value("Company", company, "default_currency")
+	created = []
+	for name in data["schyotlar"]:
+		if frappe.db.exists("Mode of Payment Account", {"parent": name, "company": company}):
+			continue
+		ensure_kassa(name, company, "Cash" if name in KASH_SCHYOTLARI else "Bank", currency)
+		created.append(name)
+	zavod = frappe.db.get_value("Zavod", {"company": company}, ["name", "kassa"], as_dict=True)
+	if zavod and (not zavod.kassa or zavod.kassa.startswith("Karer ")) and frappe.db.exists("Mode of Payment", "Наличные"):
+		frappe.db.set_value("Zavod", zavod.name, "kassa", "Наличные")  # asosiy kassa - jadvaldagi «Наличные»
+	return {"yangi": created}
+
+
+def seed_kategoriyalar(data: dict, company: str) -> dict:
+	"""Категории 1 типа + Оборот (Касса.R / Начисление.N), Лист55 ierarxiyasi. Yangi kategoriya bo'lsa xarajat/kapital
+	moddasi hisoblar rejasida ochiladi."""
+	hier = {h["kategoriya_1"].lower(): h for h in data["ierarxiya"]}
+	oborot = {}
+	for r in data["kategoriya_1"]:
+		oborot.setdefault(r["nomi"], r["oborot"] or "")
+	names = list(dict.fromkeys([r["nomi"] for r in data["kategoriya_1"]] + data["kategoriyalar_toliq"]))
+	created, updated = [], 0
+	frappe.flags.skip_kategoriya_accounts = True
+	try:
+		for name in names:
+			taqsimot = OBOROT.get((oborot.get(name) or "").strip().lower(), "")
+			kapital = KAPITAL_KATEGORIYALARI.get(name)
+			if frappe.db.exists("Kassa Kategoriya", name):
+				doc = frappe.get_doc("Kassa Kategoriya", name)
+				changed = False
+				if taqsimot and doc.taqsimot != taqsimot:
+					doc.taqsimot, changed = taqsimot, True
+				if kapital and not doc.guruh_1:
+					doc.guruh_1, doc.hisob_nomi, changed = KAPITAL_GURUH, kapital, True
+				if changed:
+					doc.save(ignore_permissions=True)
+					updated += 1
+				continue
+			row = {"doctype": "Kassa Kategoriya", "kategoriya": name, "taqsimot": taqsimot, "turi": "Ikkalasi"}
+			if kapital:
+				row.update(guruh_1=KAPITAL_GURUH, hisob_nomi=kapital)
+			elif taqsimot in ("Прибыль", "Произв", "На ОС"):
+				h = hier.get(name.lower())
+				admin = taqsimot == "Прибыль"
+				row.update(
+					turi="Chiqim",
+					guruh_1=(h and h["yuqori"]) or (ADM if admin else PRO),
+					guruh_2=(h and h["kategoriya_2"]) or ("Прочие расходы" if admin else "Прочие производственные расходы"),
+				)
+			frappe.get_doc(row).insert(ignore_permissions=True)
+			created.append(name)
+	finally:
+		frappe.flags.skip_kategoriya_accounts = False
+	make_moddalar(company)
+	return {"yangi": created, "yangilandi": updated}
+
+
+def seed_kontragentlar(data: dict, company: str) -> dict:
+	"""160 kontragent: клиент -> Customer, поставщик / Прочие лица / Налог -> Supplier (guruhi bilan), Сотрудник -> Employee.
+	Bir xil nom turli turda (Султон, Нурali миксер ...) turli doctype'da bo'lgani uchun to'qnashmaydi."""
+	selling = frappe.get_single("Selling Settings")
+	customer_group = selling.customer_group or "Commercial"
+	territory = selling.territory or frappe.db.get_value("Territory", {"is_group": 0}, "name")
+	supplier_default = "Local" if frappe.db.exists("Supplier Group", "Local") else "All Supplier Groups"
+	gender = next((g for g in ("Prefer not to say", "Male") if frappe.db.exists("Gender", g)), None) or frappe.db.get_value("Gender", {}, "name")
+	out = {"Customer": 0, "Supplier": 0, "Employee": 0, "xato": []}
+	for row in data["kontragentlar"]:
+		name = row["nomi"].strip()
+		tip = (row["turi"] or "").strip().lower()
+		try:
+			if tip == "клиент":
+				if frappe.db.exists("Customer", {"customer_name": name}):
+					continue
+				doc = {"doctype": "Customer", "customer_name": name, "customer_type": "Company", "customer_group": customer_group, "territory": territory}
+				kind = "Customer"
+			elif tip in ("поставщик", "прочие лица", "налог"):
+				if frappe.db.exists("Supplier", {"supplier_name": name}):
+					continue
+				group = {"прочие лица": "Прочие лица", "налог": "Налог"}.get(tip, supplier_default)
+				doc = {"doctype": "Supplier", "supplier_name": name, "supplier_type": "Company", "supplier_group": group}
+				kind = "Supplier"
+			elif tip == "сотрудник":
+				if frappe.db.exists("Employee", {"employee_name": name}):
+					continue
+				doc = {
+					"doctype": "Employee",
+					"first_name": name,
+					"gender": gender,
+					"date_of_birth": "1990-01-01",  # majburiy maydon, jadvalda yo'q - keyin to'ldiriladi
+					"date_of_joining": "2024-09-01",
+					"company": company,
+					"status": "Active",
+				}
+				kind = "Employee"
+			else:
+				out["xato"].append(f"{name}: noma'lum tur {row['turi']}")
+				continue
+			frappe.get_doc(doc).insert(ignore_permissions=True)
+			out[kind] += 1
+		except Exception as e:
+			frappe.db.rollback()
+			out["xato"].append(f"{name}: {str(e)[:120]}")
+	return out
+
+
+# ============================================================================ xodimlar
+def setup_user(email: str, full_name: str, lavozim: str, password: str | None = None):
+	"""Xodim yaratadi / yangilaydi. lavozim: Operator | Kassir | Menejer.
+	Beriladi: «Karer <lavozim>» roli va faqat Karer firmasi (User Permission -> Company va Zavod).
+	Boshqa karer rollari olib tashlanadi."""
+	frappe.only_for("System Manager")
 	if lavozim not in ("Operator", "Kassir", "Menejer"):
 		frappe.throw(_("lavozim: Operator, Kassir yoki Menejer"))
 	from carieer.utils import find_zavod
 
-	zavodlar = ["Karer", "Beton"] if zavod == "Ikkalasi" else [zavod]
-	companies, zavod_nomlari = {}, []
-	for z in zavodlar:
-		nomi = find_zavod(z)  # Zavod boshqacha nomlangan bo'lishi mumkin (masalan «Beton Zavod»)
-		company = nomi and frappe.db.get_value("Zavod", nomi, "company")
-		if not company:
-			frappe.throw(_("Zavod '{0}' topilmadi. Avval setup_karer ni ishga tushiring").format(z))
-		companies[z] = company
-		zavod_nomlari.append(nomi)
+	nomi = find_zavod("Karer")
+	company = nomi and frappe.db.get_value("Zavod", nomi, "company")
+	if not company:
+		frappe.throw(_("Zavod 'Karer' topilmadi. Avval setup_karer ni ishga tushiring"))
 
 	user = frappe.get_doc("User", email) if frappe.db.exists("User", email) else frappe.new_doc("User")
 	if user.is_new():
@@ -906,25 +971,18 @@ def setup_user(email: str, full_name: str, zavod: str, lavozim: str, password: s
 			"last_name": last,
 			"enabled": 1,
 			"user_type": "System User",
-			"default_workspace": LAVOZIM_BOSH_SAHIFA.get(lavozim)
-			or (KARER_SECTION if zavodlar[0] == "Karer" else BETON_SECTION),
 		}
 	)
 	user.set("roles", [d for d in user.roles if d.role not in ALL_ROLES])
-	for z in zavodlar:
-		user.append("roles", {"role": f"{z} {lavozim}"})
+	user.append("roles", {"role": f"Karer {lavozim}"})
 	if password:
 		user.new_password = password
 	user.save(ignore_permissions=True)
 
-	set_user_permissions(email, "Company", list(companies.values()))
-	set_user_permissions(email, "Zavod", zavod_nomlari)
+	set_user_permissions(email, "Company", [company])
+	set_user_permissions(email, "Zavod", [nomi])
 	frappe.db.commit()
-	return {
-		"user": user.name,
-		"roles": [f"{z} {lavozim}" for z in zavodlar],
-		"companies": list(companies.values()),
-	}
+	return {"user": user.name, "roles": [f"Karer {lavozim}"], "companies": [company]}
 
 
 def set_user_permissions(user: str, allow: str, values: list[str]):

@@ -38,8 +38,6 @@ def execute(filters=None):
 def conditions(filters, alias="ks"):
 	cond = [
 		f"{alias}.docstatus = 1",
-		# firmalararo sotuv - ikkinchi firma qabul qilgandan keyin sotuv bo'ladi
-		f"ifnull({alias}.qabul_holati, '') != 'Kutilmoqda'",
 		f"{alias}.posting_date between %(from_date)s and %(to_date)s",
 	]
 	for f in ("company", "customer", "status", "currency", "tip"):
@@ -437,11 +435,10 @@ def kunlik_otchet(filters):
 
 
 def prixod_rows(filters) -> list[dict]:
-	"""ПРИХОД (xarid): davr ichida kimdan nima olindi - Xarid fakturasi (o'zimizning ikkinchi firmamizdan olingan tovar
-	ham) va xizmat nachisleniyasi. To'langan / qarzga qolgan qismi bilan."""
+	"""ПРИХОД (xarid): davr ichida kimdan nima olindi - Xarid fakturasi va xizmat nachisleniyasi. To'langan / qarzga qolgan qismi bilan."""
 	rows = frappe.db.sql(
 		"""select pi.name, pi.supplier_name, pi.supplier, i.item_name, i.qty, i.uom, i.rate, i.amount,
-			pi.currency, pi.grand_total, pi.outstanding_amount, pi.represents_company
+			pi.currency, pi.grand_total, pi.outstanding_amount
 		from `tabPurchase Invoice` pi join `tabPurchase Invoice Item` i on i.parent = pi.name
 		where pi.company = %(company)s and pi.docstatus = 1 and pi.is_return = 0
 			and pi.posting_date between %(from_date)s and %(to_date)s
@@ -463,8 +460,6 @@ def prixod_rows(filters) -> list[dict]:
 	shown, jami = set(), {}
 	for r in rows:
 		nomi = r.supplier_name or r.supplier
-		if r.represents_company:
-			nomi += " " + _("(firmalararo)")
 		row = {
 			"nomi": nomi,
 			"item_code": r.item_name,

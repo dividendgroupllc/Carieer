@@ -9,6 +9,12 @@ from frappe.utils import add_months, escape_html, flt, get_first_day, get_last_d
 
 MAX_OY = 36
 
+# Jadvaldagi oy nomlari (ustun sarlavhasi: «Сентябрь 2024»)
+RU_OYLAR = (
+	"Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+	"Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
+)
+
 # ERPNext standart hisoblar rejasi inglizcha: hisobotlarda jadvaldagi kabi ruscha nom ko'rsatiladi
 # (hisobning o'zi o'zgartirilmaydi, faqat qator nomi)
 ACCOUNT_RU = {
@@ -126,7 +132,7 @@ def get_months(from_date, to_date) -> list[frappe._dict]:
 			frappe._dict(
 				key=start.strftime("%Y-%m"),
 				fieldname=start.strftime("m_%Y_%m"),
-				label=start.strftime("%m.%Y"),
+				label=f"{RU_OYLAR[start.month - 1]} {start.year}",
 				start=start,
 				end=min(getdate(get_last_day(start)), end),
 			)
@@ -139,7 +145,8 @@ def get_months(from_date, to_date) -> list[frappe._dict]:
 
 def month_columns(months, first_label, total=True, width=140):
 	"""Jadvaldagi kabi: summalar valyuta belgisisiz, butun son (Float, precision 0)."""
-	cols = [{"fieldname": "label", "label": first_label, "fieldtype": "Data", "width": 340}]
+	# birinchi ustun (qator nomlari) yon tomonga surilganda joyida turadi: DataTable'ning «sticky» ustuni (JS shart emas)
+	cols = [{"fieldname": "label", "label": first_label, "fieldtype": "Data", "width": 340, "sticky": True}]
 	for m in months:
 		cols.append(
 			{
@@ -332,3 +339,46 @@ def note_box(headline: str, lines: list[str], color: str = "var(--text-color)") 
 	<div style="font-size:15px;font-weight:600;color:{color}">{headline}</div>
 	<ul style="margin:6px 0 0;padding-left:18px;color:var(--text-muted);font-size:13px">{items}</ul>
 </div>"""
+
+
+# ------------------------------------------------------------------ P&L: kategoriya -> «Оборот» (taqsimot)
+TAQSIM_PROIZV = "Произв"
+TAQSIM_OS = "На ОС"
+SERVICE_INCOME = ("Выручка от реализации услуг", "Service")
+COGS_TYPES = ("Cost of Goods Sold",)
+INVENTAR_TYPES = ("Stock Adjustment",)
+PROFIT_TAX = "Tax Expense"
+
+
+def category_info(company: str | None = None) -> dict:
+	"""{hisob nomi: Kassa Kategoriya qatori}: kategoriya nomi yoki hisob_nomi bo'yicha (taqsimot, guruh_1, guruh_2)."""
+	out = {}
+	for k in frappe.get_all(
+		"Kassa Kategoriya", fields=["name", "turi", "taqsimot", "guruh_1", "guruh_2", "hisob_nomi"]
+	):
+		out[k.name] = k
+		if k.hisob_nomi:
+			out[k.hisob_nomi] = k
+	return out
+
+
+def income_kind(a, by_name: dict) -> str:
+	"""Daromad hisobi: "service" (xizmat), "other" (Прочие доходы) yoki "product" (mahsulot sotuvi)."""
+	if a.account_name in SERVICE_INCOME:
+		return "service"
+	node = by_name.get(a.parent_account)
+	while node:
+		if node.account_name == "Indirect Income":
+			return "other"
+		node = by_name.get(node.parent_account)
+	return "product"
+
+
+def net_by_account(accounts, values: dict, months, sign: int) -> dict:
+	"""{hisob nomi: [oylar]} - oy ichidagi aylanma (sign=1 xarajat, -1 daromad)."""
+	keys = [m.key for m in months]
+	return {a.name: [sign * flt(values.get(a.name, {}).get(k)) for k in keys] for a in accounts if not a.is_group}
+
+
+def vsum(*lists, n: int) -> list:
+	return [sum(v[i] for v in lists) for i in range(n)]

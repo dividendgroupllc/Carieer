@@ -9,7 +9,6 @@ from frappe import _
 from frappe.utils import flt
 
 from carieer.carieer.report.common import blank_zeros, bold, prepare, resolve_party
-from carieer.utils import get_internal_company
 
 CATEGORY_MAP = {
 	"Покупатели": "customer",
@@ -20,11 +19,12 @@ CATEGORY_MAP = {
 	"Расходы": "expense",
 	"Прочие доходы": "income",
 	"Перемещения": "transfer",
-	"Firmalararo": "internal",
 	"Прочие": "other",
 }
 CATEGORY_LABELS = {v: k for k, v in CATEGORY_MAP.items()}
 # Kassa'da kategoriya ko'rsatilmagan pul harakati qaysi qatorga tushadi (jadvaldagi nomlar)
+# Valyuta belgisi jadvaldagi kabi: UZS -> «сум», USD -> «$»
+CUR_LABEL = {"UZS": "сум", "USD": "$"}
 CATEGORY_DEFAULT = {
 	"customer": "Клиент",
 	"supplier": "Поставщик",
@@ -32,7 +32,7 @@ CATEGORY_DEFAULT = {
 	"shareholder": "Дивиденд",
 	"dividend": "Дивиденд",
 	"transfer": "Перемещение",
-	"other": "Прочие",
+	"other": "Не распределенные средства",
 }
 PARTY_CATEGORY = {
 	"Customer": "customer",
@@ -67,20 +67,20 @@ def summary(data, filters, balances):
 	currencies = sorted(
 		{d["acc_currency"] for d in data} | set(balances), key=lambda c: (c != company_currency, c)
 	)
-	columns = [{"fieldname": "kategoriya", "label": _("Категория"), "fieldtype": "Data", "width": 260}]
+	columns = [{"fieldname": "kategoriya", "label": _("Статья"), "fieldtype": "Data", "width": 260, "sticky": True}]
 	for cur in currencies:
 		f = frappe.scrub(cur)
 		columns += [
 			{
 				"fieldname": f"kirim_{f}",
-				"label": _("Кирим ({0})").format(cur),
+				"label": _("Кредит {0}").format(CUR_LABEL.get(cur, cur)),
 				"fieldtype": "Currency",
 				"options": cur,
 				"width": 150,
 			},
 			{
 				"fieldname": f"chiqim_{f}",
-				"label": _("Чиқим ({0})").format(cur),
+				"label": _("Дебет {0}").format(CUR_LABEL.get(cur, cur)),
 				"fieldtype": "Currency",
 				"options": cur,
 				"width": 150,
@@ -92,8 +92,13 @@ def summary(data, filters, balances):
 		f = frappe.scrub(d["acc_currency"])
 		g[f"kirim_{f}"] = flt(g.get(f"kirim_{f}")) + d["kirim_acc"]
 		g[f"chiqim_{f}"] = flt(g.get(f"chiqim_{f}")) + d["chiqim_acc"]
-	rows = sorted(groups.values(), key=lambda g: g["kategoriya"])
-	total = {"kategoriya": bold(_("Жами оборот"))}
+	# jadvaldagi kabi: «Конвертация» birinchi, «Не распределенные средства» oxirida
+	not_distributed = CATEGORY_DEFAULT["other"]
+	rows = sorted(
+		groups.values(),
+		key=lambda g: (g["kategoriya"] != "Конвертация", g["kategoriya"] == not_distributed, g["kategoriya"]),
+	)
+	total = {"kategoriya": bold(_("Итого"))}
 	for cur in currencies:
 		f = frappe.scrub(cur)
 		total[f"kirim_{f}"] = sum(flt(r.get(f"kirim_{f}")) for r in rows)
@@ -210,7 +215,7 @@ def get_summary_html(balances, filters=None) -> str:
 			body += tr(esc(_("Jami {0}").format(cur)), b, strong=True)
 	head = "".join(
 		f"<th style='{td}'>{h}</th>"
-		for h in (_("Касса"), _("Остаток на начало"), _("Кирим"), _("Чиқим"), _("Остаток на конец"))
+		for h in (_("Касса"), _("Остаток на начало"), _("Кредит (приход)"), _("Дебет (расход)"), _("Остаток на конец"))
 	)
 	note = ""
 	minus = [k for k in kassalar if flt(k.closing) < -0.005]
@@ -338,11 +343,6 @@ def get_data(filters):
 		if filters.get("party") and info.get("party") != filters.party:
 			continue
 		k = kassa.get(r.voucher_no) or {}
-		# o'zimizning ikkinchi firmamiz bilan pul (Firmalararo To'lov) - mijoz / ta'minotchi emas
-		ichki = internal(info.get("party_type"), info.get("party"))
-		if ichki:
-			info["category"] = "internal"
-			info["description"] = _("Firmalararo: {0}").format(ichki)
 		if info["category"] == "expense":
 			s = expense_summaries.setdefault(info["description"], {"kirim": 0, "chiqim": 0})
 			s["kirim"] += kirim
@@ -355,7 +355,6 @@ def get_data(filters):
 				"description": info["description"],
 				"kategoriya": k.get("kategoriya") or "",
 				"dds_kategoriya": k.get("kategoriya")
-				or (info["description"] if ichki else None)
 				or CATEGORY_DEFAULT.get(info["category"])
 				or info["description"],
 				"category": info["category"],
@@ -372,16 +371,6 @@ def get_data(filters):
 			}
 		)
 	return data, expense_summaries, opening, balance
-
-
-def internal(party_type, party) -> str | None:
-	"""Kontragent o'zimizning boshqa firmamiz bo'lsa - o'sha firma nomi (so'rov ichida keshlanadi)."""
-	if party_type not in ("Customer", "Supplier") or not party:
-		return None
-	cache = frappe.flags.setdefault("dds_internal", {})
-	if (party_type, party) not in cache:
-		cache[(party_type, party)] = get_internal_company(party_type, party)
-	return cache[(party_type, party)]
 
 
 def party_name(party_type, party):

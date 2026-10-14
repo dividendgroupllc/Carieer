@@ -1,7 +1,7 @@
 # Kontragent Otchet ("Оборотка контрагентов") - Google Sheets'dagi varaq tuzilishida:
 #   har bir kontragent BITTA qatorda: Начальное сальдо | Оборот | Конечное сальдо, har birida
 #   Кредит Сум, Дебет Сум, Кредит $, Дебет $ (so'm va dollar yonma-yon), oxirida Сальдо (Д-К).
-#   Tepada «Общая задолженность» - yakuniy qoldiqlar jami.
+#   Tepada «Общая задолженность» - ustunlar jami.
 # Kredit qoldiq = biz qarzdormiz (kontragent oldindan to'lagan / biz undan oldik), Debet = kontragent bizdan qarzdor.
 # Summalar kontragent hisobi valyutasida: so'm hisobidagilari «Сум» ustunlarida, dollar hisobidagilari «$» ustunlarida.
 
@@ -11,7 +11,16 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-from carieer.carieer.report.common import PARTY_LABELS, bold, kontragent_turi, prepare, resolve_party
+from carieer.carieer.report.common import (
+	PARTY_LABELS,
+	bold,
+	kontragent_turi,
+	normalize_turi,
+	party_types_for_turi,
+	prepare,
+	resolve_party,
+	turi_ok,
+)
 
 PARTY_FIELD = {"Customer": "customer", "Supplier": "supplier", "Employee": "employee"}
 BOSQICH = (("nach", _("нач.")), ("obor", _("оборот")), ("kon", _("кон.")))
@@ -70,11 +79,12 @@ def get_data(filters):
 		"ifnull(party_type, '') != ''",
 		"is_cancelled = 0",
 	]
+	turi = normalize_turi(filters.get("turi"))
 	if filters.get("party_type"):
 		cond.append("party_type = %(party_type)s")
-	elif filters.get("turi"):
-		filters.party_type = filters.turi
-		cond.append("party_type = %(party_type)s")
+	else:
+		filters.party_types = party_types_for_turi(turi)
+		cond.append("party_type in %(party_types)s")
 	if filters.get("party"):
 		cond.append("party = %(party)s")
 	rows = frappe.db.sql(
@@ -97,6 +107,8 @@ def get_data(filters):
 		v = "sum" if r.currency == company_currency else "usd"
 		opening = flt(r.opening_credit) - flt(r.opening_debit)  # musbat - kredit (biz qarzdormiz)
 		final = opening + flt(r.period_credit) - flt(r.period_debit)
+		if not turi_ok(turi, r.party_type, r.party):
+			continue
 		if not filters.get("show_zero") and not any((opening, r.period_credit, r.period_debit)):
 			continue
 		row = parties.get((r.party_type, r.party))
@@ -122,7 +134,8 @@ def get_data(filters):
 	totals = {f: sum(flt(r[f]) for r in data) for f in AMOUNT_FIELDS}
 	totals.update(cur_sum=company_currency, cur_usd=foreign)
 	if data:
-		data.append({"turi": bold(_("ЖАМИ")), **totals})
+		# jadvaldagi kabi «Общая задолженность» qatori ro'yxat tepasida
+		data.insert(0, {"turi": bold(_("Общая задолженность")), **totals})
 	return blank(data), totals
 
 

@@ -18,10 +18,12 @@
   "manba_section",
   "supplier",
   "supplier_name",
+  "tip_kontragent",
   "cb_3",
   "kredit_hisob",
   "summa_section",
   "qty",
+  "uom",
   "rate",
   "amount",
   "cb_4",
@@ -60,7 +62,7 @@
    "fieldname": "sana",
    "fieldtype": "Date",
    "in_list_view": 1,
-   "label": "Sana",
+   "label": "Дата",
    "reqd": 1
   },
   {
@@ -71,7 +73,7 @@
    "fieldname": "nomi",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Asosiy vosita nomi (Наименование)",
+   "label": "Наименование",
    "reqd": 1
   },
   {
@@ -105,7 +107,7 @@
    "fieldname": "supplier",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Yetkazib beruvchi",
+   "label": "Поставщик",
    "options": "Supplier"
   },
   {
@@ -138,14 +140,16 @@
    "fieldtype": "Float",
    "label": "Кол-во",
    "non_negative": 1,
-   "reqd": 1
+   "reqd": 1,
+   "in_list_view": 1
   },
   {
    "fieldname": "rate",
    "fieldtype": "Currency",
    "label": "Цена",
    "options": "currency",
-   "reqd": 1
+   "reqd": 1,
+   "in_list_view": 1
   },
   {
    "fieldname": "amount",
@@ -165,21 +169,24 @@
    "fieldtype": "Link",
    "label": "Валюта",
    "options": "Currency",
-   "reqd": 1
+   "reqd": 1,
+   "in_list_view": 1
   },
   {
    "description": "Bo'sh = Currency Exchange kursi",
    "fieldname": "kurs",
    "fieldtype": "Float",
-   "label": "Курс (firma valyutasiga)",
-   "precision": "4"
+   "label": "Курс",
+   "precision": "4",
+   "in_list_view": 1
   },
   {
    "fieldname": "base_amount",
    "fieldtype": "Currency",
-   "label": "Summa (firma valyutasida)",
+   "label": "Сумма сум",
    "options": "Company:company:default_currency",
-   "read_only": 1
+   "read_only": 1,
+   "in_list_view": 1
   },
   {
    "fieldname": "izoh_section",
@@ -206,6 +213,20 @@
    "options": "Prixod OS",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "label": "Ед-изм",
+   "options": "UOM"
+  },
+  {
+   "fieldname": "tip_kontragent",
+   "fieldtype": "Data",
+   "label": "Тип контрагент",
+   "fetch_from": "supplier.supplier_group",
+   "read_only": 1,
+   "in_list_view": 1
   }
  ],
  "index_web_pages_for_search": 0,
@@ -243,21 +264,6 @@
    "read": 1,
    "report": 1,
    "role": "Karer Menejer",
-   "share": 1,
-   "submit": 1,
-   "write": 1
-  },
-  {
-   "amend": 1,
-   "cancel": 1,
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "export": 1,
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Beton Menejer",
    "share": 1,
    "submit": 1,
    "write": 1

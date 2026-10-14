@@ -124,19 +124,10 @@
    "role": "Karer Menejer"
   },
   {
-   "role": "Beton Menejer"
-  },
-  {
    "role": "Karer Kassir"
   },
   {
-   "role": "Beton Kassir"
-  },
-  {
    "role": "Karer Operator"
-  },
-  {
-   "role": "Beton Operator"
   }
  ],
  "timeout": 0

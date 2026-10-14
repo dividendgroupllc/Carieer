@@ -12,14 +12,8 @@
   "eskiz_email",
   "eskiz_password",
   "eskiz_from",
-  "gps_section",
-  "gps_token",
-  "gps_cb",
-  "gps_saqlash_kun",
   "kassa_section",
-  "kassa_minus_ruxsat",
-  "firmalararo_section",
-  "qarz_muddati_kun"
+  "kassa_minus_ruxsat"
  ],
  "fields": [
   {
@@ -72,50 +66,17 @@
    "label": "Eskiz jo'natuvchi nomi (from)"
   },
   {
-   "fieldname": "gps_section",
-   "fieldtype": "Section Break",
-   "label": "GPS"
-  },
-  {
-   "description": "Telefon (Traccar Client) va GPS trekkerlar shu token bilan ma'lumot yuboradi",
-   "fieldname": "gps_token",
-   "fieldtype": "Password",
-   "label": "GPS API token"
-  },
-  {
-   "fieldname": "gps_cb",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "90",
-   "fieldname": "gps_saqlash_kun",
-   "fieldtype": "Int",
-   "label": "GPS nuqtalar necha kun saqlansin"
-  },
-  {
    "fieldname": "kassa_section",
    "fieldtype": "Section Break",
    "label": "Kassa nazorati"
   },
   {
    "default": "0",
-   "description": "O'chiq (standart): kassada yo'q pulni chiqarib bo'lmaydi - yetmagan qismi qarz bo'lib qoladi va Qarzlar bo'limidan alohida to'lanadi. Yoqilsa - kassa minusga tushishi mumkin. Faqat System Manager o'zgartira oladi.",
+   "description": "Ishlatilmaydi: kassa har doim minusga tushishi mumkin (to'lov bloklanmaydi, ogohlantiriladi).",
    "fieldname": "kassa_minus_ruxsat",
    "fieldtype": "Check",
    "label": "Kassada minus qoldiqqa ruxsat berish",
    "permlevel": 1
-  },
-  {
-   "fieldname": "firmalararo_section",
-   "fieldtype": "Section Break",
-   "label": "Firmalararo qarz eslatmasi"
-  },
-  {
-   "fieldname": "qarz_muddati_kun",
-   "fieldtype": "Int",
-   "label": "Qarz muddati (kun)",
-   "default": "7",
-   "description": "Firmalararo sotuv qarzga olingan va shuncha kundan keyin ham to'lanmagan bo'lsa, xaridor firmaga BIR MARTA eslatma bildirishnomasi boradi (bosib to'lash mumkin). 0 - eslatma o'chiq."
   }
  ],
  "index_web_pages_for_search": 0,
@@ -138,12 +99,6 @@
    "print": 1,
    "read": 1,
    "role": "Karer Menejer",
-   "write": 1
-  },
-  {
-   "print": 1,
-   "read": 1,
-   "role": "Beton Menejer",
    "write": 1
   },
   {

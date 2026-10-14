@@ -1,36 +1,46 @@
-# Qarzdorlik ("Қарздорликлар"): kim qancha qarz, NIMA UCHUN va qancha vaqtdan beri.
+# Qarzdorlik ("Карздорликлар"): kim qancha qarz, NIMA UCHUN va qancha vaqtdan beri.
 #
 # Har bir kontragent - bitta qator: Jami oldi | To'ladi | Qarz | eng eski qarz (kun) | muddat ustunlari.
 # Uning ostida (daraxt) - qarzni tashkil qilgan hujjatlar: sana, hujjat (Sotuv, Nachislenie, Kassa ...),
-# nima olgani ("Beton 4 t × 490 000 · 01A123BC"), hujjat summasi, to'langan qismi, qolgan qarz, necha kun.
+# nima olgani ("Шебень 4 куб × 70 000 · 01A123BC"), hujjat summasi, to'langan qismi, qolgan qarz, necha kun.
 # Avans bo'lsa (oldindan to'lagan) - qaysi to'lov ortib qolgani ko'rsatiladi.
 #
 # Manba - GL (buxgalteriya daftari): sotuv, nachislenie, kassa, boshlang'ich qoldiq, to'lovlar hammasi hisobga olinadi.
-# Taqsimot: to'lov aynan qaysi hujjatga yozilgan bo'lsa (Payment Ledger) - o'sha hujjat yopiladi. Hujjatga bog'lanmagan
-# to'lov (avans) eng eski ochiq hujjatlarga FIFO bilan taqsimlanadi. To'langan hujjatlar qarzga kirmaydi, lekin tarixda turadi.
+# Taqsimot (filtr «Taqsimot»): standart - jadvaldagidek FIFO: to'lov eng eski hujjatlarni yopadi, qoldiq eng yangi
+# sotuvlarda qoladi va yoshi bo'yicha 0-7 / 7+ / 14+ / 21+ kun ustunlariga bo'linadi. «ERPNext» - to'lov aynan qaysi
+# hujjatga yozilgan bo'lsa (Payment Ledger) o'sha hujjat yopiladi. To'langan hujjatlar qarzga kirmaydi, lekin tarixda turadi.
 
 import frappe
 from frappe import _
 from frappe.utils import date_diff, escape_html, flt, fmt_money
 
-from carieer.carieer.report.common import bold, prepare
-from carieer.carieer.report.firmalararo_qarzlar.firmalararo_qarzlar import fmt_qty, items_text
+from carieer.carieer.report.common import (
+	bold,
+	fmt_qty,
+	items_text,
+	normalize_turi,
+	party_types_for_turi,
+	prepare,
+	turi_ok,
+)
 
 BUCKETS = ("d0_7", "d8_14", "d15_21", "d21")
 NAME_FIELD = {"Customer": "customer_name", "Supplier": "supplier_name", "Employee": "employee_name"}
-TURI = {"Mijozlar": "Customer", "Ta'minotchilar": "Supplier", "Xodimlar": "Employee"}
 # ustun nomlari kontragent turiga qarab (kim kimga qarz - aniq bo'lsin)
 LABELS = {
-	"Customer": (_("Oldi (sotuv, xizmat)"), _("To'ladi"), _("Qarzi (bizga)")),
-	"Supplier": (_("Bizga berdi (xarid, xizmat)"), _("Biz to'ladik"), _("Bizning qarz")),
-	"Employee": (_("Hisoblandi"), _("Berildi"), _("Bizning qarz")),
+	"Клиент": (_("Oldi (sotuv, xizmat)"), _("To'ladi"), _("Сумма долга (bizga)")),
+	"Поставщик": (_("Bizga berdi (xarid, xizmat)"), _("Biz to'ladik"), _("Bizning qarz")),
+	"Сотрудник": (_("Hisoblandi"), _("Berildi"), _("Bizning qarz")),
+	"Прочие лица": (_("Hisoblandi / sotildi"), _("To'langan"), _("Qarz")),
+	"Налог": (_("Hisoblandi / sotildi"), _("To'langan"), _("Qarz")),
 }
 NUMERIC = ("jami", "tolandi", "qoldiq", *BUCKETS, "kun")
 
 
 def execute(filters=None):
 	filters = prepare(filters)
-	filters.party_type = TURI.get(filters.get("turi") or "Mijozlar", "Customer")
+	filters.turi = normalize_turi(filters.get("turi")) or "Клиент"
+	filters.party_types = party_types_for_turi(filters.turi)
 	data, parties = get_data(filters)
 	currency = frappe.get_cached_value("Company", filters.company, "default_currency")
 	return (
@@ -43,7 +53,7 @@ def execute(filters=None):
 
 
 def get_columns(filters):
-	jami, tolandi, qoldiq = LABELS[filters.party_type]
+	jami, tolandi, qoldiq = LABELS[filters.turi]
 	cur = {"fieldtype": "Currency", "options": "currency", "width": 135}
 	return [
 		{"label": _("Kim / nima uchun"), "fieldname": "nomi", "fieldtype": "Data", "width": 330},
@@ -70,9 +80,9 @@ def get_columns(filters):
 		{"label": _("Necha kun"), "fieldname": "kun", "fieldtype": "Int", "width": 85},
 		{"label": _("Izoh"), "fieldname": "izoh", "fieldtype": "Data", "width": 230},
 		{"label": _("7 кун ичи"), "fieldname": "d0_7", **cur, "width": 115},
-		{"label": _("8-14 кун"), "fieldname": "d8_14", **cur, "width": 115},
-		{"label": _("15-21 кун"), "fieldname": "d15_21", **cur, "width": 115},
-		{"label": _("21 кундан кўп"), "fieldname": "d21", **cur, "width": 125},
+		{"label": _("7 кундан куп"), "fieldname": "d8_14", **cur, "width": 115},
+		{"label": _("14 кундан куп"), "fieldname": "d15_21", **cur, "width": 115},
+		{"label": _("21 кундан куп"), "fieldname": "d21", **cur, "width": 125},
 		{
 			"label": _("Валюта"),
 			"fieldname": "currency",
@@ -87,26 +97,20 @@ def get_columns(filters):
 def get_entries(filters):
 	cond = [
 		"company = %(company)s",
-		"party_type = %(party_type)s",
+		"party_type in %(party_types)s",
 		"is_cancelled = 0",
 		"posting_date <= %(to_date)s",
 	]
 	if filters.get("party"):
 		cond.append("party = %(party)s")
-	if not filters.get("ichki_firma"):
-		# o'zimizning ikkinchi firmamiz - «Firmalararo qarzlar» hisobotida
-		table = {"Customer": "Customer", "Supplier": "Supplier"}.get(filters.party_type)
-		if table:
-			flag = "is_internal_customer" if table == "Customer" else "is_internal_supplier"
-			cond.append(f"party not in (select name from `tab{table}` where {flag} = 1)")
 	return frappe.db.sql(
-		f"""select party, account_currency currency, voucher_type, voucher_no,
+		f"""select party_type, party, account_currency currency, voucher_type, voucher_no,
 			min(posting_date) posting_date, min(creation) creation,
 			sum(debit_in_account_currency) - sum(credit_in_account_currency) net, max(remarks) remarks
 		from `tabGL Entry` where {" and ".join(cond)}
-		group by party, account_currency, voucher_type, voucher_no
+		group by party_type, party, account_currency, voucher_type, voucher_no
 		having abs(sum(debit_in_account_currency) - sum(credit_in_account_currency)) >= 0.005
-		order by party, account_currency, posting_date, creation""",
+		order by party_type, party, account_currency, posting_date, creation""",
 		filters,
 		as_dict=True,
 	)
@@ -120,23 +124,25 @@ def get_allocations(filters):
 	if filters.get("party"):
 		cond = " and party = %(party)s"
 	rows = frappe.db.sql(
-		f"""select party, voucher_type, voucher_no, against_voucher_type, against_voucher_no, sum(amount) amount
+		f"""select party_type, party, voucher_type, voucher_no, against_voucher_type, against_voucher_no, sum(amount) amount
 		from `tabPayment Ledger Entry`
-		where company = %(company)s and party_type = %(party_type)s and delinked = 0
+		where company = %(company)s and party_type in %(party_types)s and delinked = 0
 			and posting_date <= %(to_date)s and (voucher_type != against_voucher_type or voucher_no != against_voucher_no){cond}
-		group by party, voucher_type, voucher_no, against_voucher_type, against_voucher_no""",
+		group by party_type, party, voucher_type, voucher_no, against_voucher_type, against_voucher_no""",
 		filters,
 		as_dict=True,
 	)
 	to_doc, by_pay = {}, {}
 	for r in rows:
 		amount = abs(flt(r.amount))
-		to_doc[(r.party, r.against_voucher_type, r.against_voucher_no)] = to_doc.get((r.party, r.against_voucher_type, r.against_voucher_no), 0) + amount
-		by_pay[(r.party, r.voucher_type, r.voucher_no)] = by_pay.get((r.party, r.voucher_type, r.voucher_no), 0) + amount
+		k_doc = (r.party_type, r.party, r.against_voucher_type, r.against_voucher_no)
+		k_pay = (r.party_type, r.party, r.voucher_type, r.voucher_no)
+		to_doc[k_doc] = to_doc.get(k_doc, 0) + amount
+		by_pay[k_pay] = by_pay.get(k_pay, 0) + amount
 	return to_doc, by_pay
 
 
-def fifo(rows, sign, to_doc=None, by_pay=None, party=None):
+def fifo(rows, sign, to_doc=None, by_pay=None, party=None, party_type=None):
 	"""Hujjatlar (qarzni oshiruvchi) va to'lovlar. Avval haqiqiy taqsimot (to'lov aynan qaysi hujjatga yozilgan bo'lsa),
 	hujjatga bog'lanmagan to'lov (avans, kassa) esa eng eski ochiq hujjatlarga FIFO bilan.
 	Qaytaradi: (hujjatlar ro'yxati [har birida paid, left], ortib qolgan to'lovlar [avans])."""
@@ -145,10 +151,10 @@ def fifo(rows, sign, to_doc=None, by_pay=None, party=None):
 	for r in rows:
 		amount = sign * flt(r.net)
 		if amount > 0:
-			paid = min(amount, to_doc.get((party, r.voucher_type, r.voucher_no), 0))
+			paid = min(amount, to_doc.get((party_type, party, r.voucher_type, r.voucher_no), 0))
 			docs.append(frappe._dict(row=r, amount=amount, paid=paid, left=amount - paid))
 		else:
-			left = -amount - min(-amount, by_pay.get((party, r.voucher_type, r.voucher_no), 0))
+			left = -amount - min(-amount, by_pay.get((party_type, party, r.voucher_type, r.voucher_no), 0))
 			if left > 0.005:
 				free.append(frappe._dict(row=r, amount=-amount, left=left))
 	advances = []
@@ -167,18 +173,23 @@ def fifo(rows, sign, to_doc=None, by_pay=None, party=None):
 
 
 def get_data(filters, only_debt=False):
-	"""only_debt: faqat qoldig'i musbat (qarz bor) kontragentlar - «Qarzlarimiz» hisoboti uchun."""
-	entries = get_entries(filters)
-	sign = 1 if filters.party_type == "Customer" else -1  # ta'minotchi / xodim: biz qarz bo'lsak musbat
+	"""only_debt: faqat qoldig'i musbat (qarz bor) kontragentlar."""
+	entries = [e for e in get_entries(filters) if turi_ok(filters.turi, e.party_type, e.party)]
 	by_party = {}
 	for e in entries:
-		by_party.setdefault((e.party, e.currency), []).append(e)
-	details = get_details(entries, filters.party_type)
-	to_doc, by_pay = get_allocations(filters)
+		by_party.setdefault((e.party_type, e.party, e.currency), []).append(e)
+	details = get_details(entries, filters.turi)
+	if filters.get("taqsimot") == "ERPNext":
+		to_doc, by_pay = get_allocations(filters)
+	else:
+		# jadvaldagidek: to'lov eng eski hujjatlarni yopadi (FIFO), qoldiq - eng yangi sotuvlarda
+		to_doc, by_pay = {}, {}
 
 	parties = []
-	for (party, currency), rows in by_party.items():
-		docs, advances = fifo(rows, sign, to_doc, by_pay, party)
+	for (party_type, party, currency), rows in by_party.items():
+		# mijoz qarzi - debet, ta'minotchi / xodim qarzi - kredit musbat
+		sign = 1 if party_type == "Customer" else -1
+		docs, advances = fifo(rows, sign, to_doc, by_pay, party, party_type)
 		jami = sum(d.amount for d in docs)
 		tolandi = sum(sign * -flt(r.net) for r in rows if sign * flt(r.net) < 0)
 		qoldiq = flt(sum(sign * flt(r.net) for r in rows), 2)
@@ -187,9 +198,10 @@ def get_data(filters, only_debt=False):
 		if only_debt and qoldiq < 0.5:
 			continue
 		p = frappe._dict(
+			party_type=party_type,
 			party=party,
 			currency=currency,
-			nomi=frappe.db.get_value(filters.party_type, party, NAME_FIELD[filters.party_type]) or party,
+			nomi=frappe.db.get_value(party_type, party, NAME_FIELD[party_type]) or party,
 			jami=flt(jami, 2),
 			tolandi=flt(tolandi, 2),
 			qoldiq=qoldiq,
@@ -211,7 +223,7 @@ def get_data(filters, only_debt=False):
 	data, totals = [], {}
 	for p in parties:
 		data.append(party_row(p, filters))
-		data += doc_rows(p, details, filters, sign)
+		data += doc_rows(p, details, filters)
 		t = totals.setdefault(p.currency, {f: 0.0 for f in ("jami", "tolandi", "qoldiq", *BUCKETS)})
 		for f in t:
 			t[f] += flt(p[f])
@@ -230,7 +242,7 @@ def party_row(p, filters):
 	if p.qoldiq < 0:
 		izoh = (
 			_("Avans: oldindan to'lagan, tovar olmagan")
-			if filters.party_type == "Customer"
+			if p.party_type == "Customer"
 			else _("Avans: biz oldindan to'laganmiz")
 		)
 	elif open_docs:
@@ -241,9 +253,9 @@ def party_row(p, filters):
 		izoh += (" · " if izoh else "") + _("oxirgi to'lov {0}").format(frappe.format(p.last_payment.posting_date, "Date"))
 	return {
 		"nomi": bold(p.nomi),
-		"party_type": filters.party_type,
+		"party_type": p.party_type,
 		"party": p.party,
-		"hujjat_turi": filters.party_type,
+		"hujjat_turi": p.party_type,
 		"hujjat": p.party,
 		"currency": p.currency,
 		"jami": p.jami,
@@ -256,7 +268,7 @@ def party_row(p, filters):
 	}
 
 
-def doc_rows(p, details, filters, sign):
+def doc_rows(p, details, filters):
 	"""Qarzni tashkil qilgan hujjatlar (to'langanlari - faqat «to'langan hujjatlar ham» belgilansa)."""
 	rows = []
 	for d in p.docs:
@@ -371,15 +383,14 @@ def get_summary(parties, filters, currency):
 	debt = sum(p.qoldiq for p in mine if p.qoldiq > 0)
 	advance = -sum(p.qoldiq for p in mine if p.qoldiq < 0)
 	old = sum(p.d21 for p in mine)
-	if filters.party_type == "Customer":
-		labels = (_("Mijozlar bizga qarz"), _("Mijozlar avansi (biz qarzmiz)"))
-	elif filters.party_type == "Supplier":
-		labels = (_("Biz ta'minotchilarga qarzmiz"), _("Ta'minotchilarga avans berilgan"))
-	else:
-		labels = (_("Biz xodimlarga qarzmiz"), _("Xodimlarda (podotchet)"))
+	labels = {
+		"Клиент": (_("Mijozlar bizga qarz"), _("Mijozlar avansi (biz qarzmiz)")),
+		"Поставщик": (_("Biz ta'minotchilarga qarzmiz"), _("Ta'minotchilarga avans berilgan")),
+		"Сотрудник": (_("Biz xodimlarga qarzmiz"), _("Xodimlarda (podotchet)")),
+	}.get(filters.turi, (_("Qarz"), _("Avans")))
 	out = [
 		{"label": labels[0], "value": debt, "datatype": "Currency", "currency": currency, "indicator": "Red"},
-		{"label": _("21 kundan eski qarz"), "value": old, "datatype": "Currency", "currency": currency, "indicator": "Orange"},
+		{"label": _("21 кундан куп"), "value": old, "datatype": "Currency", "currency": currency, "indicator": "Orange"},
 		{"label": labels[1], "value": advance, "datatype": "Currency", "currency": currency, "indicator": "Blue"},
 		{"label": _("Qarzdorlar soni"), "value": len([p for p in mine if p.qoldiq > 0]), "datatype": "Int", "indicator": "Grey"},
 	]
@@ -415,9 +426,11 @@ def get_message(parties, filters, currency):
 				p.kun,
 			)
 		)
-	who = {"Customer": _("Mijozlar bizga"), "Supplier": _("Biz ta'minotchilarga"), "Employee": _("Biz xodimlarga")}[
-		filters.party_type
-	]
+	who = {
+		"Клиент": _("Mijozlar bizga"),
+		"Поставщик": _("Biz ta'minotchilarga"),
+		"Сотрудник": _("Biz xodimlarga"),
+	}.get(filters.turi, _("Kontragentlar"))
 	total = sum(p.qoldiq for p in debtors if p.currency == currency)
 	headline = _("{0} holatiga: {1} {2} qarz").format(date, who, fmt_money(total, 0, currency))
 	items = "".join(f"<li style='margin:2px 0'>{line}</li>" for line in lines)

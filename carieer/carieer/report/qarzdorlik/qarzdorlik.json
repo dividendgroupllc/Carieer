@@ -25,12 +25,12 @@
    "wildcard_filter": 0
   },
   {
-   "default": "Mijozlar",
+   "default": "Клиент",
    "fieldname": "turi",
    "fieldtype": "Select",
-   "label": "Кимлар",
+   "label": "Тип контрагента",
    "mandatory": 0,
-   "options": "Mijozlar\nTa'minotchilar\nXodimlar",
+   "options": "Клиент\nПоставщик\nПрочие лица\nНалог\nСотрудник",
    "wildcard_filter": 0
   },
   {
@@ -42,17 +42,19 @@
    "default": "1"
   },
   {
-   "fieldname": "ichki_firma",
-   "fieldtype": "Check",
-   "label": "Ички фирмани ҳам кўрсатиш",
-   "mandatory": 0,
-   "wildcard_filter": 0
-  },
-  {
    "fieldname": "show_zero",
    "fieldtype": "Check",
    "label": "Нол қолдиқларни кўрсатиш",
    "mandatory": 0,
+   "wildcard_filter": 0
+  },
+  {
+   "default": "FIFO",
+   "fieldname": "taqsimot",
+   "fieldtype": "Select",
+   "label": "Тўловни тақсимлаш",
+   "mandatory": 0,
+   "options": "FIFO\nERPNext",
    "wildcard_filter": 0
   }
  ],
@@ -76,13 +78,7 @@
    "role": "Karer Menejer"
   },
   {
-   "role": "Beton Menejer"
-  },
-  {
    "role": "Karer Kassir"
-  },
-  {
-   "role": "Beton Kassir"
   }
  ],
  "timeout": 0

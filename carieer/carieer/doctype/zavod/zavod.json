@@ -2,7 +2,7 @@
  "actions": [],
  "autoname": "field:zavod",
  "creation": "2026-10-05 18:00:00.000000",
- "description": "Ikki zavod (Karer, Beton) va ularning firmasi, omborlari, kassasi",
+ "description": "Karer zavodi va uning firmasi, omborlari, kassasi",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -18,7 +18,7 @@
  ],
  "fields": [
   {
-   "description": "Karer yoki Beton. Sotuv'dagi «Тип» shu ro'yxatdan tanlanadi",
+   "description": "Sotuv'dagi «Тип» shu ro'yxatdan tanlanadi",
    "fieldname": "zavod",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -53,7 +53,7 @@
    "label": "Omborlar"
   },
   {
-   "description": "Karer: qazib olingan va sotiladigan tovar. Beton: tayyor beton",
+   "description": "qazib olingan va sotiladigan tovar.",
    "fieldname": "asosiy_ombor",
    "fieldtype": "Link",
    "label": "Asosiy ombor",
@@ -62,7 +62,7 @@
    "reqd": 1
   },
   {
-   "description": "Firmalararo xarid shu yerga kiradi, beton ishlab chiqarish xomashyosi shu yerdan olinadi",
+   "description": "Xomashyo shu yerga kiradi",
    "fieldname": "xomashyo_ombori",
    "fieldtype": "Link",
    "label": "Xomashyo ombori",
@@ -113,32 +113,13 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Beton Menejer",
-   "write": 1
-  },
-  {
-   "print": 1,
-   "read": 1,
-   "report": 1,
    "role": "Karer Kassir"
   },
   {
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Beton Kassir"
-  },
-  {
-   "print": 1,
-   "read": 1,
-   "report": 1,
    "role": "Karer Operator"
-  },
-  {
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Beton Operator"
   }
  ],
  "sort_field": "zavod",

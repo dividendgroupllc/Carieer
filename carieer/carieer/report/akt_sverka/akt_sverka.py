@@ -1,22 +1,20 @@
-# Akt Sverka (акт сверки) - Armada andozasi asosida.
-# Bitta kontragent bilan davr ichidagi barcha hisob-kitob: sotuv/xarid (tovar, miqdor, narx), to'lovlar,
-# hisoblashlar (Начисление / Journal Entry) va har qatordan keyingi qoldiq. Tepada yig'ma jadval.
-# Ishora: Kredit = kontragent foydasiga (biz qarzdor), Debet = bizning foydamizga (kontragent qarzdor).
+# Akt Sverka (акт сверки) - Google Sheets'dagi varaq tuzilishida.
+# Bitta kontragent bilan davr ichidagi barcha hisob-kitob. Tepada yig'ma jadval: Сальдо на начало, Сумма оплаты,
+# Сумма отгрузки, Сальдo на конец - har biri Кредит Сум / Дебет Сум / Кредит $ / Дебет $ ustunlarida.
+# Pastda xronologik ro'yxat: sotuv / xarid (tovar, miqdor, narx), hisoblashlar (Начисление) va to'lovlar (Касса).
+# Ishora: Кредит = kontragent foydasiga (biz qarzdor), Дебет = bizning foydamizga (kontragent qarzdor).
+# Manba - GL: mijozga sotuv Дебет, mijoz to'lovi Кредит; ta'minotchidan xarid Кредит, unga to'lov Дебет.
 
 import frappe
 from frappe import _
 from frappe.utils import flt
 
-from carieer.carieer.report.common import PARTY_FILTERS, blank_zeros, bold, prepare
-from carieer.carieer.report.firmalararo_qarzlar.firmalararo_qarzlar import internal_parties, party_condition
-from carieer.utils import get_internal_company
+from carieer.carieer.report.common import PARTY_FILTERS, blank_zeros, bold, party_condition, prepare
 
-GROUPS = {
-	"Sales Invoice": "goods",
-	"Purchase Invoice": "goods",
-	"Payment Entry": "money",
-	"Journal Entry": "accruals",
-}
+# Hujjat -> yig'ma jadvaldagi qator: to'lov (Касса) yoki otgruzka (sotuv, xarid, начисление)
+PAYMENT_TYPES = ("Payment Entry",)
+# Hujjatning «tabiiy» yo'nalishi: otgruzka summasi shu tomonda musbat (qaytarish - manfiy)
+NATURAL = {"Sales Invoice": "debit", "Purchase Invoice": "credit"}
 
 
 def execute(filters=None):
@@ -25,7 +23,7 @@ def execute(filters=None):
 		return get_columns(), [], _("Контрагентни танланг: Мижоз, Таъминотчи ёки Ходим")
 	data, summary = get_data(filters)
 	# tovar bo'lmagan qatorlarda (to'lov, nachislenie) «Кол-во / Цена» bo'sh ko'rinsin, «0.00» emas
-	data = blank_zeros(data, ("qty", "rate", "credit", "debit", "balance_credit", "balance_debit"))
+	data = blank_zeros(data, ("qty", "rate", "amount", "payment", "balance_credit", "balance_debit"))
 	return get_columns(), data, get_summary_html(summary, filters)
 
 
@@ -35,14 +33,6 @@ def resolve_parties(filters) -> bool:
 	chosen = [(dt, filters.get(f)) for f, dt in PARTY_FILTERS if filters.get(f)]
 	if not chosen:
 		return False
-	# o'zimizning ikkinchi firmamiz tanlansa (mijoz YOKI ta'minotchi sifatida) - ikkala tomoni birga:
-	# u bizdan olgan tovar (mijoz) ham, bizga to'lagan / bizdan olgan pul (ta'minotchi) ham bir aktda ko'rinadi
-	for dt, party in list(chosen):
-		firma = get_internal_company(dt, party)
-		if firma:
-			for pair in internal_parties(firma):
-				if pair not in chosen:
-					chosen.append(pair)
 	filters.party_type, filters.party = chosen[0]
 	filters.party_label = " + ".join(dict.fromkeys(p for _dt, p in chosen))
 	filters.party_cond, values = party_condition(chosen)
@@ -53,7 +43,7 @@ def resolve_parties(filters) -> bool:
 def get_columns():
 	cur = {"fieldtype": "Currency", "options": "currency", "width": 120}
 	return [
-		{"label": _("Сана"), "fieldname": "posting_date", "fieldtype": "Date", "width": 90},
+		{"label": _("Дата"), "fieldname": "posting_date", "fieldtype": "Date", "width": 90},
 		{"label": _("Ҳужжат"), "fieldname": "voucher_label", "fieldtype": "Data", "width": 110},
 		{
 			"label": _("Ҳужжат №"),
@@ -62,15 +52,10 @@ def get_columns():
 			"options": "voucher_type",
 			"width": 150,
 		},
-		{"label": _("Наименование"), "fieldname": "item_name", "fieldtype": "Data", "width": 170},
+		{"label": _("Наименования"), "fieldname": "item_name", "fieldtype": "Data", "width": 190},
 		{"label": _("Кол-во"), "fieldname": "qty", "fieldtype": "Float", "precision": 2, "width": 80},
-		{"label": _("Ед.изм"), "fieldname": "uom", "fieldtype": "Data", "width": 70},
+		{"label": _("Ед изм"), "fieldname": "uom", "fieldtype": "Data", "width": 70},
 		{"label": _("Цена"), "fieldname": "rate", "fieldtype": "Float", "precision": 2, "width": 100},
-		{"label": _("Кредит"), "fieldname": "credit", **cur},
-		{"label": _("Дебет"), "fieldname": "debit", **cur},
-		{"label": _("Қолдиқ (Кред)"), "fieldname": "balance_credit", **cur},
-		{"label": _("Қолдиқ (Деб)"), "fieldname": "balance_debit", **cur},
-		{"label": _("Коммент"), "fieldname": "komment", "fieldtype": "Data", "width": 220},
 		{
 			"label": _("Валюта"),
 			"fieldname": "currency",
@@ -78,65 +63,76 @@ def get_columns():
 			"options": "Currency",
 			"width": 65,
 		},
+		{"label": _("Сумма"), "fieldname": "amount", **cur},
+		{"label": _("Оплата сумма"), "fieldname": "payment", **cur},
+		{"label": _("Қолдиқ (Кред)"), "fieldname": "balance_credit", **cur},
+		{"label": _("Қолдиқ (Деб)"), "fieldname": "balance_debit", **cur},
+		{"label": _("Коммент"), "fieldname": "komment", "fieldtype": "Data", "width": 220},
 		{"label": "", "fieldname": "voucher_type", "fieldtype": "Data", "hidden": 1},
 	]
 
 
-def party_currency(filters) -> str:
-	if filters.get("currency"):
-		return filters.currency
-	row = frappe.db.sql(
-		f"""select account_currency from `tabGL Entry`
-		where company=%(company)s and {filters.party_cond} and is_cancelled=0
-		order by posting_date desc, creation desc limit 1""",
-		filters,
-	)
-	return row[0][0] if row else frappe.get_cached_value("Company", filters.company, "default_currency")
-
-
 def get_data(filters):
-	filters.currency = party_currency(filters)
-	opening = flt(
-		frappe.db.sql(
-			f"""select sum(credit_in_account_currency) - sum(debit_in_account_currency) from `tabGL Entry`
-			where company=%(company)s and {filters.party_cond} and account_currency=%(currency)s
-			and posting_date < %(from_date)s and is_cancelled=0""",
+	company_currency = frappe.get_cached_value("Company", filters.company, "default_currency")
+	# valyuta bo'yicha boshlang'ich qoldiq (kontragent so'mda ham, dollarda ham hisoblashgan bo'lishi mumkin)
+	balances = {
+		r.currency: flt(r.net)
+		for r in frappe.db.sql(
+			f"""select account_currency currency, sum(credit_in_account_currency) - sum(debit_in_account_currency) net
+			from `tabGL Entry`
+			where company=%(company)s and {filters.party_cond} and posting_date < %(from_date)s and is_cancelled=0
+			group by account_currency""",
 			filters,
-		)[0][0]
-	)
+			as_dict=True,
+		)
+	}
 	gl = frappe.db.sql(
-		f"""select posting_date, voucher_type, voucher_no,
+		f"""select posting_date, voucher_type, voucher_no, account_currency currency,
 			sum(credit_in_account_currency) credit, sum(debit_in_account_currency) debit, min(creation) creation
 		from `tabGL Entry`
-		where company=%(company)s and {filters.party_cond} and account_currency=%(currency)s
+		where company=%(company)s and {filters.party_cond}
 			and posting_date between %(from_date)s and %(to_date)s and is_cancelled=0
-		group by posting_date, voucher_type, voucher_no
+		group by posting_date, voucher_type, voucher_no, account_currency
 		order by posting_date, creation""",
 		filters,
 		as_dict=True,
 	)
+	if filters.get("currency"):
+		balances = {k: v for k, v in balances.items() if k == filters.currency}
+		gl = [g for g in gl if g.currency == filters.currency]
+	currencies = list(dict.fromkeys([*balances, *(g.currency for g in gl)])) or [company_currency]
+	filters.company_currency = company_currency
+	filters.foreign_currency = next((c for c in currencies if c != company_currency), "USD")
+
 	items = get_invoice_items(
 		[g.voucher_no for g in gl if g.voucher_type in ("Sales Invoice", "Purchase Invoice")]
 	)
 	komment = get_komments(gl)
 
-	cur = filters.currency
-	summary = {"opening": opening, "goods": [0, 0], "money": [0, 0], "accruals": [0, 0], "other": [0, 0]}
-	data = [
-		{
-			"posting_date": filters.from_date,
-			"voucher_label": bold(_("Бошланғич қолдиқ")),
-			"currency": cur,
-			**split_balance(opening),
-		}
-	]
-	balance = opening
+	# yig'ma jadval: har valyuta (sum / usd) uchun [kredit, debet] juftliklari
+	summary = {
+		g: {"opening": 0.0, "payment": [0.0, 0.0], "shipment": [0.0, 0.0], "closing": 0.0} for g in ("sum", "usd")
+	}
+	data = []
+	for cur in currencies:
+		grp = "sum" if cur == company_currency else "usd"
+		summary[grp]["opening"] += balances.get(cur, 0.0)
+		data.append(
+			{
+				"posting_date": filters.from_date,
+				"voucher_label": bold(_("Бошланғич қолдиқ")),
+				"currency": cur,
+				**split_balance(balances.get(cur, 0.0)),
+			}
+		)
 	for g in gl:
+		cur = g.currency
+		grp = "sum" if cur == company_currency else "usd"
 		credit, debit = flt(g.credit), flt(g.debit)
-		group = GROUPS.get(g.voucher_type, "other")
-		summary[group][0] += credit
-		summary[group][1] += debit
-		balance += credit - debit
+		kind = "payment" if g.voucher_type in PAYMENT_TYPES else "shipment"
+		summary[grp][kind][0] += credit
+		summary[grp][kind][1] += debit
+		balances[cur] = balances.get(cur, 0.0) + credit - debit
 		base = {
 			"posting_date": g.posting_date,
 			"voucher_type": g.voucher_type,
@@ -146,46 +142,59 @@ def get_data(filters):
 			"komment": komment.get(g.voucher_no, ""),
 		}
 		lines = items.get(g.voucher_no)
+		if kind == "payment":
+			data.append(
+				{
+					**base,
+					"item_name": item_label(g.voucher_type, credit, debit),
+					"payment": abs(credit - debit),
+					**split_balance(balances[cur]),
+				}
+			)
+			continue
+		amount = shipment_amount(g.voucher_type, credit, debit)
 		if lines:
 			# GL summasi (hisob valyutasida) qatorlar orasida ulushiga qarab bo'linadi (valyuta va soliq ham hisobga olinadi)
 			total = sum(flt(i.base_net_amount) for i in lines) or 1
 			for idx, i in enumerate(lines):
-				share = flt(i.base_net_amount) / total
 				row = {
 					**base,
 					"item_name": i.item_name,
 					"qty": i.qty,
 					"uom": i.uom,
 					"rate": i.rate,
-					"credit": flt(credit * share, 2),
-					"debit": flt(debit * share, 2),
+					"amount": flt(amount * flt(i.base_net_amount) / total, 2),
 				}
 				if idx == len(lines) - 1:
-					row.update(split_balance(balance))
+					row.update(split_balance(balances[cur]))
 				data.append(row)
 		else:
-			data.append(
-				{
-					**base,
-					"item_name": item_label(g.voucher_type, credit, debit),
-					"credit": credit,
-					"debit": debit,
-					**split_balance(balance),
-				}
-			)
+			data.append({**base, "item_name": item_label(g.voucher_type, credit, debit), "amount": amount, **split_balance(balances[cur])})
 
-	summary["closing"] = balance
-	data.append(
-		{
-			"posting_date": filters.to_date,
-			"voucher_label": bold(_("Жами")),
-			"currency": cur,
-			"credit": sum(summary[k][0] for k in ("goods", "money", "accruals", "other")),
-			"debit": sum(summary[k][1] for k in ("goods", "money", "accruals", "other")),
-			**split_balance(balance),
-		}
-	)
+	for cur in currencies:
+		grp = "sum" if cur == company_currency else "usd"
+		summary[grp]["closing"] += balances.get(cur, 0.0)
+		data.append(
+			{
+				"posting_date": filters.to_date,
+				"voucher_label": bold(_("Жами")),
+				"currency": cur,
+				"amount": sum(r.get("amount") or 0 for r in data if r.get("currency") == cur and r.get("voucher_no")),
+				"payment": sum(r.get("payment") or 0 for r in data if r.get("currency") == cur and r.get("voucher_no")),
+				**split_balance(balances.get(cur, 0.0)),
+			}
+		)
 	return data, summary
+
+
+def shipment_amount(voucher_type, credit, debit) -> float:
+	"""Otgruzka summasi (musbat): sotuv - debet, xarid - kredit, nachislenie - qaysi tomonda bo'lsa o'sha."""
+	natural = NATURAL.get(voucher_type)
+	if natural == "debit":
+		return flt(debit - credit, 2)
+	if natural == "credit":
+		return flt(credit - debit, 2)
+	return flt(abs(credit - debit), 2)
 
 
 def split_balance(value):
@@ -204,7 +213,7 @@ def voucher_label(voucher_type):
 
 def item_label(voucher_type, credit, debit):
 	if voucher_type == "Payment Entry":
-		return _("Оплата (приход)") if credit else _("Оплата (расход)")
+		return _("Оплата (приход)") if credit > debit else _("Оплата (расход)")
 	return ""
 
 
@@ -252,34 +261,43 @@ def get_komments(gl):
 
 
 def get_summary_html(s, filters):
+	"""Jadvaldagi shapka: Сальдо на начало / Сумма оплаты / Сумма отгрузки / Сальдо на конец x (Кредит, Дебет) x (Сум, $)."""
+
 	def fmt(v):
-		return f"{flt(v):,.2f}".replace(",", " ")
+		return f"{flt(v):,.2f}".replace(",", " ") if abs(flt(v)) >= 0.005 else ""
 
 	td = "padding:8px 10px;border:1px solid var(--border-color);"
 	head = "background:var(--subtle-accent);font-weight:600;"
-	o, c = flt(s["opening"]), flt(s["closing"])
+	def pair(grp, key):
+		v = s[grp][key]
+		if isinstance(v, list):
+			return v
+		return [max(flt(v), 0), abs(min(flt(v), 0))]
+
 	rows = [
-		(_("Сальдо на начало"), max(o, 0), abs(min(o, 0)), head),
-		(_("Отгрузка (товары, услуги)"), *s["goods"], ""),
-		(_("Оплата (деньги)"), *s["money"], ""),
-		(_("Начисления"), *s["accruals"], ""),
+		(_("Сальдо на начало"), "opening", head),
+		(_("Сумма оплаты"), "payment", ""),
+		(_("Сумма отгрузки"), "shipment", ""),
+		(_("Сальдо на конец"), "closing", head),
 	]
-	if any(s["other"]):
-		rows.append((_("Прочие"), *s["other"], ""))
-	rows.append((_("Сальдо на конец"), max(c, 0), abs(min(c, 0)), head))
-	body = "".join(
-		f"""<tr style="{style}"><td style="{td}">{label}</td>
-		<td style="{td}text-align:right;color:#d32f2f">{fmt(cr)}</td>
-		<td style="{td}text-align:right;color:#388e3c">{fmt(dr)}</td></tr>"""
-		for label, cr, dr, style in rows
-	)
+	body = ""
+	for label, key, style in rows:
+		cells = "".join(
+			f'<td style="{td}text-align:right;color:{color}">{fmt(val)}</td>'
+			for grp in ("sum", "usd")
+			for val, color in zip(pair(grp, key), ("#d32f2f", "#388e3c"), strict=True)
+		)
+		body += f'<tr style="{style}"><td style="{td}">{label}</td>{cells}</tr>'
 	who = frappe.utils.escape_html(filters.get("party_label") or filters.party)
+	cur_sum, cur_usd = filters.company_currency, filters.foreign_currency
 	return f"""<div style="margin:10px 0 16px">
-		<div style="margin-bottom:6px"><b>{_("Контрагент")}:</b> {who} · <b>{_("Валюта")}:</b> {filters.currency}
-		· {frappe.format(filters.from_date, "Date")} – {frappe.format(filters.to_date, "Date")}</div>
+		<div style="margin-bottom:6px"><b>{_("Начало периода")}:</b> {frappe.format(filters.from_date, "Date")} ·
+		<b>{_("Конец периода")}:</b> {frappe.format(filters.to_date, "Date")} · <b>{_("Контрагент")}:</b> {who}</div>
 		<table style="width:100%;border-collapse:collapse">
-			<thead><tr style="{head}"><th style="{td}width:40%"></th>
-			<th style="{td}text-align:right;color:#d32f2f">{_("Кредит")}</th>
-			<th style="{td}text-align:right;color:#388e3c">{_("Дебет")}</th></tr></thead>
+			<thead><tr style="{head}"><th style="{td}width:28%">{_("Валюта")}</th>
+			<th style="{td}text-align:right;color:#d32f2f">{_("Кредит")} {cur_sum}</th>
+			<th style="{td}text-align:right;color:#388e3c">{_("Дебет")} {cur_sum}</th>
+			<th style="{td}text-align:right;color:#d32f2f">{_("Кредит")} {cur_usd}</th>
+			<th style="{td}text-align:right;color:#388e3c">{_("Дебет")} {cur_usd}</th></tr></thead>
 			<tbody>{body}</tbody>
 		</table></div>"""

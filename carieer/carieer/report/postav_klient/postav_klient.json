@@ -36,8 +36,9 @@
    "fieldtype": "Select",
    "label": "Тип контрагента",
    "mandatory": 0,
-   "options": "\nMijozlar\nTa'minotchilar\nXodimlar",
-   "wildcard_filter": 0
+   "options": "\nВсе\nКлиент\nПоставщик\nПрочие лица\nНалог\nСотрудник",
+   "wildcard_filter": 0,
+   "default": "Все"
   },
   {
    "fieldname": "show_zero",
@@ -67,13 +68,7 @@
    "role": "Karer Menejer"
   },
   {
-   "role": "Beton Menejer"
-  },
-  {
    "role": "Karer Kassir"
-  },
-  {
-   "role": "Beton Kassir"
   }
  ],
  "timeout": 0

@@ -1,6 +1,6 @@
 # Pul Oqimi ("Cash Flow" / "Движение денежных средств"): oyma-oy, kategoriyalar kesimida.
 # Google Sheets'dagi "Cash Flow" varag'i tartibida:
-#   Денег на начало месяца
+#   Денег на начало месяца (boshlang'ich «Сальдо» ham shu qatorga kiradi, Поступления'ga emas)
 #   Поступления: от клиентов, прочие доходы (kategoriya bo'yicha), учредители ...
 #   Выплаты: поставщикам, сотрудникам, keyin xarajatlar jadvaldagi guruhlar bo'yicha
 #            (Административный / Операционный / Производственный / Инвестиционные / Финансовые -> kategoriya)
@@ -21,6 +21,7 @@ from carieer.carieer.report.moliya import (
 	card,
 	drop_empty_months,
 	finalize,
+	get_monthly_gl,
 	get_months,
 	line,
 	money,
@@ -50,6 +51,7 @@ CHIQIM_NOMI = {
 	"dividend": "Выплаты учредителям / дивиденды",
 }
 PEREMESHENIE = "Перемещение между кассами"
+SALDO = "Сальдо"  # Kassa Kategoriya: boshlang'ich qoldiq
 
 
 def execute(filters=None):
@@ -128,6 +130,7 @@ def get_data(filters, months, with_totals=False):
 	kirim = {}  # qator -> [oylar]
 	chiqim = {}  # guruh -> {qator -> [oylar]}
 	transfer = [0.0] * n
+	saldo = [0.0] * n  # «Сальдо» kategoriyasi: boshlang'ich qoldiq (oy boshidagi pulga qo'shiladi, Поступления'ga emas)
 
 	def put(target, label, i, value):
 		target.setdefault(label, [0.0] * n)[i] += value
@@ -141,11 +144,8 @@ def get_data(filters, months, with_totals=False):
 		if cat == "transfer":
 			transfer[i] += k - c
 			continue
-		if cat == "internal":  # o'zimizning ikkinchi firmamiz bilan pul (Firmalararo To'lov)
-			if k:
-				put(kirim, d["dds_kategoriya"], i, k)
-			if c:
-				put(chiqim.setdefault("", {}), d["dds_kategoriya"], i, c)
+		if d.get("kategoriya") == SALDO and k and not c:
+			saldo[i] += k
 			continue
 		if k:
 			if d.get("kategoriya"):
@@ -168,6 +168,7 @@ def get_data(filters, months, with_totals=False):
 	change = [k - c + t for k, c, t in zip(kirim_total, chiqim_total, transfer)]
 	start, end, balance = [], [], flt(opening)
 	for i in range(n):
+		balance += saldo[i]
 		start.append(balance)
 		balance += change[i]
 		end.append(balance)
@@ -207,6 +208,10 @@ def get_data(filters, months, with_totals=False):
 		data.append(line(_(PEREMESHENIE), months, transfer, bold=1))
 	data.append(line(_("Изменение за месяц"), months, change, bold=1))
 	data.append(balance_line(_("Денег на конец месяца"), end))
+	if not filters.get("mode_of_payment"):
+		# jadvaldagi «Сверка с Балансом»: oy oxiridagi pul = Balans'dagi «Все счета» (0 bo'lishi kerak)
+		book = book_cash(filters, months)
+		data.append({**line(_("Сверка с Балансом (Все счета)"), months, [flt(e - b, 2) for e, b in zip(end, book)], total=False), "is_check": 1})
 	if not with_totals:
 		return data
 	chiqim_items = {}
@@ -224,6 +229,19 @@ def get_data(filters, months, with_totals=False):
 		"chiqim_items": chiqim_items,
 		"ends_by_month": ends,
 	}
+
+
+def book_cash(filters, months) -> list[float]:
+	"""Oy oxiridagi barcha pul hisoblari (Cash / Bank) qoldig'i - Balans'dagi «Все счета» bilan bir xil manba."""
+	accounts = frappe.get_all(
+		"Account",
+		filters={"company": filters.company, "account_type": ["in", ["Cash", "Bank"]], "is_group": 0},
+		pluck="name",
+	)
+	values = get_monthly_gl(filters.company, ("Asset",), filters.to_date)
+	return [
+		sum(v for acc in accounts for ym, v in values.get(acc, {}).items() if ym <= m.key) for m in months
+	]
 
 
 def expense_groups(company) -> dict:

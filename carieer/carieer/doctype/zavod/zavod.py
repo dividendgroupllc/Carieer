@@ -1,4 +1,4 @@
-# Zavod: ikki zavod (Karer, Beton) -> firma, omborlar, standart kassa.
+# Zavod: Karer -> firma, omborlar, standart kassa.
 # Sotuv'dagi «Тип» shu yerdan tanlanadi va firma o'zi qo'yiladi. Xodimga User Permission (Zavod) berilsa,
 # Sotuv formasida Тип avtomatik uning zavodi bo'ladi.
 

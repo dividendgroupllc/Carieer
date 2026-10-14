@@ -15,7 +15,6 @@ from carieer.utils import (
 	get_kategoriya_account,
 	get_rate,
 	reconcile,
-	validate_not_internal,
 )
 
 PARTY_NAME_FIELD = {"Customer": "customer_name", "Supplier": "supplier_name"}
@@ -43,7 +42,6 @@ class Nachislenie(Document):
 				)
 			self.party_type = expected
 		self.validate_kategoriya()
-		validate_not_internal(self.party_type, self.party, _("Sotuv (ichki firma)"))
 		company_currency = get_company_currency(self.company)
 		self.currency = self.currency or company_currency
 		if self.currency == company_currency:
@@ -54,6 +52,10 @@ class Nachislenie(Document):
 			frappe.throw(_("Miqdor va narx 0 dan katta bo'lishi kerak"))
 		self.amount = flt(flt(self.qty) * flt(self.rate), 2)
 		self.base_amount = flt(self.amount * flt(self.kurs), 2)
+		self.summa_sum = flt(self.base_amount if self.turi == "Закуп услуга" else -self.base_amount, 2)
+		self.taqsimot = (
+			frappe.db.get_value("Kassa Kategoriya", self.kategoriya, "taqsimot") if self.kategoriya else None
+		)
 		self.party_name = (
 			frappe.db.get_value(self.party_type, self.party, PARTY_NAME_FIELD[self.party_type]) or self.party
 		)
@@ -95,15 +97,15 @@ class Nachislenie(Document):
 		self.status = {0: "Draft", 1: "Tasdiqlangan", 2: "Bekor qilingan"}[self.docstatus]
 
 	def validate_kategoriya(self):
-		"""Закуп -> xarajat (Chiqim) moddasi, Продажа -> daromad (Kirim) moddasi."""
-		if not self.kategoriya:
+		"""Закуп -> xarajat (Chiqim) moddasi. Продажа услуга -> har qanday statya (jadvalda «Доставка», «Самосвал услуга»
+		kabi statyalar bilan sotiladi), tushum doim «Выручка от реализации услуг» ga yoziladi."""
+		if not self.kategoriya or self.turi == "Продажа услуга":
 			return
 		turi = frappe.db.get_value("Kassa Kategoriya", self.kategoriya, "turi")
-		need = "Kirim" if self.turi == "Продажа услуга" else "Chiqim"
-		if turi not in ("Ikkalasi", None, "", need):
+		if turi not in ("Ikkalasi", None, "", "Chiqim"):
 			frappe.throw(
-				_("«{0}» - {1} moddasi, «{2}» uchun {3} moddasini tanlang").format(
-					self.kategoriya, turi, self.turi, need
+				_("«{0}» - {1} moddasi, «{2}» uchun xarajat (Chiqim) moddasini tanlang").format(
+					self.kategoriya, turi, self.turi
 				)
 			)
 

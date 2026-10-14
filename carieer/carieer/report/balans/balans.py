@@ -3,8 +3,8 @@
 #   АКТИВЫ
 #     Внеоборотные активы -> Основные средства: Оборудование, Офисная техника, Прочее
 #     Оборотные активы    -> Запасы: Продукция
-#                            Денежные средства: har bir kassa, Разница в перемещении
-#                            Дебиторская задолженность: клиентов, выданные авансы, сотрудников, второй фирмы,
+#                            Денежные средства: Все счета (har bir kassa alohida), Разница в перемещении
+#                            Дебиторская задолженность: клиентов, выданные авансы, сотрудников,
 #                                                       прочих дебиторов, налог
 #                            Прочие активы: Расходы будущих периодов, Прочее
 #     Итого активы
@@ -12,10 +12,11 @@
 #     Капитал: Уставный капитал, Ввод остатков, Накопленная прибыль (прошлых / текущего периода), Дивиденды, Инвестиция
 #     Обязательства -> Долгосрочные: Кредиты банков, Займы, Задолженность по лизингу
 #                      Краткосрочные: Кредиты банков, Займы
-#                      Кредиторская задолженность: поставщикам, сотрудникам, налоги, авансы клиентов, второй фирме,
+#                      Кредиторская задолженность: поставщикам, сотрудникам, налоги, авансы клиентов,
 #                                                  зарплата собственника, прочие
 #     Итого пассивы, Разница (doim 0)
-# Kontragent qoldig'i ishorasiga qarab: qarzdor mijoz - aktivda, oldindan to'lagan mijoz - passivda (avans).
+# Kontragent qoldig'i ishorasiga va jadvaldagi turiga (клиент, поставщик, Сотрудник, Прочие лица, Налог) qarab:
+# qarzdor mijoz - aktivda, oldindan to'lagan mijoz - passivda (avans).
 # «Ввод остатков» (Temporary Opening - boshlang'ich qoldiqlar qarshi hisobi) kapitalda ko'rsatiladi.
 # Yil yopilmagan bo'lsa ham to'g'ri: foyda daromad/xarajat hisoblari qoldig'idan hisoblanadi.
 
@@ -23,9 +24,11 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-from carieer.carieer.report.common import prepare
+from carieer.carieer.report.common import kontragent_turi, prepare
 from carieer.carieer.report.moliya import (
+	TAQSIM_OS,
 	card,
+	category_info,
 	drop_empty_months,
 	finalize,
 	get_accounts,
@@ -38,7 +41,6 @@ from carieer.carieer.report.moliya import (
 	ru,
 )
 
-ICHKI_FIELD = {"Customer": "is_internal_customer", "Supplier": "is_internal_supplier"}
 # ERPNext asosiy vositalar hisoblari -> Sheets qatorlari
 OS_GURUH = {
 	"Capital Equipment": "Оборудование",
@@ -125,22 +127,26 @@ def get_data(filters, months):
 	def add(key, vals):
 		b[key] = [x + y for x, y in zip(b.get(key, zero), vals)]
 
-	# 1. kontragentlar: har biri alohida (bir mijozning qarzi boshqasining avansini yopmasin)
+	# 1. kontragentlar: har biri alohida (bir mijozning qarzi boshqasining avansini yopmasin).
+	# Tur jadvaldagi «Тип Контрагента» bo'yicha: клиент, поставщик, Сотрудник, Прочие лица, Налог
 	for kind, per_month in party_balances(company, party_accounts, filters.to_date):
 		bal = cumulative(per_month)  # debet - kredit
 		plus, minus = [max(v, 0) for v in bal], [max(-v, 0) for v in bal]
-		if kind == "internal":
-			add("ichki_aktiv", plus)
-			add("ichki_passiv", minus)
-		elif kind == "Asset Receivable":
+		if kind == "client":
 			add("debitor", plus)
 			add("avans_olingan", minus)
-		elif kind == "Asset Payable":  # xodimlar
-			add("podotchet", plus)
-			add("xodim_qarz", minus)
-		else:  # ta'minotchilar
+		elif kind == "supplier":
 			add("avans_berilgan", plus)
 			add("kreditor", minus)
+		elif kind == "employee":
+			add("podotchet", plus)
+			add("xodim_qarz", minus)
+		elif kind == "other":
+			add("prochie_debitor", plus)
+			add("other_liability", minus)
+		else:  # tax
+			add("tax_asset", plus)
+			add("tax", minus)
 
 	# 2. qolgan hisoblar
 	for a in accounts:
@@ -189,9 +195,16 @@ def get_data(filters, months):
 			else:
 				add("investitsiya", neg)
 
-	# 3. foyda: daromad - xarajat
+	# 3. foyda: daromad - xarajat. «На ОС» kategoriyalari bo'yicha kassadan to'langan summa - kapital qo'yilma:
+	# foydadan ayrilmaydi, «Оборудование» qatoriga qo'shiladi (jadvaldagi Баланс!8: Приход ОС + Касса «На ОС»)
+	os_names = {k for k, v in category_info(company).items() if v.taqsimot == TAQSIM_OS}
+	pl_accounts = {a.name: a for a in get_accounts(company, ("Income", "Expense"))}
 	pl = {}
-	for per_month in get_monthly_gl(company, ("Income", "Expense"), filters.to_date).values():
+	for account, per_month in get_monthly_gl(company, ("Income", "Expense"), filters.to_date).items():
+		acc = pl_accounts.get(account)
+		if acc and acc.root_type == "Expense" and acc.account_name in os_names:
+			add("os:Оборудование", cumulative(per_month))
+			continue
 		for ym, net in per_month.items():
 			pl[ym] = pl.get(ym, 0) - flt(net)
 	current = [flt(pl.get(k)) for k in keys]
@@ -213,10 +226,9 @@ def get_data(filters, months):
 	peremeshenie = zero  # yo'ldagi pul (kassadan kassaga o'tkazma bir kunda yopiladi)
 	debitorka = [
 		("Задолженность клиентов", g("debitor")),
-		("Выданные авансы (поставщикам)", g("avans_berilgan")),
-		("Задолженность сотрудников (подотчёт)", g("podotchet")),
-		("Задолженность второй фирмы", g("ichki_aktiv")),
-		("Долг прочих дебиторов", g("prochie_debitor")),
+		("Выданные авансы", g("avans_berilgan")),
+		("Задолженность сотр-в", g("podotchet")),
+		("Долг прочих Дебиторов", g("prochie_debitor")),
 		("Налог", g("tax_asset")),
 	]
 	debitorka_total = s(*[v for _l, v in debitorka])
@@ -238,7 +250,6 @@ def get_data(filters, months):
 		("Задолженность перед сотрудниками", g("xodim_qarz")),
 		("Задолженность по налогам и сборам", g("tax")),
 		("Полученные авансы от клиентов", g("avans_olingan")),
-		("Задолженность перед второй фирмой", g("ichki_passiv")),
 		("Зарплата собственника/партнеров", zero),
 		("Прочие обязательства", g("other_liability")),
 	]
@@ -258,7 +269,8 @@ def get_data(filters, months):
 		row("Запасы", g("stock"), 2, 1),
 		row("Продукция (склад)", g("stock"), 3),
 		row("Денежные средства", cash_total, 2, 1),
-		*[row(lbl, v, 3) for lbl, v in sorted(cash_rows.items())],
+		row("Все счета", cash_total, 3),
+		*[row(lbl, v, 4) for lbl, v in sorted(cash_rows.items())],
 		row("Разница в перемещении", peremeshenie, 3),
 		row("Дебиторская задолженность", debitorka_total, 2, 1),
 		*[row(lbl, v, 3) for lbl, v in debitorka],
@@ -298,39 +310,37 @@ def get_data(filters, months):
 
 def party_balances(company, accounts, to_date) -> list[tuple[str, dict]]:
 	"""[(tur, {"2026-09": debet - kredit})], har bir kontragent alohida (bir mijozning qarzi boshqasining avansini
-	yopmasligi uchun). tur: "Asset Receivable" (mijoz), "Asset Payable" (xodim), "Liability Payable" (ta'minotchi),
-	"internal" (ikkinchi firmamiz: mijoz va ta'minotchi tomoni bitta netto qoldiq)."""
+	yopmasligi uchun). tur: "client", "supplier", "employee", "other" (Прочие лица), "tax" (Налог) -
+	kontragentning jadvaldagi turi bo'yicha (kontragent guruhi: Прочие лица / Налог)."""
 	if not accounts:
 		return []
 	rows = frappe.db.sql(
-		"""select acc.root_type, acc.account_type, gle.party_type, gle.party,
+		"""select acc.account_type, gle.party_type, gle.party,
 			date_format(gle.posting_date, '%%Y-%%m') ym, sum(gle.debit) - sum(gle.credit) net
 		from `tabGL Entry` gle join `tabAccount` acc on acc.name = gle.account
 		where gle.company = %(company)s and gle.is_cancelled = 0 and gle.posting_date <= %(to_date)s
 			and gle.account in %(accounts)s
-		group by acc.root_type, acc.account_type, gle.party_type, gle.party, ym""",
+		group by acc.account_type, gle.party_type, gle.party, ym""",
 		{"company": company, "to_date": to_date, "accounts": list(accounts)},
 		as_dict=True,
 	)
-	ichki = {}
 	groups = {}
 	for r in rows:
-		party = (r.party_type or "", r.party or "")
-		if party not in ichki:
-			field = ICHKI_FIELD.get(r.party_type)
-			firma = field and frappe.db.get_value(
-				r.party_type, r.party, ["represents_company", field], as_dict=True
-			)
-			ichki[party] = firma.represents_company if firma and firma.get(field) else None
-		if ichki[party]:
-			key = ("internal", ichki[party])
-		elif r.party_type == "Employee":
+		if r.party_type == "Employee":
 			# Kassa'da xodim -> Creditors hisobiga yoziladi (Party Type Employee = Payable), lekin bu ta'minotchi emas:
 			# musbat qoldiq - подотчёт, manfiy - xodimga qarz
-			key = ("Asset Payable", party)
+			kind = "employee"
 		else:
-			kind = f"{r.root_type} {r.account_type}" if r.root_type == "Asset" else "Liability Payable"
-			key = (kind, party)
+			turi = kontragent_turi(r.party_type, r.party) if r.party_type else ""
+			if turi == "Прочие лица":
+				kind = "other"
+			elif turi == "Налог":
+				kind = "tax"
+			elif r.party_type == "Supplier" or (not r.party_type and r.account_type == "Payable"):
+				kind = "supplier"
+			else:
+				kind = "client"
+		key = (kind, r.party_type or "", r.party or "")
 		per_month = groups.setdefault(key, {})
 		per_month[r.ym] = per_month.get(r.ym, 0) + flt(r.net)
-	return [(kind, per_month) for (kind, _party), per_month in groups.items()]
+	return [(key[0], per_month) for key, per_month in groups.items()]
