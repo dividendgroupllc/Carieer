@@ -20,6 +20,21 @@
    "parenttype": "Sidebar",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "doctype": "Sidebar Item",
+   "idx": 2,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Материальный отчет",
+   "link_to": "Material Hisobot",
+   "link_type": "Report",
+   "parentfield": "items",
+   "parenttype": "Sidebar",
+   "show_arrow": 0,
+   "type": "Link"
   }
  ],
  "modified": "2026-10-13 17:00:00.000000",

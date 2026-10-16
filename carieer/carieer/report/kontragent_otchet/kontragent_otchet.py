@@ -157,7 +157,7 @@ def get_summary(t):
 			"value": flt(t.get(field)),
 			"datatype": "Currency",
 			"currency": t.get(cur_field),
-			"indicator": indicator,
+			"indicator": indicator if abs(flt(t.get(field))) >= 0.005 else "Gray",
 		}
 
 	out = [
@@ -184,4 +184,7 @@ def akt_link(filters, party_type, party):
 			"to_date": str(filters.to_date),
 		}
 	)
-	return f'<a href="/desk/query-report/Akt Sverka?{query}">{_("Акт сверка")}</a>'
+	return (
+		f'<a href="/desk/query-report/Akt Sverka?{query}" style="color: var(--blue-500)">'
+		f'📊 {_("Акт Сверка")}</a>'
+	)

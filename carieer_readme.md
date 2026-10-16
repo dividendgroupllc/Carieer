@@ -1,294 +1,145 @@
-# Carieer — Eko Karer va Beton Zavod (ERPNext v16 / v17 ustida)
+# Carieer — Eko Karer (ERPNext v16 ustida)
 
-Karer va beton zavodining hisob-kitobi: **sotuv posti, kassa, nachislenie, ombor, beton ishlab chiqarish,
-firmalararo oldi-sotdi, texnika (yoqilg'i, GPS) va Google Sheets'dagi barcha hisobotlar**.
+Google Sheets'dagi «Эко Карьер» jadvalining o'rnini bosadigan tizim: **sotuv posti, kassa, начисление, приход,
+приход ОС, инвентаризация va jadvaldagi barcha hisobotlar** (Оборотка, Акт сверка, ДДС, Cash Flow, P&L, Баланс ...).
 
-> **Formalarda custom JS yo'q.** Hamma forma, ro'yxat, hisobot va menyu Frappe / ERPNext'ning o'z UI'si bilan ishlaydi.
-> Mantiq faqat Python'da (`validate`, `on_submit`), filtrlar DocType va Report JSON'ida.
-> Yagona istisno — **Texnikalar xaritasi** sahifasi (GPS, Leaflet xarita): bunday sahifa Frappe'da tayyor yo'q.
+> Faqat **Eko Karer** firmasi. Eko Beton (ishlab chiqarish, retsept, texnika / GPS) — alohida loyiha.
+>
+> **Formalarda custom JS yo'q.** Forma, ro'yxat, hisobot va menyu Frappe / ERPNext'ning o'z UI'si bilan ishlaydi.
+> Mantiq Python'da (`validate`, `on_submit`), filtrlar DocType va Report JSON'ida.
 
 ---
 
-## 1. Bo'limlar (desktop ikonkalari)
+## 1. Ikonkalar = jadval varaqlari
 
-Har bir vazifa — **alohida ikonka** (alohida modul, workspace va chap menyu). Kassir "Karer"ga kirib, ichidan "Kassa"ni
-qidirmaydi: desktop'da to'g'ridan-to'g'ri **Kassa** ikonkasi turadi. Xodim faqat o'z roliga tegishli ikonkalarni ko'radi.
+Desktop'dagi har bir ikonka jadvaldagi bitta varaq. Xodim faqat o'z roliga tegishli ikonkalarni ko'radi.
 
-| Ikonka | Ichida | Kimga |
+| Ikonka (varaq) | Tizimda | Kimga |
 |---|---|---|
-| **Karer** / **Beton Zavod** (modullar: Karer Panel / Beton Panel) | zavodning bosh sahifasi (dashboard) + **Sozlamalar** (Karer sozlamalari, Zavodlar, Tovarlar, Narxlar, Omborlar, Kassalar, Kategoriyalar, Xodimlar, Foydalanuvchilar, Birliklar, Hisoblar rejasi, Firmalar) | o'z zavodi xodimlari |
-| **Kassa** | Kassa (kirim / chiqim), Начисление, Firmalararo to'lov, To'lovlar, Provodkalar, Valyuta kursi, Kategoriyalar, hisobotlar: Kassa daftari, ДДС, Cash Flow, Qarzlarimiz | Kassir, Menejer |
-| **Sotuv** | Sotuv, firmalararo «qabul kutilmoqda», Mijozlar, Sales Invoice, Delivery Note, Mijoz to'lovlari, Narxlar, firmalararo xaridlar (Purchase Receipt / Invoice), hisobotlar: Kunlik otchet, Qarzdorlik, Акт сверка, Оборотка | Operator, Kassir, Menejer |
-| **Ta'minot** | Ta'minotchilar, Qabul (Purchase Receipt), Xarid fakturasi (Purchase Invoice), Приход ОС, Начисление, Ta'minotchiga to'lov, hisobotlar: Приход, Qarzlarimiz | Menejer |
-| **Ombor** | Ombor qoldig'i, Ombor tarixi, Инвентаризация, Ko'chirish / chiqim, Tovarlar, Omborlar, Материальный отчет | Operator, Kassir, Menejer |
-| **Ishlab chiqarish** | Qazib olish (karer), Beton ishlab chiqarish, Retsept (BOM), Beton xomashyo, Материальный отчет | Operator, Menejer |
-| **Texnika** | Texnikalar, **Texnikalar xaritasi**, Yoqilg'i va moy, GPS nuqtalar, Texnika xarajatlari | Operator, Menejer |
-| **Hisobotlar** | barcha 12+ hisobot (kundalik, kontragent va qarz, pul va moliya, ombor va texnika) | Operator, Kassir, Menejer |
+| Эко Карьер | bosh sahifa + barcha jurnal, hisobot va ma'lumotnomalar menyusi | System Manager |
+| Диспетчер | Tovarlar, Tovar guruhlari (Тип), Mijozlar, Ta'minotchilar, Xodimlar, Kategoriyalar, Hisoblar (Счета), Kurs | Menejer |
+| Продажа карьер | **Sotuv** | Operator, Kassir, Menejer |
+| Касса карьер | **Kassa** | Kassir, Menejer |
+| Приход | hisobot **Prixod** + Purchase Invoice | Menejer |
+| Приход ОС | **Prixod OS** | Menejer |
+| Инвентаризация | Stock Reconciliation + Материальный отчет | Menejer |
+| Начисление карьер | **Nachislenie** | Kassir, Menejer |
+| Оборотка Контрагентов | **Kontragent Otchet** | Kassir, Menejer |
+| Акт сверка | **Akt Sverka** | Kassir, Menejer |
+| Баланс / Баланс бпр | **Balans** / **Balans Bpr** | Menejer |
+| P&L / P&L Разбитый | **Foyda Zarar** / **Pl Razbityi** | Menejer |
+| Cash Flow | **Pul Oqimi** | Kassir, Menejer |
+| Отчет | **Kontrol Hisobot** (kunlik otchet) | Operator, Kassir, Menejer |
+| ДДС | **DDS** | Kassir, Menejer |
+| Постав Клиент / Постав Клиент Факт | **Postav Klient** / **Postav Klient Fakt** | Kassir, Menejer |
+| Кардорликлар | **Qarzdorlik** (7 / 14 / 21+ kun, FIFO) | Kassir, Menejer |
+| БД контрагент | **BD Kontragent** | Kassir, Menejer |
+| ПР Срав. | **Pr Srav** — mahsulot bo'yicha oyma-oy sotuv, СС, marja («ПР Срав. Общ» — Гуруҳлаш = Наименование) | Menejer |
+| Контрагент отчет нев | **Kontragent Oylik** — kontragent × oy: Приход, Продажа, Услуга, Деньги | Kassir, Menejer |
+| Материальный отчет | **Material Hisobot** — tovar bo'yicha qoldiq, kirim, chiqim | Kassir, Menejer |
 
-Har bir ikonkaning bosh sahifasida (workspace) o'z ko'rsatkichlari (**Mening ...** kartochkalari: xodimning o'z firmasi
-bo'yicha) va tezkor tugmalari bor. Menyudagi har bir punkt foydalanuvchining DocType ruxsatiga qarab o'zi ko'rinadi / yashirinadi.
+Rollar: **Karer Operator** (sotuv posti), **Karer Kassir**, **Karer Menejer**. Xodim faqat o'z firmasini ko'radi
+(User Permission → Company / Zavod), desktop'da faqat Carieer ikonkalari (`permissions.hide_foreign_icons`).
+Ikonka kimga ko'rinishi — `desktop_icon/*.json` dagi `roles`.
 
-## 2. Rollar va dostup
-
-6 ta rol = **zavod** (Karer / Beton) × **lavozim** (Operator / Kassir / Menejer).
-Har bir xodim faqat o'z firmasining ma'lumotini ko'radi (ERPNext **User Permission → Company**).
-
-| Hujjat / hisobot | Operator | Kassir | Menejer |
-|---|---|---|---|
-| Sotuv (yaratish, tasdiqlash, to'lov qo'shish) | ✅ (bekor qila olmaydi) | ✅ + bekor qilish | ✅ hammasi |
-| Qazib olish | faqat Karer operatori | — | Karer menejeri |
-| Beton ishlab chiqarish | faqat Beton operatori | — | Beton menejeri |
-| Yoqilg'i hisobi | ✅ | — | ✅ |
-| Kassa, Начисление, Firmalararo to'lov | — | ✅ | ✅ |
-| Приход ОС, Приход, Инвентаризация, BOM | — | — | ✅ |
-| Kunlik otchet, Material hisobot | ✅ | ✅ (kunlik) | ✅ |
-| Ombor qoldig'i, Ombor tarixi (faqat ko'rish) | ✅ | ✅ | ✅ |
-| Akt sverka, Оборотка, Qarzdorlik, ДДС, Cash Flow, Firmalararo qarzlar | — | ✅ | ✅ |
-| P&L, Баланс, Texnika xarajatlari | — | — | ✅ |
-
-* Modul profili zavod bo'yicha (Karer xodim / Beton xodim / Karer va Beton xodim): Beton xodimiga Karer paneli ko'rinmaydi va aksincha.
-* Xodim desktop'da faqat Carieer ikonkalarini ko'radi (ERPNext'ning Selling, Stock, Accounting ... papkalari ularga
-  ko'rinmaydi: «Karer xodim» modul profili + `permissions.hide_foreign_icons`).
-* **Qaysi ikonka kimga** — `desktop_icon/*.json` dagi `roles` (yuqoridagi jadval). Xodimni firmaga bog'lash: `setup_user`
-  yoki User'ga `Karer Kassir` kabi rol berish (User Permission -> Company / Zavod o'zi qo'yiladi).
-* **Sotuv posti operatori** (zavod «Ikkalasi») ikkala zavod nomidan sotadi, Sotuv'da «Тип» tanlaydi.
-* Xodim bitta zavodga bog'langan bo'lsa, yangi hujjatda firma, zavod va xarid ombori o'zi qo'yiladi (`carieer.js`).
-* Kirgandan keyin ochiladigan sahifa: Kassir -> Kassa, Operator -> Sotuv, Menejer -> Karer / Beton bosh sahifasi.
-* System Manager hamma narsani ko'radi.
-
-## 3. Yangi sayt (WSL terminalida)
+## 2. O'rnatish
 
 ```bash
-cd /mnt/d/finance/frappe-bench-v16
-
-# 1) yangi sayt + ERPNext + HRMS
-bench new-site ekokarer.local --db-root-password 'MYSQL_ROOT_PAROL' --admin-password 'Admin123!' \
-    --install-app erpnext --install-app hrms
-bench use ekokarer.local
-
-# 2) brauzerda Setup Wizard: Uzbekistan, UZS, Asia/Tashkent, birinchi firma (masalan "Eko Karer")
-bench start            # boshqa terminalda; http://localhost:8001
-#    Setup Wizard tugagach: Company -> New -> ikkinchi firma "Eko Beton" (valyuta UZS)
-
-# 3) ilova
-bench --site ekokarer.local install-app carieer
+cd frappe-bench
+bench new-site SITE --admin-password 'Admin123!' --install-app erpnext --install-app hrms
+# brauzerda Setup Wizard: Uzbekistan, UZS, Asia/Tashkent, firma (masalan "Eko Karer")
+bench --site SITE install-app carieer
 bench build --app carieer
-bench --site ekokarer.local clear-cache
 
-# 4) bir martalik sozlash: omborlar, kassalar, tovarlar, xizmatlar, kategoriyalar, Zavod, firmalararo kontragentlar
-bench --site ekokarer.local execute carieer.install.setup_karer \
-    --kwargs "{'karer_company': 'Eko Karer', 'beton_company': 'Eko Beton'}"
+# bir martalik sozlash: Zavod «Karer», omborlar, kassalar, «Диспетчер» ro'yxatlari (tovarlar, kategoriyalar,
+# kontragentlar, kurs) - carieer/data/dispetcher.json dan
+bench --site SITE execute carieer.install.setup_karer --kwargs "{'karer_company': 'Eko Karer'}"
 
-# 5) xodimlar (zavod: Karer | Beton | Ikkalasi,  lavozim: Operator | Kassir | Menejer)
-bench --site ekokarer.local execute carieer.install.setup_user \
-    --kwargs "{'email': 'post@ekokarer.uz', 'full_name': 'Post Operator', 'zavod': 'Ikkalasi', 'lavozim': 'Operator', 'password': 'Parol123!'}"
-bench --site ekokarer.local execute carieer.install.setup_user \
-    --kwargs "{'email': 'kassir@ekokarer.uz', 'full_name': 'Karer Kassir', 'zavod': 'Karer', 'lavozim': 'Kassir', 'password': 'Parol123!'}"
-bench --site ekokarer.local execute carieer.install.setup_user \
-    --kwargs "{'email': 'menejer@ekobeton.uz', 'full_name': 'Beton Menejer', 'zavod': 'Beton', 'lavozim': 'Menejer', 'password': 'Parol123!'}"
+# xodimlar (lavozim: Operator | Kassir | Menejer)
+bench --site SITE execute carieer.install.setup_user \
+    --kwargs "{'email': 'kassir@ekokarer.uz', 'full_name': 'Karer Kassir', 'lavozim': 'Kassir', 'password': 'Parol123!'}"
 ```
 
-**Sinov uchun test ma'lumotlari** (faqat sinov saytida! haqiqiy ish uchun toza sayt):
+Kod yangilangandan keyin: `bench --site SITE migrate && bench build --app carieer`.
 
-```bash
-bench --site ekokarer.local execute carieer.demo.make_demo
-```
+## 3. Kundalik ish
 
-Bir haftalik ish yaratiladi: mijozlar, ta'minotchilar, narxlar, qazib olish, Purchase Receipt → Purchase Invoice,
-firmalararo sotuv, BOM (Бетон М200 / М300), beton ishlab chiqarish, 12 ta sotuv, kassa, начисление, firmalararo to'lov,
-yoqilg'i, 4 ta texnika va ularning bugungi GPS yo'li. Har bir rol uchun foydalanuvchi (parol `Demo12345!`):
-`karer.operator@demo.uz`, `karer.kassir@demo.uz`, `karer.menejer@demo.uz`, `beton.operator@demo.uz`,
-`beton.menejer@demo.uz`, `post@demo.uz` (ikkala zavod operatori).
+**Tovar.** Karer mahsuloti (qum, sheben, klinets) — «Maintain Stock» ✅, tan narxi **0** (yerdan qazib olinadi).
+Qoldiq **Инвентаризация** (Stock Reconciliation) bilan kiritiladi, tan narx 0 ruxsat etilgan. Sotuv qoldiq yetmasa
+ham bloklanmaydi (jadvaldagidek), faqat ogohlantiradi.
 
-Keyin brauzerda (administrator):
-1. **Valyuta kursi** (Currency Exchange): USD → UZS kursini kiriting (har kuni yoki o'zgarganda).
-2. **Retsept (BOM)**: har bir beton markasi uchun (Beton Zavod firmasida) → Submit.
-3. Boshlang'ich qoldiqlar: **Инвентаризация** (Stock Reconciliation) — karer tovari tan narxi 0 bo'lsa ham bo'ladi.
-4. Kontragentlarning eski qarzlari: Journal Entry (Opening) yoki Начисление orqali.
+**Sotuv** («Продажа карьер», operator): Дата, Тип, Валюта (UZS / USD), Доставка, Клиент, Номер машины, haydovchi →
+**Товары** (miqdor, narx; narx 0 bo'lsa Item Price'dan) → **Услуги** → **Оплаты** (kassa, summa, kurs, kim, izoh) →
+Save → Submit: Sales Invoice (tovar ombordan chiqadi, mijozga qarz) + har bir to'lov uchun Payment Entry.
+Keyinroq to'lov — tasdiqlangan sotuvda Оплаты'ga qator qo'shib **Update**. Tovarsiz tuzatish — «Корректировка».
 
-> Eski `karer16.local` saytida yangi kodni `migrate` qilmang: u eski tuzilmada (Firmalararo Sotuv, firma rollari ...).
-> Yangi sayt toza tuzilma bilan ishlaydi.
+**Kassa** («Касса карьер», kassir):
 
-## 4. Kundalik ish
-
-### 4.0 Algoritm: tovar qo'shishdan sotishgacha (ketma-ket)
-
-```
- 1. Tovar (Item)          Sozlamalar -> Tovarlar -> + : nomi, birligi (Куб / Тонна / Кг), guruhi,
-                          «Maintain Stock» ✅ (ombor tovari). Xizmat bo'lsa ✅ olib tashlanadi.
- 2. Narx (ixtiyoriy)      Sozlamalar -> Narxlar (Item Price): Standard Selling, tovar, narx.
-                          Sotuvda narx 0 qoldirilsa shu narx qo'yiladi.
- 3. Omborga kirim         tovar qayerdan keladi:
-      karer mahsuloti  -> Ombor -> Qazib olish            (tan narx 0, Karer ombori)
-      sotib olinadi    -> Xarid -> Qabul (Receipt)        (ta'minotchi, miqdor, narx, ombor)
-                          keyin Qabul -> «Create -> Purchase Invoice» -> Submit (ta'minotchiga qarz)
-      boshqa firmadan  -> Karer'da Sotuv, mijoz = Eko Beton (Beton'ga avtomatik Purchase Invoice + kirim)
-      boshlang'ich     -> Ombor -> Инвентаризация (Stock Reconciliation)
- 4. Qoldiqni ko'rish      Ombor -> Ombor qoldig'i (Stock Balance)  /  Ombor tarixi (Stock Ledger)
- 5. Sotish                Sotuv posti -> Sotuv -> + : Тип (Karer / Beton), mijoz, mashina, Товары, Услуги,
-                          Оплаты -> Save -> Submit  (4.1)
- 6. Qarz / to'lov         Kassa -> Kirim (mijoz) yoki Sotuv'ga keyinroq to'lov qatori + Update
- 7. Nazorat               Hisobotlar: Kunlik otchet, Kontragent otchet, Akt sverka, Qarzdorlik, ДДС
-```
-
-**Purchase Receipt va Purchase Invoice farqi.** *Qabul (Receipt)* — tovar omborga kirdi (miqdor + tan narx).
-*Xarid fakturasi (Invoice)* — ta'minotchiga qarz paydo bo'ldi. Odatiy tartib: Qabul → undan «Create → Purchase Invoice»
-→ to'lov (Kassa → Chiqim, kontragent = ta'minotchi). Tovar va hujjat bir vaqtda kelsa — bitta Purchase Invoice,
-**«Update Stock» ✅** (ombor ham, qarz ham bitta hujjatda). Xizmat (tovar emas) — faqat Purchase Invoice yoki Начисление.
-
-### 4.1 Sotuv posti («Ввод продажи») — operator
-1. **Sotuv → Add** : Дата, **Тип** (Karer / Beton — firma o'zi qo'yiladi), **Валюта** (UZS / USD), **Доставка** (Да / Нет).
-2. **Клиент**, **Номер машины**, haydovchi.
-3. **Товары**: tovar (qum, sheben, klinets, beton ...), miqdor, narx. Ombor o'zi qo'yiladi.
-4. **Услуги**: погрузчик, доставка ... (ombor tovari emas).
-5. **Оплаты**: kassa (Наличные, Наличные $, Р/С, Карта ...), summa, kurs (bo'sh = Currency Exchange), kim to'ladi, izoh.
-6. **Save** → summa, qarz (Долг) hisoblanadi. **Submit** → Sales Invoice (tovar ombordan chiqadi, mijozga qarz) +
-   har bir to'lov uchun Payment Entry.
-7. Keyinroq to'lov («Изменить оплату»): yakunlangan sotuvda **Оплаты** jadvaliga qator qo'shib **Update** bosiladi.
-
-Holat: `To'lanmagan` → `Qisman to'langan` → `To'langan` (Kassa orqali olingan to'lov ham hisobga olinadi).
-
-### 4.2 Qazib olish — karer operatori
-Karerdan qazib olingan qum / sheben / klinets omborga **tan narxi 0** bilan kiradi (Stock Entry, Material Receipt).
-Ombor bo'sh qoldirilsa Zavod'dagi asosiy ombor.
-
-### 4.3 Kassa — kassir («Касса карьер»)
-| Turi | Kontragent turi | Natija |
+| Turi | Kontragent | Natija |
 |---|---|---|
-| Kirim / Chiqim | Customer, Supplier, Employee | Payment Entry (qarz kamayadi; mijoz to'lovi eng eski sotuvga taqsimlanadi) |
-| Chiqim | Xarajat | Journal Entry: kassa → **kategoriya** moddasi (masalan Хоз.расход, Топливо и ГСМ) |
-| Kirim | Daromad | Journal Entry: kassa ← Прочие доходы |
-| Chiqim | Dividend | Journal Entry: kassa → Dividends Paid |
-| O'tkazma | — | kassadan kassaga (Наличные → Р/С), valyuta har xil bo'lsa kurs bo'yicha |
+| Kirim / Chiqim | Customer, Supplier, Employee | Payment Entry (mijoz to'lovi eng eski qarzga taqsimlanadi) |
+| Chiqim | Xarajat | xarajat **kategoriya** moddasiga (Топливо и ГСМ, Хоз.расход ...) |
+| Kirim | Daromad | Прочие доходы |
+| Chiqim / Kirim | Dividend, Kapital | Dividends / Инвестиция, Сальдо, Фин займ |
+| O'tkazma / Konvertatsiya | — | kassadan kassaga (Перемещение), valyuta har xil bo'lsa kurs bo'yicha |
 
-**Kategoriya** har bir yozuvda: ДДС va Cash Flow shu bo'yicha yig'iladi (jadvaldagi kabi).
+Kassada pul yetmasa chiqim bloklanmaydi (jadvaldagidek): ogohlantirish chiqadi, kassa minusga kiradi.
 
-### 4.4 Начисление — pul harakatisiz qarz
-* **Закуп услуга**: bizga xizmat ko'rsatildi (samosval, ekskavator ...) → biz ta'minotchiga qarzdormiz, xarajat moddaga yoziladi.
-* **Продажа услуга**: biz xizmat ko'rsatdik → mijoz qarzdor, daromad.
-Pul keyin Kassa orqali to'lanadi / olinadi.
+**Начисление** — pul harakatisiz qarz: *Закуп услуга* (bizga xizmat → ta'minotchiga qarz, xarajat moddaga),
+*Продажа услуга* (biz xizmat ko'rsatdik → mijoz qarzdor, daromad). Pul keyin Kassa orqali.
 
-### 4.5 Приход, Приход ОС, Инвентаризация
-* **Приход** — Xarid → Qabul (Purchase Receipt) → Purchase Invoice yoki bitta Purchase Invoice (`Update Stock` ✅):
-  sement, ximikat, solyarka, metall. Xizmatlar — Purchase Invoice (Update Stock'siz) yoki Начисление.
-* **Приход ОС** — asosiy vosita kirimi: yetkazib beruvchidan (qarz) yoki ta'sischidan (ustav kapitali). USD ham bo'ladi.
-* **Инвентаризация** — Stock Reconciliation (karer omborida tan narx 0 avtomatik ruxsat etiladi).
+**Приход** — Purchase Invoice (`Update Stock` ✅) yoki Purchase Receipt → Purchase Invoice.
+**Приход ОС** — asosiy vosita kirimi (ta'minotchidan qarz yoki ta'sischidan), USD ham bo'ladi.
 
-### 4.6 Firmalararo oldi-sotdi (Karer ↔ Beton)
-* **Perexod / sotuv**: oddiy **Sotuv**, mijoz = ikkinchi firmamiz (ichki mijoz). Submit → sotuvchida Sales Invoice,
-  xaridorda **avtomatik Purchase Invoice** (tovar uning xomashyo omboriga kiradi). Ikkala kitob doim mos.
-* **Qo'lda kiritib bo'lmaydi**: Beton'da «Eko Karer'dan» Purchase Receipt / Purchase Invoice yoki Karer'da
-  «Eko Beton'ga» Sales Invoice bloklanadi - ular faqat bitta kitobga yozilardi (Karer ombori kamaymaydi, Karer
-  qarzni ko'rmaydi). Har doim sotuvchi firma **Sotuv** qiladi.
-* **To'lov**: **Firmalararo to'lov** → ikkala firmada Payment Entry (to'lovchida chiqim, oluvchida kirim).
-  Ortiqcha to'langan pul qaytarilsa (masalan Karer Beton'ga qaytaradi) - u avansni qaytarish bo'lib yoziladi va avans yopiladi.
-* Holat: **Firmalararo qarzlar** hisoboti, bosh sahifada **Firmalararo qarz** kartochkasi (kitoblar mos kelmasa ⚠).
+## 4. Hisobotlar qanday hisoblaydi
 
-### 4.7 Beton
-1. Karerdan sheben / qum — firmalararo sotuv (4.6) bilan **Beton xomashyo** omboriga.
-2. Sement, ximikat — Xarid → Qabul (Purchase Receipt) bilan Beton xomashyo omboriga.
-3. **Retsept (BOM)** — **Eko Beton** firmasida: mahsulot (Бетон М300), 1 куб uchun xomashyo (Шебень 0.8, Қум 0.5,
-   Цемент 0.35, Хим.добавка 3) → Submit.
-4. **Beton ishlab chiqarish**: faqat retsept va miqdor tanlanadi (firma retseptdan olinadi) → Save: xomashyo jadvali
-   (Kerakli / Omborda bor) → Submit → Stock Entry (Manufacture): xomashyo chiqadi, beton kiradi, tan narx avtomatik.
-   «Omborda bor» yetmasa xato qaysi tovardan qancha yetmasligini va qanday kiritishni ko'rsatadi.
-5. Beton sotuvi — Sotuv, Тип = Beton.
+* **P&L** (Foyda Zarar): Выручка (продукции / услуг) → Себестоимость → Маржинальная прибыль → Общепроизводственные
+  (kategoriya «Оборот» = Произв) → Валовая прибыль → Административные → Операционная / Чистая прибыль.
+  Manba — GL Entry. Kontragentga to'lov xarajat emas (qarzni yopish), xarajat Kassa (Xarajat), Начисление yoki
+  Purchase Invoice kunida tushadi — jadvaldagi formula bilan bir xil natija. «На ОС» kategoriyasi Balansga o'tadi.
+* **P&L Разбитый**: xarajatlar kategoriya daraxti bo'yicha (guruh 1 → guruh 2 → modda, jadvaldagi Лист55).
+* **ПР Срав.**: tasdiqlangan Sotuv tovar qatorlari; Продажа so'mda (USD sotuv kurs bo'yicha), СС — Sotuv'dagi «Сумма СС».
+* **Контрагент отчет нев**: kredit tomoni: Сальдо кон. = нач. + Приход − Продажа + Услуга + Деньги Кр − Деньги Дт
+  (musbat — biz qarzdormiz, manfiy — kontragent qarzdor). Boshqa provodkalar bo'lsa «Прочие» ustuni chiqadi.
+* **Материальный отчет**: Stock Ledger bo'yicha; Инвентаризация farqi ham kirim / chiqimga tushadi.
 
-### 4.8 Texnika, yoqilg'i, GPS
-* **Texnikalar** (Vehicle): raqam, marka, model, texnika turi, GPS IMEI.
-* **Yoqilg'i va moy**: *Ombordan* → ombordan chiqim, xarajat «Топливо и ГСМ» / «Масло для техники» moddasiga;
-  *Zapravkadan* → zapravkaga qarz (Journal Entry), pul Kassa orqali. Spidometr bo'yicha 100 km ga sarf.
-* **GPS**: telefon (Traccar Client) yoki trekker o'zi yuboradi:
-  `https://DOMEN/api/method/carieer.api.traccar?token=GPS_TOKEN` (token: Karer sozlamalari).
-* **Texnikalar xaritasi** (`/desk/texnika-xarita`): har bir texnikaning oxirgi joyi va holati (yashil — harakatda,
-  sariq — to'xtagan, kulrang — aloqa yo'q), yangi nuqta kelganda darhol yangilanadi. Tepada hisoblagichlar
-  (bosilsa shu holatdagilar qoladi) va bugun jami km, qidiruv (raqam, turi, haydovchi), firma filtri.
-  Texnika bosilsa — tanlangan kundagi yurgan yo'li: masofa, maks. tezlik, harakat / turgan vaqti, to'xtashlar
-  (5 daqiqadan ko'p) ro'yxati, uzilishlar (punktir, ko'chalar bo'yicha taxminiy yo'l). Xodim faqat o'z firmasi
-  texnikasini ko'radi.
+Filtrlar: **Firma** bo'sh — o'z firmangiz, **Сана дан** bo'sh — oy yoki yil boshi.
 
-## 5. Google Sheets → tizim
+## 5. Jadvalda bor, tizimda boshqacha
 
-| Varaq | Tizimda |
+| Varaq | Nega |
 |---|---|
-| Диспетчер | Tovarlar (Item), birliklar, xizmatlar, Kassa Kategoriya, kassalar (Mode of Payment), kontragentlar |
-| Продажа карьер | **Sotuv**; jadval ko'rinishi - Kontrol Hisobot → «Sotuvlar» (Курс, Сумма $, Цех, Цена СС, Сумма СС, Тип продукта) |
-| Касса карьер | **Kassa** |
-| Приход | Purchase Invoice / Receipt, Начисление; jadval - hisobot **Prixod** (Месяц, Дата, ..., Поставщик, Курс, Сумма $, Тип, Цех) |
-| Приход ОС | **Prixod OS** |
-| Инвентаризация | Stock Reconciliation |
-| Начисление карьер | **Nachislenie** |
-| Оборотка Контрагентов | hisobot **Kontragent Otchet** (har kontragent bitta qatorda, Сум va $ yonma-yon) |
-| Акт сверка | **Akt Sverka** |
-| Баланс / Баланс бпр | **Balans** |
-| P&L / P&L Разбитый | **Foyda Zarar** |
-| Cash Flow | **Pul Oqimi** |
-| ДДС | **DDS** |
-| Отчет | **Kontrol Hisobot** (ko'rinish: Kunlik otchet) |
-| Постав/Клиент | hisobot **Postav Klient** (har oy oxiridagi qoldiq, Тип контрагента) |
-| БД контрагент | Mijozlar / Ta'minotchilar ro'yxati (guruh: Прочие лица, Налог) |
-| Карздорликлар | **Qarzdorlik** (7 / 14 / 21 kun) |
+| Муммо контр | kontragent nomlaridagi bo'sh joy farqlarini tutish uchun yordamchi ro'yxat; tizimda kontragent ro'yxatdan tanlanadi, bunday xato bo'lmaydi |
+| ПР Срав. (jadvaldagi) | formulalar noto'g'ri ustunlarga qaragan (natija 0); tizimda to'g'ri hisoblanadi |
+| Производство | Eko Beton loyihasida |
+| Зарплата, Сотрудники, Посещение, Расчёт ЗП, ВЕДОМОСТЬ, Рабочие дни, Ишчи ойлиги | keyingi bosqich (HRMS); hozircha oylik Kassa orqali «Зарплата ...» kategoriyasi bilan to'lanadi |
 
-## 6. Hisobotlar
-
-| Hisobot | Nima ko'rsatadi |
-|---|---|
-| **Kontrol Hisobot** | *Kunlik otchet*: ПРОДАЖА (mijoz, tovar, miqdor, narx, summa) + КАССА (kategoriya bo'yicha kirim / chiqim), tepada kassa qoldig'i. *Sotuvlar*: har bir sotuv, guruhlash (mijoz / tovar / kun / mashina) |
-| **Kontragent Otchet** | Оборотка: har kontragent bitta qatorda - boshlang'ich, oborot, yakuniy qoldiq (Кредит / Дебет × Сум / $), Сальдо, Акт сверка havolasi; tepada «Общая задолженность» |
-| **Postav Klient** | Постав/Клиент: kontragent × oy - har oy oxiridagi qoldiq (Д-К), tepada debitor / kreditor / sof jami |
-| **Prixod** | Приход: xarid fakturalari, fakturasiz qabullar, Начисление (Закуп услуга), Приход ОС - sana, nomi, miqdor, narx, summa, $, tur |
-| **Akt Sverka** | bitta kontragent: har bir hujjat (tovar, miqdor, narx), to'lovlar, начисления, qoldiq; tepada yig'ma |
-| **Qarzdorlik** | sof qarz va muddati: 7 kun ichi, 7 / 14 / 21 kundan ko'p (FIFO) |
-| **DDS** | kategoriya × valyuta (kirim / chiqim), boshlang'ich va yakuniy qoldiq; «Batafsil» — har bir harakat |
-| **Pul Oqimi** | Cash Flow oyma-oy: kirim kategoriyalari, chiqim guruhlari (Административный, Производственный ...) |
-| **Foyda Zarar** | P&L Разбитый oyma-oy: выручка, себестоимость, маржа, xarajatlar daraxti, чистая прибыль, рентабельность |
-| **Balans** | oy oxiriga: kassalar, debitorlar, zapaslar, OS, kreditorlar, kapital, foyda; «Разница» = 0 |
-| **Material Hisobot** | tovar × ombor: qoldiq, qazib olindi, ishlab chiqarildi, xarid, sotildi, sarf, yakuniy |
-| **Firmalararo Qarzlar** | Karer ↔ Beton: kim kimdan qancha qarz va nima uchun |
-| **Texnika Xarajatlari** | texnika bo'yicha litr, summa, km, 100 km ga sarf, motor soat |
-
-Filtrlar hisobot JSON'ida; **Firma** bo'sh qoldirilsa — o'z firmangiz, **Sana dan** bo'sh — oy / yil boshi.
-ERPNext'ning standart hisobotlari (General Ledger, Stock Balance, Accounts Receivable ...) menejerga ham ochiq.
-
-## 7. Kod tuzilishi
+## 6. Kod tuzilishi
 
 ```
 carieer/
-├── hooks.py             doc_events (Payment Entry, Vehicle, Stock Reconciliation), boot_session, scheduler
-├── install.py           after_migrate (rollar, ruxsatlar, Vehicle maydonlari) + setup_karer + setup_user
-├── permissions.py       rollar, firma ruxsati, menyuni tozalash (boot_session)
-├── utils.py             Zavod, kurs, kassa, kategoriya -> hisob, ombor, firmalararo, SMS
-├── events.py            Stock Reconciliation: karer tovari tan narxi 0
-├── api.py               GPS: traccar(), gps_push(), xarita uchun get_live_positions(), get_track()
-├── demo.py              test ma'lumotlari: make_demo()
-├── desktop_icon/        ikonkalar: Karer, Beton Zavod, Kassa, Sotuv, Ta'minot, Ombor, Ishlab chiqarish, Texnika, Hisobotlar (rol bo'yicha)
-├── kassa_bolimi/ ... hisobotlar_bolimi/   har bir bo'lim = modul: workspace/ (bosh sahifa) + sidebar/ (chap menyu)
-├── public/icons/        desktop ikonkalari (svg)
+├── hooks.py          doc_events: Payment Entry (Sotuv qarzi), Kassa Kategoriya (modda hisobi), Mode of Payment,
+│                     Currency Exchange (teskari kurs), Stock Reconciliation (tan narx 0)
+├── install.py        after_migrate (rollar, ruxsatlar, maydonlar) + setup_karer + setup_user + seed_dispetcher
+├── permissions.py    firma ruxsati, menyuni tozalash
+├── utils.py          zavod, kurs, kassa, kategoriya -> hisob
+├── events.py         Инвентаризация: karer tovari tan narxi 0
+├── data/             dispetcher.json (jadvaldagi «Диспетчер» ro'yxatlari)
+├── desktop_icon/     ikonkalar (har bir varaq), rollar
 └── carieer/
-    ├── doctype/         sotuv(+tovar, xizmat, tolov), kassa, nachislenie, prixod_os, qazib_olish(+tovar),
-    │                    beton_ishlab_chiqarish(+xomashyo), firmalararo_tolov, yoqilgi_hisobi, gps_malumot,
-    │                    zavod, kassa_kategoriya, karer_sozlamalari
-    ├── page/            texnika_xarita (GPS xarita sahifasi)
-    ├── report/          11 ta hisobot (.py + .json filtrlar), common.py, moliya.py
-    ├── sidebar/         Carieer moduli menyusi (Karer / Beton bosh sahifalari + Sozlamalar)
-    ├── workspace/       Karer, Beton Zavod bosh sahifalari (dashboard)
-    ├── number_card/     ko'rsatkichlar (karer_* / beton_* — dashboard; mening_* — bo'limlar, xodimning o'z firmasi)
-    ├── dashboard_chart/ kunlik sotuv grafigi
-    └── dashboard.py     kassa qoldig'i, mijozlar qarzi kartochkalari
+    ├── doctype/      sotuv (+ tovar, xizmat, tolov), kassa, kassa_kategoriya, nachislenie, prixod_os, zavod,
+    │                 karer_sozlamalari
+    ├── report/       hisobotlar (.py + .json filtrlar), common.py, moliya.py (oylik ustunlar, P&L qoidalari)
+    ├── sidebar/      har bir ikonkaning chap menyusi
+    └── workspace/    Эко Карьер bosh sahifasi
 ```
 
-## 8. Tez-tez uchraydigan xatolar
+## 7. Tez-tez uchraydigan xatolar
 
 | Xato | Yechim |
 |---|---|
-| «USD -> UZS kursi topilmadi» | Valyuta kursi (Currency Exchange) ga kurs kiriting |
-| «... omborida ... yetarli emas» | Qazib olish / Приход / Инвентаризация bilan qoldiqni kiriting |
-| «Xomashyo yetarli emas» (beton) | Xabarda qaysi tovardan qancha yetmasligi bor: Xarid → Qabul (Receipt) yoki Karer'dan Sotuv bilan **Beton xomashyo** omboriga kiriting |
-| «Retsept boshqa firmada» | BOM'ni Eko Beton firmasida qayta yarating (Karer firmasida xomashyo ombori yo'q) |
-| «... narxini kiriting yoki Narxlar (Item Price) ga ... qo'shing» | Sotuvda narxni yozing yoki Sozlamalar → Narxlar ga tovar narxini qo'shing |
-| «... kassasida ... firmasi uchun hisob yo'q» | Kassalar (Mode of Payment) → Accounts jadvaliga shu firma hisobini qo'shing |
-| «Zavod '...' uchun firma ko'rsatilmagan» | Sozlamalar → Zavodlar: Karer va Beton yozuvlari (setup_karer yaratadi) |
-| «Ichki firmaga sotuvda to'lov shu yerda olinmaydi» | Firmalararo to'lov orqali kiriting |
-| «... o'zimizning firmalarimiz. Ular o'rtasidagi oldi-sotdi qo'lda kiritilmaydi» | Sotuvchi firma bo'limida **Sotuv** qiling (Клиент = ikkinchi firma) - xaridorda Purchase Invoice o'zi yaratiladi |
-| Firmalararo sotuvni bekor qilib bo'lmaydi | Avval undan foydalangan hujjatlarni (beton ishlab chiqarish, sotuv) bekor qiling |
-| Menyuda bo'lim ko'rinmaydi | `bench --site SITE clear-cache`, foydalanuvchi qayta kirsin |
+| «USD -> UZS kursi topilmadi» | Kurs (Currency Exchange) ga shu kun kursini kiriting |
+| «... narxini kiriting» | Sotuvda narxni yozing yoki Item Price ga qo'shing |
+| «... kassasida ... firmasi uchun hisob yo'q» | Hisoblar (Mode of Payment) → Accounts jadvaliga firma hisobini qo'shing |
+| «Zavod 'Karer' topilmadi» | `setup_karer` ni ishga tushiring |
+| Menyuda ikonka ko'rinmaydi | `bench --site SITE clear-cache`, foydalanuvchi qayta kirsin |

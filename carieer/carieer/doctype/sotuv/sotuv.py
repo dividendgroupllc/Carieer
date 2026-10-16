@@ -291,11 +291,14 @@ class Sotuv(Document):
 
 	# ------------------------------------------------------------ hujjatlar
 	def set_cost_columns(self, si):
-		"""«Цена СС» / «Сумма СС»: tasdiqlangandan keyin ombor tan narxi (Sales Invoice qatoridagi incoming_rate)."""
+		"""«Цена СС» / «Сумма СС»: omborda haqiqatda ayrilgan tan narx (Stock Ledger Entry). Sales Invoice
+		qatoridagi incoming_rate eski qiymatda qolishi mumkin (P&L'dagi Себестоимость bilan mos kelmaydi)."""
 		si.reload()
+		cost = sales_invoice_cost(si.name)
 		for row, si_row in zip(self.items, si.items[: len(self.items)], strict=True):
-			narx = flt(si_row.incoming_rate) * flt(row.conversion_factor or 1)
-			row.db_set({"narx_ss": narx, "summa_ss": flt(narx * flt(row.qty), 2)})
+			summa = flt(cost.get(si_row.name), 2)
+			narx = flt(summa / flt(row.qty), 2) if flt(row.qty) else 0
+			row.db_set({"narx_ss": narx, "summa_ss": summa})
 
 	def make_korrektirovka_entry(self):
 		"""Mijoz qarzini tovarsiz tuzatish: Journal Entry (Dt mijoz / Kt korrektirovka hisobi; manfiy bo'lsa teskari).
@@ -447,6 +450,19 @@ class Sotuv(Document):
 
 # ---------------------------------------------------------------- forma (sotuv.js)
 @frappe.whitelist()
+def sales_invoice_cost(sales_invoice: str) -> dict:
+	"""{Sales Invoice Item: ombordan chiqqan tan narx qiymati} - Stock Ledger Entry bo'yicha."""
+	return dict(
+		frappe.db.sql(
+			"""select voucher_detail_no, -sum(stock_value_difference)
+			from `tabStock Ledger Entry`
+			where voucher_type = 'Sales Invoice' and voucher_no = %s and is_cancelled = 0
+			group by voucher_detail_no""",
+			sales_invoice,
+		)
+	)
+
+
 def get_item_defaults(item_code: str, tip: str, currency: str | None = None) -> dict:
 	"""Forma: tovar tanlanganda birlik, narx (Item Price) va sotuvchi firma ombori o'zi to'ldiriladi."""
 	frappe.has_permission("Sotuv", "read", throw=True)
