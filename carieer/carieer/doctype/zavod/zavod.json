@@ -10,6 +10,7 @@
   "company",
   "cb_1",
   "kassa",
+  "ishlab_chiqarish",
   "ombor_section",
   "asosiy_ombor",
   "xomashyo_ombori",
@@ -48,6 +49,13 @@
    "options": "Mode of Payment"
   },
   {
+   "default": "0",
+   "description": "Beton: sotuv tasdiqlanganda sotilgan marka retsept (BOM) bo'yicha ishlab chiqariladi - xomashyo ombori -> asosiy ombor",
+   "fieldname": "ishlab_chiqarish",
+   "fieldtype": "Check",
+   "label": "Sotuvda retsept bo'yicha ishlab chiqarish"
+  },
+  {
    "fieldname": "ombor_section",
    "fieldtype": "Section Break",
    "label": "Omborlar"
@@ -83,7 +91,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-23 17:30:00.000000",
+ "modified": "2026-10-23 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Zavod",
@@ -113,7 +121,20 @@
    "print": 1,
    "read": 1,
    "report": 1,
+   "role": "Beton Menejer",
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
    "role": "Karer Kassir"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Beton Kassir"
   },
   {
    "print": 1,
@@ -125,7 +146,19 @@
    "print": 1,
    "read": 1,
    "report": 1,
+   "role": "Beton Operator"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
    "role": "Karer Omborchi"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Beton Omborchi"
   }
  ],
  "sort_field": "zavod",

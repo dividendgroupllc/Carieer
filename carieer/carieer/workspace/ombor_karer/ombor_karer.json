@@ -1,10 +1,10 @@
 {
- "creation": "2026-10-23 17:00:00.000000",
+ "creation": "2026-10-23 18:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
- "modified": "2026-10-23 17:00:00.000000",
+ "modified": "2026-10-23 18:00:00.000000",
  "modified_by": "Administrator",
- "name": "Omborchi",
+ "name": "Ombor Karer",
  "owner": "Administrator",
  "app": "carieer",
  "charts": [],
@@ -15,7 +15,7 @@
  "icon": "organization",
  "idx": 2,
  "is_hidden": 0,
- "label": "Omborchi",
+ "label": "Ombor Karer",
  "links": [],
  "module": "Carieer",
  "number_cards": [],
@@ -96,6 +96,6 @@
    "doc_view": "List"
   }
  ],
- "title": "Omborchi",
+ "title": "Ombor Karer",
  "type": "Workspace"
 }

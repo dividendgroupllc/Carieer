@@ -1,25 +1,25 @@
 {
- "creation": "2026-10-23 17:00:00.000000",
+ "creation": "2026-10-23 18:00:00.000000",
  "docstatus": 0,
  "doctype": "Desktop Icon",
- "modified": "2026-10-23 17:00:00.000000",
+ "modified": "2026-10-23 18:00:00.000000",
  "modified_by": "Administrator",
- "name": "Operator",
+ "name": "Kassa Karer",
  "owner": "Administrator",
  "app": "carieer",
  "hidden": 0,
- "icon": "sotuv",
+ "icon": "kassa",
  "icon_type": "Link",
- "idx": 0,
- "label": "Operator",
- "link_to": "Operator",
+ "idx": 1,
+ "label": "Kassa Karer",
+ "link_to": "Kassa Karer",
  "link_type": "Workspace Sidebar",
  "logo_url": "",
  "parent_icon": "",
  "restrict_removal": 1,
  "roles": [
   {
-   "role": "Karer Operator"
+   "role": "Karer Kassir"
   },
   {
    "role": "Karer Menejer"

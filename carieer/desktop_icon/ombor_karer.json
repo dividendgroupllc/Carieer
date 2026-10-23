@@ -1,0 +1,32 @@
+{
+ "creation": "2026-10-23 18:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "modified": "2026-10-23 18:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "Ombor Karer",
+ "owner": "Administrator",
+ "app": "carieer",
+ "hidden": 0,
+ "icon": "ombor",
+ "icon_type": "Link",
+ "idx": 2,
+ "label": "Ombor Karer",
+ "link_to": "Ombor Karer",
+ "link_type": "Workspace Sidebar",
+ "logo_url": "",
+ "parent_icon": "",
+ "restrict_removal": 1,
+ "roles": [
+  {
+   "role": "Karer Omborchi"
+  },
+  {
+   "role": "Karer Menejer"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "standard": 1
+}

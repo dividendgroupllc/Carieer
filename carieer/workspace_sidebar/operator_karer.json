@@ -1,10 +1,10 @@
 {
- "creation": "2026-10-23 17:00:00.000000",
+ "creation": "2026-10-23 18:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "modified": "2026-10-23 17:00:00.000000",
+ "modified": "2026-10-23 18:00:00.000000",
  "modified_by": "Administrator",
- "name": "Omborchi",
+ "name": "Operator Karer",
  "owner": "Administrator",
  "app": "carieer",
  "header_icon": "organization",
@@ -19,8 +19,8 @@
    "parentfield": "items",
    "parenttype": "Workspace Sidebar",
    "show_arrow": 0,
-   "label": "Omborchi",
-   "link_to": "Omborchi",
+   "label": "Operator Karer",
+   "link_to": "Operator Karer",
    "link_type": "Workspace",
    "type": "Link",
    "idx": 1
@@ -49,25 +49,25 @@
    "parentfield": "items",
    "parenttype": "Workspace Sidebar",
    "show_arrow": 0,
-   "label": "Инвентаризация",
-   "link_to": "Stock Reconciliation",
+   "label": "Продажа карьер",
+   "link_to": "Sotuv",
    "link_type": "DocType",
    "type": "Link",
    "idx": 3
   },
   {
-   "child": 1,
+   "child": 0,
    "collapsible": 1,
    "doctype": "Workspace Sidebar Item",
-   "indent": 0,
+   "indent": 1,
    "keep_closed": 0,
    "parentfield": "items",
    "parenttype": "Workspace Sidebar",
    "show_arrow": 0,
-   "label": "Stock Entry",
-   "link_to": "Stock Entry",
+   "label": "ERPNext hujjatlari",
    "link_type": "DocType",
-   "type": "Link",
+   "type": "Section Break",
+   "icon": "folder",
    "idx": 4
   },
   {
@@ -79,11 +79,26 @@
    "parentfield": "items",
    "parenttype": "Workspace Sidebar",
    "show_arrow": 0,
-   "label": "Purchase Invoice (Приход)",
-   "link_to": "Purchase Invoice",
+   "label": "Sales Invoice",
+   "link_to": "Sales Invoice",
    "link_type": "DocType",
    "type": "Link",
    "idx": 5
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "doctype": "Workspace Sidebar Item",
+   "indent": 0,
+   "keep_closed": 0,
+   "parentfield": "items",
+   "parenttype": "Workspace Sidebar",
+   "show_arrow": 0,
+   "label": "Payment Entry",
+   "link_to": "Payment Entry",
+   "link_type": "DocType",
+   "type": "Link",
+   "idx": 6
   },
   {
    "child": 0,
@@ -98,21 +113,6 @@
    "link_type": "DocType",
    "type": "Section Break",
    "icon": "folder",
-   "idx": 6
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "doctype": "Workspace Sidebar Item",
-   "indent": 0,
-   "keep_closed": 0,
-   "parentfield": "items",
-   "parenttype": "Workspace Sidebar",
-   "show_arrow": 0,
-   "label": "Материальный отчет",
-   "link_to": "Material Hisobot",
-   "link_type": "Report",
-   "type": "Link",
    "idx": 7
   },
   {
@@ -124,8 +124,8 @@
    "parentfield": "items",
    "parenttype": "Workspace Sidebar",
    "show_arrow": 0,
-   "label": "Приход (hisobot)",
-   "link_to": "Prixod",
+   "label": "Отчет",
+   "link_to": "Kontrol Hisobot",
    "link_type": "Report",
    "type": "Link",
    "idx": 8
@@ -146,21 +146,6 @@
    "idx": 9
   },
   {
-   "child": 1,
-   "collapsible": 1,
-   "doctype": "Workspace Sidebar Item",
-   "indent": 0,
-   "keep_closed": 0,
-   "parentfield": "items",
-   "parenttype": "Workspace Sidebar",
-   "show_arrow": 0,
-   "label": "Ombor harakati",
-   "link_to": "Stock Ledger",
-   "link_type": "Report",
-   "type": "Link",
-   "idx": 10
-  },
-  {
    "child": 0,
    "collapsible": 1,
    "doctype": "Workspace Sidebar Item",
@@ -173,6 +158,21 @@
    "link_type": "DocType",
    "type": "Section Break",
    "icon": "folder",
+   "idx": 10
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "doctype": "Workspace Sidebar Item",
+   "indent": 0,
+   "keep_closed": 0,
+   "parentfield": "items",
+   "parenttype": "Workspace Sidebar",
+   "show_arrow": 0,
+   "label": "Mijozlar",
+   "link_to": "Customer",
+   "link_type": "DocType",
+   "type": "Link",
    "idx": 11
   },
   {
@@ -189,24 +189,9 @@
    "link_type": "DocType",
    "type": "Link",
    "idx": 12
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "doctype": "Workspace Sidebar Item",
-   "indent": 0,
-   "keep_closed": 0,
-   "parentfield": "items",
-   "parenttype": "Workspace Sidebar",
-   "show_arrow": 0,
-   "label": "Omborlar",
-   "link_to": "Warehouse",
-   "link_type": "DocType",
-   "type": "Link",
-   "idx": 13
   }
  ],
  "module": "Carieer",
  "standard": 1,
- "title": "Omborchi"
+ "title": "Operator Karer"
 }

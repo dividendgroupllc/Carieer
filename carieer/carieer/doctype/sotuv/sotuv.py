@@ -1,8 +1,10 @@
-# Sotuv - karer sotuv posti.
+# Sotuv - karer / beton sotuv posti.
 #
 #   Saqlash (Save)     -> summalar, ombor, kurs, qarz hisoblanadi (hammasi serverda)
-#   Tasdiqlash (Submit) -> Sales Invoice (tovar ombordan chiqadi, mijozga qarz) + har bir to'lov qatori uchun
+#   Tasdiqlash (Submit) -> Beton: sotilgan marka retsept (BOM) bo'yicha ishlab chiqariladi (Stock Entry Manufacture)
+#                         -> Sales Invoice (tovar ombordan chiqadi, mijozga qarz) + har bir to'lov qatori uchun
 #                         Payment Entry (kassaga kirim) + SMS
+#                         Mijoz - boshqa firmamiz (Karer -> Beton): o'sha firmada xarid fakturasi (Приход) o'zi yaratiladi
 #   Keyinroq to'lov    -> «Оплаты» jadvaliga qator qo'shib «Update» bosiladi -> yangi Payment Entry
 
 import frappe
@@ -10,7 +12,14 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, fmt_money, formatdate, nowdate
 
-from carieer.carieer.doctype.sotuv.helpers import allow_negative_stock, get_adjustment_account, get_usd_rate
+from carieer.carieer.doctype.sotuv.helpers import (
+	allow_negative_stock,
+	bom_raw_qty,
+	get_adjustment_account,
+	get_production_bom,
+	get_usd_rate,
+	make_manufacture_entry,
+)
 from carieer.permissions import check_company
 from carieer.utils import (
 	apply_advances,
@@ -20,7 +29,9 @@ from carieer.utils import (
 	get_item_warehouse,
 	get_kassa_info,
 	get_rate,
+	get_zavod,
 	send_sms,
+	user_zavod,
 	validate_warehouse_company,
 )
 
@@ -43,6 +54,7 @@ class Sotuv(Document):
 	# ------------------------------------------------------------ validate
 	def validate(self):
 		if self.docstatus == 0:
+			self.tip = user_zavod(self.tip)
 			self.company = company_for_tip(self.tip)
 			check_company(self.company)
 		self.set_rate()
@@ -56,6 +68,18 @@ class Sotuv(Document):
 		self.set_summa_usd()
 		if self.docstatus == 0:
 			self.status = "Draft"
+			self.validate_firmalararo()
+
+	def validate_firmalararo(self):
+		"""Boshqa firmamizga sotuv (Karer -> Beton): ERPNext firmalararo hujjati faqat firma valyutasida."""
+		if self.korrektirovka or not firmalararo_company(self.customer, self.company):
+			return
+		if self.currency != get_company_currency(self.company):
+			frappe.throw(
+				_("Firmalararo sotuv ({0}) firma valyutasida ({1}) bo'lishi kerak").format(
+					self.customer, get_company_currency(self.company)
+				)
+			)
 
 	def set_rate(self):
 		company_currency = get_company_currency(self.company)
@@ -93,6 +117,7 @@ class Sotuv(Document):
 
 		if not self.items:
 			frappe.throw(_("Kamida bitta tovar kiriting"))
+		zavod = get_zavod(self.company)
 		for row in self.items:
 			stock_uom, sales_uom, is_stock = frappe.get_cached_value(
 				"Item", row.item_code, ["stock_uom", "sales_uom", "is_stock_item"]
@@ -120,6 +145,10 @@ class Sotuv(Document):
 				row.rate = get_selling_price(row.item_code, row.uom, self.currency)
 			row.amount = flt(flt(row.qty) * flt(row.rate), 2)
 			row.currency = self.currency
+			# Beton: retsepti bor marka sotuvda ishlab chiqariladi va asosiy omborga kirib, o'sha yerdan sotiladi
+			row.bom = get_production_bom(row.item_code, self.company) if zavod.get("ishlab_chiqarish") else None
+			if row.bom:
+				row.warehouse = zavod.asosiy_ombor
 			if (
 				not row.warehouse
 				or frappe.get_cached_value("Warehouse", row.warehouse, "company") != self.company
@@ -190,11 +219,19 @@ class Sotuv(Document):
 			self.check_stock()
 
 	def check_stock(self):
-		"""Jadvalda qoldiq tekshiruvi yo'q: sotuv bloklanmaydi, qoldiq yetmasa ogohlantirish chiqadi."""
+		"""Jadvalda qoldiq tekshiruvi yo'q: sotuv bloklanmaydi, qoldiq yetmasa ogohlantirish chiqadi.
+		Beton markasi (retsepti bor) - uning xomashyosi (sement, shag'al ...) xomashyo omborida tekshiriladi."""
 		from erpnext.stock.utils import get_stock_balance
 
 		need = {}
+		xomashyo_ombori = None
 		for r in self.items:
+			if r.bom:
+				zavod = get_zavod(self.company)
+				xomashyo_ombori = xomashyo_ombori or zavod.xomashyo_ombori or zavod.asosiy_ombor
+				for item, qty in bom_raw_qty(r.bom, r.stock_qty).items():
+					need[(item, xomashyo_ombori)] = need.get((item, xomashyo_ombori), 0) + qty
+				continue
 			need[(r.item_code, r.warehouse)] = need.get((r.item_code, r.warehouse), 0) + flt(r.stock_qty)
 		for (item, wh), qty in need.items():
 			available = flt(get_stock_balance(item, wh, self.posting_date, self.posting_time))
@@ -215,9 +252,11 @@ class Sotuv(Document):
 			self.db_set({"journal_entry": je.name, "status": "Korrektirovka"})
 			return
 		with allow_negative_stock():
+			self.make_production()
 			si = self.make_sales_invoice()
 		self.db_set("sales_invoice", si.name)
 		self.set_cost_columns(si)
+		self.make_firmalararo_xarid(si)
 		self.make_payments()
 		# mijoz oldindan (Kassa orqali) avans bergan bo'lsa - qolgan qarz avansdan yopiladi
 		with as_admin():
@@ -265,7 +304,13 @@ class Sotuv(Document):
 			"Payment Ledger Entry",
 			"Payment Entry",
 			"Journal Entry",
+			"Stock Entry",
+			"Purchase Invoice",
 		)
+		# boshqa firmadagi xarid fakturasi (Приход) birinchi bekor qilinadi: u Sales Invoice'ga bog'langan
+		if self.firmalararo_xarid and frappe.db.get_value("Purchase Invoice", self.firmalararo_xarid, "docstatus") == 1:
+			with as_admin(), allow_negative_stock():
+				frappe.get_doc("Purchase Invoice", self.firmalararo_xarid).cancel()
 		if self.journal_entry and frappe.db.get_value("Journal Entry", self.journal_entry, "docstatus") == 1:
 			je = frappe.get_doc("Journal Entry", self.journal_entry)
 			je.flags.ignore_permissions = True
@@ -287,6 +332,13 @@ class Sotuv(Document):
 				si.flags.ignore_permissions = True
 				with allow_negative_stock():
 					si.cancel()
+		# beton ishlab chiqarishi bekor: tayyor beton chiqariladi, xomashyo omborga qaytadi
+		for row in self.items:
+			if row.stock_entry and frappe.db.get_value("Stock Entry", row.stock_entry, "docstatus") == 1:
+				se = frappe.get_doc("Stock Entry", row.stock_entry)
+				se.flags.ignore_permissions = True
+				with allow_negative_stock():
+					se.cancel()
 		self.db_set("status", "Cancelled")
 
 	# ------------------------------------------------------------ hujjatlar
@@ -299,6 +351,48 @@ class Sotuv(Document):
 			summa = flt(cost.get(si_row.name), 2)
 			narx = flt(summa / flt(row.qty), 2) if flt(row.qty) else 0
 			row.db_set({"narx_ss": narx, "summa_ss": summa})
+
+	def make_production(self):
+		"""Beton: retsepti bor har bir qator -> «Производство» (Stock Entry Manufacture). Sales Invoice'dan oldin:
+		tayyor beton asosiy omborga kirib, o'sha zahoti sotiladi (jadvalda «Производство» = «Продажа»)."""
+		rows = [r for r in self.items if r.bom]
+		if not rows:
+			return
+		zavod = get_zavod(self.company)
+		for row in rows:
+			row.db_set("stock_entry", make_manufacture_entry(self, row, zavod))
+
+	def make_firmalararo_xarid(self, si):
+		"""Mijoz - boshqa firmamiz (ichki mijoz, masalan Karer -> «Beton» firmasi): o'sha firmada xarid fakturasi
+		(Приход) - tovar uning xomashyo omboriga kiradi, Karerga qarzi yoziladi. ERPNext inter-company mexanizmi."""
+		from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_inter_company_purchase_invoice
+
+		target = firmalararo_company(self.customer, self.company)
+		if not target:
+			return
+		zavod = get_zavod(target)
+		warehouse = zavod.get("xomashyo_ombori") or zavod.get("asosiy_ombor")
+		if not warehouse:
+			return  # boshqa firmaning zavodi sozlanmagan - xaridni o'sha firma o'zi kiritadi
+		with as_admin(), allow_negative_stock():
+			pi = make_inter_company_purchase_invoice(si.name)
+			pi.update(
+				{
+					"posting_date": self.posting_date,
+					"posting_time": self.posting_time,
+					"set_posting_time": 1,
+					"bill_no": self.name,
+					"bill_date": self.posting_date,
+					"update_stock": 1,
+					"set_warehouse": warehouse,
+				}
+			)
+			for row in pi.items:
+				if frappe.get_cached_value("Item", row.item_code, "is_stock_item"):
+					row.warehouse = warehouse
+			pi.insert()
+			pi.submit()
+		self.db_set("firmalararo_xarid", pi.name)
 
 	def make_korrektirovka_entry(self):
 		"""Mijoz qarzini tovarsiz tuzatish: Journal Entry (Dt mijoz / Kt korrektirovka hisobi; manfiy bo'lsa teskari).
@@ -356,6 +450,10 @@ class Sotuv(Document):
 				"remarks": _("Sotuv {0}. Mashina: {1}").format(self.name, self.mashina_raqami or "-"),
 			}
 		)
+		if firmalararo_company(self.customer, self.company):
+			from carieer.install import FIRMALARARO_PRICE_LIST
+
+			si.selling_price_list = FIRMALARARO_PRICE_LIST
 		for r in self.items:
 			si.append(
 				"items",
@@ -463,24 +561,45 @@ def sales_invoice_cost(sales_invoice: str) -> dict:
 	)
 
 
+@frappe.whitelist()
 def get_item_defaults(item_code: str, tip: str, currency: str | None = None) -> dict:
 	"""Forma: tovar tanlanganda birlik, narx (Item Price) va sotuvchi firma ombori o'zi to'ldiriladi."""
 	frappe.has_permission("Sotuv", "read", throw=True)
+	tip = user_zavod(tip)
 	company = company_for_tip(tip)
 	stock_uom, sales_uom, item_name = frappe.get_cached_value(
 		"Item", item_code, ["stock_uom", "sales_uom", "item_name"]
 	)
 	uom = sales_uom or stock_uom
 	currency = currency or get_company_currency(company)
+	zavod = get_zavod(company)
+	bom = get_production_bom(item_code, company) if zavod.get("ishlab_chiqarish") else None
 	return {
 		"item_name": item_name,
 		"uom": uom,
 		"rate": get_selling_price(item_code, uom, currency),
-		"warehouse": get_item_warehouse(item_code, company),
+		"warehouse": zavod.asosiy_ombor if bom else get_item_warehouse(item_code, company),
+		"bom": bom,
 	}
 
 
+@frappe.whitelist()
+def get_user_zavod(tip: str | None = None) -> str | None:
+	"""Forma: yangi Sotuv'da «Тип» - xodimning zavodi (Beton operatori -> Beton)."""
+	return user_zavod(tip)
+
+
 # ---------------------------------------------------------------- module level
+def firmalararo_company(customer: str | None, company: str) -> str | None:
+	"""Mijoz boshqa firmamiz bo'lsa (ichki mijoz, masalan «Beton Zavod») - o'sha firma, aks holda None."""
+	if not customer:
+		return None
+	info = frappe.get_cached_value("Customer", customer, ["is_internal_customer", "represents_company"], as_dict=True)
+	if info and info.is_internal_customer and info.represents_company and info.represents_company != company:
+		return info.represents_company
+	return None
+
+
 def is_posted(payment_entry: str | None) -> bool:
 	"""To'lov qatori haqiqatan o'tkazilganmi (Payment Entry tasdiqlangan, bekor qilinmagan)."""
 	return bool(payment_entry) and frappe.db.get_value("Payment Entry", payment_entry, "docstatus") == 1

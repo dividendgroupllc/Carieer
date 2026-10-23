@@ -1,25 +1,25 @@
 {
- "creation": "2026-10-23 17:00:00.000000",
+ "creation": "2026-10-23 18:00:00.000000",
  "docstatus": 0,
  "doctype": "Desktop Icon",
- "modified": "2026-10-23 17:00:00.000000",
+ "modified": "2026-10-23 18:00:00.000000",
  "modified_by": "Administrator",
- "name": "Menejer",
+ "name": "Menejer Beton",
  "owner": "Administrator",
  "app": "carieer",
  "hidden": 0,
  "icon": "hisobotlar",
  "icon_type": "Link",
- "idx": 3,
- "label": "Menejer",
- "link_to": "Menejer",
+ "idx": 7,
+ "label": "Menejer Beton",
+ "link_to": "Menejer Beton",
  "link_type": "Workspace Sidebar",
  "logo_url": "",
  "parent_icon": "",
  "restrict_removal": 1,
  "roles": [
   {
-   "role": "Karer Menejer"
+   "role": "Beton Menejer"
   },
   {
    "role": "System Manager"

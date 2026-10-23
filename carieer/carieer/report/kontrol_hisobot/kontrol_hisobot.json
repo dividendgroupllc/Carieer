@@ -107,7 +107,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letterhead": null,
- "modified": "2026-10-05 12:00:00.000000",
+ "modified": "2026-10-23 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Kontrol Hisobot",
@@ -124,10 +124,19 @@
    "role": "Karer Menejer"
   },
   {
+   "role": "Beton Menejer"
+  },
+  {
    "role": "Karer Kassir"
   },
   {
+   "role": "Beton Kassir"
+  },
+  {
    "role": "Karer Operator"
+  },
+  {
+   "role": "Beton Operator"
   }
  ],
  "timeout": 0
