@@ -1,0 +1,62 @@
+{
+ "app": "carieer",
+ "creation": "2026-10-23 19:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Sidebar",
+ "header_icon": "hisobotlar",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "doctype": "Sidebar Item",
+   "idx": 1,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Hujjatlar (kiruvchi / chiquvchi)",
+   "link_to": "Didox Hujjat",
+   "link_type": "DocType",
+   "parentfield": "items",
+   "parenttype": "Sidebar",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "doctype": "Sidebar Item",
+   "idx": 2,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Didox hisoboti",
+   "link_to": "Didox Hisobot",
+   "link_type": "Report",
+   "parentfield": "items",
+   "parenttype": "Sidebar",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "doctype": "Sidebar Item",
+   "idx": 3,
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Didox sozlamalari",
+   "link_to": "Didox Sozlamalari",
+   "link_type": "DocType",
+   "parentfield": "items",
+   "parenttype": "Sidebar",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-10-23 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Didox",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Didox"
+}

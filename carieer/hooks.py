@@ -42,3 +42,10 @@ doc_events = {
 		"before_validate": "carieer.events.stock_reconciliation_before_validate",
 	},
 }
+
+# Didox: firmalarning kiruvchi / chiquvchi elektron hujjatlari tarixi «Didox Hujjat» jurnaliga tortiladi
+scheduler_events = {
+	"cron": {
+		"*/30 * * * *": ["carieer.didox.sync.sync_all"],
+	},
+}

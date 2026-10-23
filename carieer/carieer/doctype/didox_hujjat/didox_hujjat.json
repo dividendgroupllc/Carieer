@@ -1,0 +1,310 @@
+{
+ "actions": [],
+ "creation": "2026-10-23 19:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "didox_id",
+  "company",
+  "yonalish",
+  "cb_1",
+  "hujjat_turi",
+  "hujjat_kodi",
+  "raqam",
+  "sana",
+  "cb_2",
+  "holat",
+  "status_kod",
+  "holat_izoh",
+  "kontragent_section",
+  "kontragent_nomi",
+  "kontragent_inn",
+  "cb_3",
+  "customer",
+  "supplier",
+  "cb_4",
+  "shartnoma_raqami",
+  "shartnoma_sanasi",
+  "summa_section",
+  "summa",
+  "cb_5",
+  "qqs_summa",
+  "cb_6",
+  "jami",
+  "boglanish_section",
+  "sotuv",
+  "pdf",
+  "cb_7",
+  "imzolangan",
+  "yangilangan",
+  "json_section",
+  "hujjat_json"
+ ],
+ "fields": [
+  {
+   "fieldname": "didox_id",
+   "fieldtype": "Data",
+   "label": "Didox ID",
+   "reqd": 1,
+   "unique": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "options": "Company",
+   "label": "Firma",
+   "reqd": 1,
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "yonalish",
+   "fieldtype": "Select",
+   "options": "Chiquvchi\nKiruvchi",
+   "label": "Yo'nalish",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "hujjat_turi",
+   "fieldtype": "Data",
+   "label": "Hujjat turi",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "hujjat_kodi",
+   "fieldtype": "Data",
+   "label": "Tur kodi",
+   "read_only": 1
+  },
+  {
+   "fieldname": "raqam",
+   "fieldtype": "Data",
+   "label": "Raqam",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_global_search": 1
+  },
+  {
+   "fieldname": "sana",
+   "fieldtype": "Date",
+   "label": "Sana",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "holat",
+   "fieldtype": "Select",
+   "options": "Qoralama\nKontragent imzosini kutmoqda\nBizning imzoni kutmoqda\nImzolangan\nRad etilgan\nO'chirilgan\nAgent imzosini kutmoqda\nAgent imzolagan\nYaroqsiz\nSoliq bekor qilgan\nQoralama o'chirilgan\nBoshqa\nNoma'lum",
+   "label": "Holat",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "status_kod",
+   "fieldtype": "Int",
+   "label": "Holat kodi",
+   "read_only": 1
+  },
+  {
+   "fieldname": "holat_izoh",
+   "fieldtype": "Small Text",
+   "label": "Izoh (Didox)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "kontragent_section",
+   "fieldtype": "Section Break",
+   "label": "Kontragent"
+  },
+  {
+   "fieldname": "kontragent_nomi",
+   "fieldtype": "Data",
+   "label": "Kontragent",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_global_search": 1
+  },
+  {
+   "fieldname": "kontragent_inn",
+   "fieldtype": "Data",
+   "label": "Kontragent INN",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "cb_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "options": "Customer",
+   "label": "Mijoz"
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "options": "Supplier",
+   "label": "Ta'minotchi"
+  },
+  {
+   "fieldname": "cb_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "shartnoma_raqami",
+   "fieldtype": "Data",
+   "label": "Shartnoma raqami",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shartnoma_sanasi",
+   "fieldtype": "Date",
+   "label": "Shartnoma sanasi",
+   "read_only": 1
+  },
+  {
+   "fieldname": "summa_section",
+   "fieldtype": "Section Break",
+   "label": "Summa"
+  },
+  {
+   "fieldname": "summa",
+   "fieldtype": "Currency",
+   "options": "Company:company:default_currency",
+   "label": "Summa (QQSsiz)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "qqs_summa",
+   "fieldtype": "Currency",
+   "options": "Company:company:default_currency",
+   "label": "QQS",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "jami",
+   "fieldtype": "Currency",
+   "options": "Company:company:default_currency",
+   "label": "Jami",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "boglanish_section",
+   "fieldtype": "Section Break",
+   "label": "Bog'langan"
+  },
+  {
+   "fieldname": "sotuv",
+   "fieldtype": "Link",
+   "options": "Sotuv",
+   "label": "Sotuv",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pdf",
+   "fieldtype": "Attach",
+   "label": "PDF",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "imzolangan",
+   "fieldtype": "Date",
+   "label": "Yuborilgan sana",
+   "read_only": 1
+  },
+  {
+   "fieldname": "yangilangan",
+   "fieldtype": "Datetime",
+   "label": "Didox'da yangilangan",
+   "read_only": 1
+  },
+  {
+   "fieldname": "json_section",
+   "fieldtype": "Section Break",
+   "label": "Hujjat JSON",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "hujjat_json",
+   "fieldtype": "Code",
+   "options": "JSON",
+   "label": "JSON",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-23 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Didox Hujjat",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "role": "Karer Menejer",
+   "create": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "write": 1
+  },
+  {
+   "role": "Karer Kassir",
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "sana",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "field:didox_id",
+ "naming_rule": "By fieldname",
+ "title_field": "raqam",
+ "show_title_field_in_link": 1,
+ "track_changes": 1,
+ "in_create": 1
+}

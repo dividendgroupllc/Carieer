@@ -49,6 +49,8 @@
   "tovarlar",
   "hujjat_section",
   "sales_invoice",
+  "didox_hujjat",
+  "didox_holati",
   "journal_entry",
   "cb_7",
   "izoh",
@@ -311,6 +313,24 @@
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
+   "fieldname": "didox_hujjat",
+   "fieldtype": "Link",
+   "label": "Didox hisob-faktura",
+   "no_copy": 1,
+   "options": "Didox Hujjat",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "didox_hujjat.holat",
+   "fieldname": "didox_holati",
+   "fieldtype": "Data",
+   "label": "Didox holati",
+   "no_copy": 1,
+   "read_only": 1,
+   "allow_on_submit": 1
+  },
+  {
    "fieldname": "cb_7",
    "fieldtype": "Column Break"
   },
@@ -382,7 +402,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-09 16:00:00.000000",
+ "modified": "2026-10-23 19:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Sotuv",

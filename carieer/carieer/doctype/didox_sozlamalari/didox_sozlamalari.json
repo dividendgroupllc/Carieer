@@ -1,0 +1,95 @@
+{
+ "actions": [],
+ "creation": "2026-10-23 19:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "yoqilgan",
+  "rejim",
+  "til",
+  "cb_1",
+  "partner_token",
+  "eimzo_api_kalitlari",
+  "firmalar_section",
+  "firmalar"
+ ],
+ "fields": [
+  {
+   "fieldname": "yoqilgan",
+   "fieldtype": "Check",
+   "label": "Didox yoqilgan"
+  },
+  {
+   "fieldname": "rejim",
+   "fieldtype": "Select",
+   "label": "Rejim",
+   "options": "Test\nProd",
+   "default": "Test",
+   "description": "Test: testapi3.didox.uz, Prod: api-partners.didox.uz"
+  },
+  {
+   "fieldname": "til",
+   "fieldtype": "Select",
+   "label": "Til",
+   "options": "ru\nuz",
+   "default": "ru"
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "partner_token",
+   "fieldtype": "Password",
+   "label": "Partner token",
+   "length": 255,
+   "description": "Didox account manager beradi (ORANGE TEAM nomiga)"
+  },
+  {
+   "fieldname": "eimzo_api_kalitlari",
+   "fieldtype": "Small Text",
+   "label": "E-IMZO API kalitlari",
+   "description": "Har qatorda: domen|kalit. Sayt domenida E-IMZO ishlashi uchun e-imzo.uz beradi. Lokal (developer rejim) uchun bo'sh qoldiring."
+  },
+  {
+   "fieldname": "firmalar_section",
+   "fieldtype": "Section Break",
+   "label": "Firmalar"
+  },
+  {
+   "fieldname": "firmalar",
+   "fieldtype": "Table",
+   "options": "Didox Firma",
+   "label": "Firmalar"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-23 19:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Didox Sozlamalari",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "share": 1,
+   "write": 1
+  },
+  {
+   "role": "Karer Menejer",
+   "read": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "issingle": 1,
+ "track_changes": 1
+}

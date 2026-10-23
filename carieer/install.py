@@ -189,6 +189,62 @@ def make_custom_fields():
 					"in_standard_filter": 1,
 				},
 			],
+			# Didox hisob-faktura: har bir tovar / xizmat uchun soliq klassifikatori (tasnif.soliq.uz)
+			"Item": [
+				{
+					"fieldname": "didox_section",
+					"fieldtype": "Section Break",
+					"label": "Didox (soliq)",
+					"insert_after": "description",
+					"collapsible": 1,
+				},
+				{
+					"fieldname": "mxik_kod",
+					"fieldtype": "Data",
+					"label": "MXIK (ИКПУ) kodi",
+					"insert_after": "didox_section",
+					"length": 17,
+				},
+				{
+					"fieldname": "mxik_nomi",
+					"fieldtype": "Data",
+					"label": "MXIK nomi",
+					"insert_after": "mxik_kod",
+				},
+				{
+					"fieldname": "didox_cb",
+					"fieldtype": "Column Break",
+					"insert_after": "mxik_nomi",
+				},
+				{
+					"fieldname": "upakovka_kod",
+					"fieldtype": "Data",
+					"label": "Qadoq (o'lchov) kodi",
+					"insert_after": "didox_cb",
+					"description": "tasnif.soliq.uz'da MXIK kodiga biriktirilgan qadoq kodi (masalan kub metr)",
+				},
+				{
+					"fieldname": "upakovka_nomi",
+					"fieldtype": "Data",
+					"label": "Qadoq nomi",
+					"insert_after": "upakovka_kod",
+				},
+			],
+			# hisob-fakturadagi «к договору №» - mijoz bilan shartnoma
+			"Customer": [
+				{
+					"fieldname": "shartnoma_raqami",
+					"fieldtype": "Data",
+					"label": "Shartnoma raqami",
+					"insert_after": "tax_id",
+				},
+				{
+					"fieldname": "shartnoma_sanasi",
+					"fieldtype": "Date",
+					"label": "Shartnoma sanasi",
+					"insert_after": "shartnoma_raqami",
+				},
+			],
 		},
 		update=True,
 	)

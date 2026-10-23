@@ -44,3 +44,38 @@ frappe.ui.form.on("Sotuv", {
 	items_remove: (frm) => sotuv_calc(frm),
 	xizmatlar_remove: (frm) => sotuv_calc(frm),
 });
+
+// Didox hisob-faktura (tasdiqlangan sotuv)
+frappe.ui.form.on("Sotuv", {
+	refresh(frm) {
+		if (frm.doc.docstatus !== 1 || frm.doc.korrektirovka) return;
+		frappe.require("/assets/carieer/js/didox.js", () => sotuv_didox_buttons(frm));
+	},
+});
+
+function sotuv_didox_buttons(frm) {
+	const ochirilgan = ["O'chirilgan", "Qoralama o'chirilgan"].includes(frm.doc.didox_holati);
+	if (frm.doc.didox_hujjat && !ochirilgan) {
+		frm.add_custom_button(
+			__("Hisob-faktura"),
+			() => frappe.set_route("Form", "Didox Hujjat", frm.doc.didox_hujjat),
+			__("Didox")
+		);
+		return;
+	}
+	frm.add_custom_button(
+		__("Hisob-faktura yaratish"),
+		async () => {
+			const hujjat = await carieer.didox.call("sotuvdan_faktura", { sotuv: frm.doc.name });
+			await frm.reload_doc();
+			frappe.confirm(
+				__("Qoralama Didox'da yaratildi. Hozir ERI bilan imzolab yuborasizmi?"),
+				async () => {
+					await carieer.didox.imzolash(hujjat, frm.doc.company);
+					frm.reload_doc();
+				}
+			);
+		},
+		__("Didox")
+	);
+}
