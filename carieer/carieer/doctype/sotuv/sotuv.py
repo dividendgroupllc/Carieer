@@ -449,7 +449,6 @@ class Sotuv(Document):
 
 
 # ---------------------------------------------------------------- forma (sotuv.js)
-@frappe.whitelist()
 def sales_invoice_cost(sales_invoice: str) -> dict:
 	"""{Sales Invoice Item: ombordan chiqqan tan narx qiymati} - Stock Ledger Entry bo'yicha."""
 	return dict(
@@ -463,6 +462,7 @@ def sales_invoice_cost(sales_invoice: str) -> dict:
 	)
 
 
+@frappe.whitelist()
 def get_item_defaults(item_code: str, tip: str, currency: str | None = None) -> dict:
 	"""Forma: tovar tanlanganda birlik, narx (Item Price) va sotuvchi firma ombori o'zi to'ldiriladi."""
 	frappe.has_permission("Sotuv", "read", throw=True)
