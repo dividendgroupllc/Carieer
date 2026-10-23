@@ -1,7 +1,7 @@
 """O'rnatish va boshlang'ich sozlash (Eko Karer).
 
 Avtomatik (install-app va har bir migrate'dan keyin) - after_migrate():
-  - 3 ta rol: Karer Operator / Kassir / Menejer
+  - 4 ta rol: Karer Operator / Kassir / Omborchi / Menejer
   - Mode of Payment'ga «Firma» maydoni
   - Rollar uchun ERPNext hujjatlariga kerakli minimal ruxsatlar, ombor hisobotlari uchun rollar
   - Item formasidagi keraksiz maydonlar yashiriladi
@@ -13,7 +13,7 @@ Bir marta, qo'lda (firma yaratilgandan keyin):
 
 Xodim qo'shish (rol + faqat o'z firmasi):
   bench --site SITE execute carieer.install.setup_user --kwargs "{'email': 'kassir@karer.uz', 'full_name': 'Ali Valiyev', 'lavozim': 'Kassir', 'password': 'Parol123!'}"
-    lavozim: Operator | Kassir | Menejer
+    lavozim: Operator | Kassir | Omborchi | Menejer
 """
 
 import frappe
@@ -91,6 +91,20 @@ LAVOZIM_PERMS = {
 		"GL Entry": RR,  # moliyaviy hisobotlar
 		"Stock Ledger Entry": RR,  # Ombor qoldig'i / tarixi - faqat ko'rish (kassir Qabul ham qiladi)
 	},
+	"Omborchi": {
+		"Item": R,
+		"UOM": R,
+		"Warehouse": R,
+		"Company": R,
+		"Account": R,  # Stock Entry / Инвентаризация: farq va xarajat hisoblarini tekshiradi
+		"Cost Center": R,
+		"Supplier": ("select",),
+		"BOM": R,
+		"Purchase Invoice": RR,  # Приход - faqat ko'rish
+		"Stock Entry": ("read", "write", "create", "submit", "report", "print"),
+		"Stock Reconciliation": ("read", "write", "create", "submit", "report", "print"),  # Инвентаризация
+		"Stock Ledger Entry": RR,
+	},
 	"Menejer": {
 		"Accounts Settings": R,  # Hisoblar rejasi (Chart of Accounts) sahifasi
 		"Customer": CRW,
@@ -122,10 +136,10 @@ LAVOZIM_PERMS = {
 }
 
 
-def make_standard_permissions():
+def make_standard_permissions(roles=ALL_ROLES):
 	from frappe.permissions import add_permission, update_permission_property
 
-	for role in ALL_ROLES:
+	for role in roles:
 		lavozim = role.split()[-1]
 		for doctype, rights in LAVOZIM_PERMS[lavozim].items():
 			if not frappe.db.exists("DocType", doctype):
@@ -140,8 +154,8 @@ def make_standard_permissions():
 
 # ERPNext hisobotlari (menyuda bor) -> qaysi lavozimlar ochadi. Hisobotning o'z rollari saqlanadi.
 REPORT_ROLES = {
-	"Stock Balance": ("Operator", "Kassir", "Menejer"),  # ombor qoldig'i
-	"Stock Ledger": ("Operator", "Kassir", "Menejer"),  # ombor harakati tarixi
+	"Stock Balance": ("Operator", "Kassir", "Omborchi", "Menejer"),  # ombor qoldig'i
+	"Stock Ledger": ("Operator", "Kassir", "Omborchi", "Menejer"),  # ombor harakati tarixi
 }
 
 
@@ -947,12 +961,12 @@ def seed_kontragentlar(data: dict, company: str) -> dict:
 
 # ============================================================================ xodimlar
 def setup_user(email: str, full_name: str, lavozim: str, password: str | None = None):
-	"""Xodim yaratadi / yangilaydi. lavozim: Operator | Kassir | Menejer.
+	"""Xodim yaratadi / yangilaydi. lavozim: Operator | Kassir | Omborchi | Menejer.
 	Beriladi: «Karer <lavozim>» roli va faqat Karer firmasi (User Permission -> Company va Zavod).
 	Boshqa karer rollari olib tashlanadi."""
 	frappe.only_for("System Manager")
-	if lavozim not in ("Operator", "Kassir", "Menejer"):
-		frappe.throw(_("lavozim: Operator, Kassir yoki Menejer"))
+	if lavozim not in ("Operator", "Kassir", "Omborchi", "Menejer"):
+		frappe.throw(_("lavozim: Operator, Kassir, Omborchi yoki Menejer"))
 	from carieer.utils import find_zavod
 
 	nomi = find_zavod("Karer")

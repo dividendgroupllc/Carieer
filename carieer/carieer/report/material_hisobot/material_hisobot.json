@@ -58,7 +58,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letterhead": null,
- "modified": "2026-10-16 20:00:00.000000",
+ "modified": "2026-10-23 17:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Material Hisobot",
@@ -76,6 +76,9 @@
   },
   {
    "role": "Karer Kassir"
+  },
+  {
+   "role": "Karer Omborchi"
   }
  ],
  "timeout": 0

@@ -1,4 +1,4 @@
-"""Rollar (Karer Operator / Kassir / Menejer), firma bo'yicha ruxsat va menyu (desktop / sidebar) tozaligi.
+"""Rollar (Karer Operator / Kassir / Omborchi / Menejer), firma bo'yicha ruxsat va menyu (desktop / sidebar) tozaligi.
 
 Ma'lumot cheklovi ERPNext'ning o'z mexanizmi bilan: User Permission -> Company.
 Menyu: Karer xodimi faqat Carieer bo'limlarini ko'radi.
@@ -7,11 +7,12 @@ Menyu: Karer xodimi faqat Carieer bo'limlarini ko'radi.
 import frappe
 from frappe import _
 
-KARER_ROLES = ("Karer Operator", "Karer Kassir", "Karer Menejer")
+KARER_ROLES = ("Karer Operator", "Karer Kassir", "Karer Omborchi", "Karer Menejer")
 ALL_ROLES = KARER_ROLES
 
 OPERATOR_ROLES = ("Karer Operator",)
 KASSIR_ROLES = ("Karer Kassir",)
+OMBORCHI_ROLES = ("Karer Omborchi",)
 MENEJER_ROLES = ("Karer Menejer",)
 
 # Bu rollardan biri bo'lsa foydalanuvchi ERPNext'ning boshqa bo'limlarini ham ko'radi (menyu qisqartirilmaydi)
@@ -67,6 +68,12 @@ def check_report_company(filters: frappe._dict):
 	if not filters.company:
 		frappe.throw(_("Firma topilmadi. Avval Company yarating"))
 	check_company(filters.company)
+
+
+def has_app_permission() -> bool:
+	"""hooks.py: add_to_apps_screen. "Carier" ilovasi -> desktop (har bir lavozim o'z workspace'ini ko'radi:
+	Operator, Kassir, Omborchi, Menejer)."""
+	return bool(set(frappe.get_roles()) & (set(ALL_ROLES) | {"System Manager"}))
 
 
 def hide_foreign_icons(bootinfo):

@@ -1,5 +1,5 @@
 app_name = "carieer"
-app_title = "Carieer"
+app_title = "Carier"
 app_publisher = "ismoil"
 app_description = "Eko Karer: sotuv, kassa, nachislenie, ombor va hisobotlar (ERPNext ustida)"
 app_email = "devpy2869@gmail.com"
@@ -8,8 +8,18 @@ app_license = "mit"
 # ERPNext (buxgalteriya, ombor) va HRMS (xodimlar) ustida ishlaydi
 required_apps = ["erpnext", "hrms"]
 
+add_to_apps_screen = [
+	{
+		"name": "carieer",
+		"logo": "/assets/carieer/icons/desktop_icons/solid/karer.svg",
+		"title": "Carier",
+		"route": "/desk",
+		"has_permission": "carieer.permissions.has_app_permission",
+	}
+]
+
 # Formalar, ro'yxatlar va hisobotlar Frappe / ERPNext'ning o'z UI'si bilan ishlaydi (custom JS yo'q).
-# Bo'limlar (desktop ikonkasi + chap menyu): carieer/desktop_icon, carieer/<modul>/sidebar
+# Bo'limlar (desktop ikonkasi + chap menyu): carieer/desktop_icon, carieer/workspace_sidebar
 
 # Menyuni tozalash: Karer xodimi (ERPNext'ning boshqa rollari bo'lmasa) faqat Carieer ikonkalarini ko'radi
 extend_bootinfo = "carieer.permissions.hide_foreign_icons"
