@@ -73,9 +73,16 @@ def hide_foreign_icons(bootinfo):
 	"""hooks.py: extend_bootinfo. Karer xodimi (ERPNext'ning boshqa rollari bo'lmasa) desktop'da faqat Carieer
 	ikonkalarini ko'radi (jadvaldagi varaqlar). ERPNext'ning Accounting, Stock, Selling ... papkalari ularga
 	ko'rinmaydi. System Manager hammasini ko'radi."""
+	icons = bootinfo.get("desktop_icons")
+	if icons:
+		# Carieer ikonkalari o'z tartibida birinchi turadi: desktop idx bo'yicha saralaydi, ERPNext / HRMS
+		# ikonkalari bir xil idx bilan ularning orasiga aralashmasin (System Manager desktopida ham).
+		# Faqat boot nusxasi o'zgaradi, Desktop Icon yozuvlari emas.
+		for icon in icons:
+			if icon.get("app") != "carieer":
+				icon["idx"] = (icon.get("idx") or 0) + 1000
 	roles = set(frappe.get_roles())
 	if roles & POWER_ROLES or not roles & set(ALL_ROLES):
 		return
-	icons = bootinfo.get("desktop_icons")
 	if icons:
 		bootinfo.desktop_icons = [i for i in icons if i.get("app") == "carieer"]
