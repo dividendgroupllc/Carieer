@@ -1,0 +1,471 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "naming_series:",
+ "creation": "2026-10-05 18:00:00.000000",
+ "description": "Продажа карьер: Дата, Клиент, Номер машины, Товары (Наименование, Кол-во, Ед.изм, Цена), Валюта, Курс, Услуги, Оплаты",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "asosiy_section",
+  "naming_series",
+  "posting_date",
+  "posting_time",
+  "cb_1",
+  "customer",
+  "customer_name",
+  "mobile_no",
+  "cb_2",
+  "mashina_raqami",
+  "haydovchi",
+  "vehicle",
+  "dostavka",
+  "tsex",
+  "cb_3",
+  "currency",
+  "conversion_rate",
+  "summa_usd",
+  "status",
+  "tip",
+  "company",
+  "tovar_section",
+  "items",
+  "xizmat_section",
+  "xizmatlar",
+  "tolov_section",
+  "tolovlar",
+  "jami_section",
+  "itog",
+  "xizmat_jami",
+  "cb_5",
+  "amount",
+  "base_amount",
+  "cb_6",
+  "total_paid",
+  "outstanding_amount",
+  "korrektirovka_section",
+  "korrektirovka",
+  "korrektirovka_summa",
+  "tovarlar",
+  "hujjat_section",
+  "sales_invoice",
+  "journal_entry",
+  "cb_7",
+  "izoh",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "asosiy_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "SOT-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Seriya",
+   "options": "SOT-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Дата",
+   "reqd": 1
+  },
+  {
+   "default": "Now",
+   "fieldname": "posting_time",
+   "fieldtype": "Time",
+   "label": "Vaqt"
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Qaysi zavod nomidan sotiladi",
+   "fieldname": "tip",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Тип",
+   "options": "Zavod",
+   "reqd": 1,
+   "default": "Karer",
+   "hidden": 1
+  },
+  {
+   "fetch_from": "tip.company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_standard_filter": 1,
+   "label": "Firma",
+   "options": "Company",
+   "read_only": 1,
+   "hidden": 0
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "UZS",
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Валюта",
+   "link_filters": "[[\"Currency\", \"enabled\", \"=\", 1]]",
+   "options": "Currency",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.conversion_rate && doc.conversion_rate != 1",
+   "fieldname": "conversion_rate",
+   "fieldtype": "Float",
+   "label": "Курс",
+   "precision": "4",
+   "read_only": 1
+  },
+  {
+   "default": "Нет",
+   "fieldname": "dostavka",
+   "fieldtype": "Select",
+   "label": "Доставка",
+   "options": "Нет\nДа"
+  },
+  {
+   "fieldname": "cb_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Holat",
+   "no_copy": 1,
+   "options": "Draft\nTo'lanmagan\nQisman to'langan\nTo'langan\nKorrektirovka\nCancelled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Клиент",
+   "link_filters": "[[\"Customer\", \"disabled\", \"=\", 0]]",
+   "options": "Customer",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Mijoz nomi",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "customer.mobile_no",
+   "fetch_if_empty": 1,
+   "fieldname": "mobile_no",
+   "fieldtype": "Data",
+   "label": "Telefon (SMS)",
+   "options": "Phone"
+  },
+  {
+   "fieldname": "mashina_raqami",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Номер машины",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "haydovchi",
+   "fieldtype": "Data",
+   "label": "Haydovchi"
+  },
+  {
+   "depends_on": "eval:doc.dostavka=='Да'",
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "label": "O'z texnikamiz (dostavka)",
+   "options": "Vehicle"
+  },
+  {
+   "fieldname": "tovar_section",
+   "fieldtype": "Section Break",
+   "label": "Товары"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Товары",
+   "options": "Sotuv Tovar",
+   "reqd": 0,
+   "depends_on": "eval:!doc.korrektirovka"
+  },
+  {
+   "fieldname": "xizmat_section",
+   "fieldtype": "Section Break",
+   "label": "Услуги (погрузчик, доставка ...)"
+  },
+  {
+   "fieldname": "xizmatlar",
+   "fieldtype": "Table",
+   "label": "Услуги",
+   "options": "Sotuv Xizmat",
+   "depends_on": "eval:!doc.korrektirovka"
+  },
+  {
+   "description": "Yakunlangandan (Submit) keyin ham to'lov qo'shish mumkin: qator qo'shing va «Update» bosing",
+   "fieldname": "tolov_section",
+   "fieldtype": "Section Break",
+   "label": "Оплаты"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "tolovlar",
+   "fieldtype": "Table",
+   "label": "Оплаты",
+   "options": "Sotuv Tolov",
+   "depends_on": "eval:!doc.korrektirovka"
+  },
+  {
+   "fieldname": "jami_section",
+   "fieldtype": "Section Break",
+   "label": "Итог"
+  },
+  {
+   "fieldname": "itog",
+   "fieldtype": "Currency",
+   "label": "Итог (товары)",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "xizmat_jami",
+   "fieldtype": "Currency",
+   "label": "Услуги",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Общий",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "base_amount",
+   "fieldtype": "Currency",
+   "label": "Сумма (so'mda)",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_paid",
+   "fieldtype": "Currency",
+   "label": "Оплачено",
+   "no_copy": 1,
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "outstanding_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Долг",
+   "no_copy": 1,
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "hujjat_section",
+   "fieldtype": "Section Break",
+   "label": "Bog'langan hujjatlar"
+  },
+  {
+   "fieldname": "sales_invoice",
+   "fieldtype": "Link",
+   "label": "Sales Invoice",
+   "no_copy": 1,
+   "options": "Sales Invoice",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "izoh",
+   "fieldtype": "Small Text",
+   "label": "Примечание"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Sotuv",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "tsex",
+   "fieldtype": "Data",
+   "label": "Цех"
+  },
+  {
+   "fieldname": "summa_usd",
+   "fieldtype": "Float",
+   "label": "Сумма $",
+   "precision": "2",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "tovarlar",
+   "fieldtype": "Data",
+   "label": "Наименование",
+   "read_only": 1,
+   "no_copy": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "korrektirovka_section",
+   "fieldtype": "Section Break",
+   "label": "Корректировка (tovarsiz)",
+   "collapsible": 1,
+   "description": "Mijozning qarzini tovarsiz tuzatish: musbat summa - qarz oshadi, manfiy - kamayadi. Выручка (P&L) ga kirmaydi."
+  },
+  {
+   "fieldname": "korrektirovka",
+   "fieldtype": "Check",
+   "label": "Корректировка",
+   "no_copy": 1
+  },
+  {
+   "fieldname": "korrektirovka_summa",
+   "fieldtype": "Currency",
+   "label": "Сумма корректировки (+/-)",
+   "options": "currency",
+   "depends_on": "korrektirovka",
+   "no_copy": 1
+  },
+  {
+   "fieldname": "journal_entry",
+   "fieldtype": "Link",
+   "label": "Journal Entry",
+   "options": "Journal Entry",
+   "read_only": 1,
+   "no_copy": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-09 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Sotuv",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Menejer",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Kassir",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Operator",
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "customer_name,mashina_raqami",
+ "show_title_field_in_link": 0,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [
+  {
+   "color": "Red",
+   "title": "To'lanmagan"
+  },
+  {
+   "color": "Orange",
+   "title": "Qisman to'langan"
+  },
+  {
+   "color": "Green",
+   "title": "To'langan"
+  },
+  {
+   "color": "Blue",
+   "title": "Korrektirovka"
+  },
+  {
+   "color": "Gray",
+   "title": "Cancelled"
+  }
+ ],
+ "title_field": "customer_name",
+ "track_changes": 1
+}

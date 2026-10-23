@@ -1,0 +1,150 @@
+{
+ "actions": [],
+ "creation": "2026-10-05 18:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_code",
+  "item_name",
+  "qty",
+  "uom",
+  "rate",
+  "amount",
+  "cb_1",
+  "warehouse",
+  "conversion_factor",
+  "stock_qty",
+  "currency",
+  "item_group",
+  "narx_ss",
+  "summa_ss"
+ ],
+ "fields": [
+  {
+   "columns": 3,
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Наименование",
+   "link_filters": "[[\"Item\", \"disabled\", \"=\", 0], [\"Item\", \"is_sales_item\", \"=\", 1], [\"Item\", \"is_stock_item\", \"=\", 1]]",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "item_code.item_name",
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Tovar nomi",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Кол-во",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "description": "Bo'sh qoldirilsa tovarning sotuv birligi",
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "in_list_view": 0,
+   "label": "Ед.изм",
+   "options": "UOM"
+  },
+  {
+   "columns": 2,
+   "description": "0 qoldirilsa narx «Narxlar (Item Price)» dan olinadi",
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Цена",
+   "options": "currency",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Сумма",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "columns": 1,
+   "description": "Bo'sh qoldirilsa o'zi qo'yiladi",
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Ombor",
+   "link_filters": "[[\"Warehouse\", \"company\", \"=\", \"eval:parent.company\"], [\"Warehouse\", \"is_group\", \"=\", 0]]",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "conversion_factor",
+   "fieldtype": "Float",
+   "label": "Koeffitsiyent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "stock_qty",
+   "fieldtype": "Float",
+   "label": "Ombor birligida",
+   "read_only": 1
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Valyuta",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "item_group",
+   "fieldtype": "Data",
+   "label": "Тип категории",
+   "fetch_from": "item_code.item_group",
+   "read_only": 1,
+   "in_list_view": 0
+  },
+  {
+   "fieldname": "narx_ss",
+   "fieldtype": "Currency",
+   "label": "Цена СС",
+   "options": "currency",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "summa_ss",
+   "fieldtype": "Currency",
+   "label": "Сумма СС",
+   "options": "currency",
+   "read_only": 1,
+   "no_copy": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-05 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Sotuv Tovar",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 0
+}

@@ -1,119 +1,170 @@
-# Material Hisobot (материальный отчёт): tovar + ombor bo'yicha
-# boshlang'ich qoldiq -> kirim (qazib olindi / ishlab chiqarildi / xarid / firmalararo / boshqa)
-# -> chiqim (sotildi / ishlab chiqarishga sarf / texnikaga / boshqa) -> yakuniy qoldiq va qiymati.
+# Material Hisobot ("Материальный отчет"): davr uchun har bir tovar bo'yicha
+#   Нач. остаток -> Приход -> Расход -> Кон. остаток (miqdor ombor birligida va summa so'mda).
+# Manba: Stock Ledger Entry (Sotuv, Приход, Инвентаризация, Stock Entry - ombor harakati bo'lgan barcha hujjatlar).
+# Karer tovari tan narxi 0 (yerdan qazib olinadi): uning summasi 0, miqdori esa to'liq ko'rinadi.
 
 import frappe
 from frappe import _
 from frappe.utils import flt
 
-IN_COLS = [
-	("kirim_qazish", _("Qazib olindi")),
-	("kirim_ishlab", _("Ishlab chiqarildi")),
-	("kirim_xarid", _("Xarid")),
-	("kirim_kochirish", _("Ko'chirib kelindi")),
-	("kirim_boshqa", _("Boshqa kirim")),
-]
-OUT_COLS = [
-	("chiqim_sotuv", _("Sotildi")),
-	("chiqim_ishlab", _("Ishlab chiqarishga")),
-	("chiqim_kochirish", _("Boshqa omborga ko'chirildi")),
-	("chiqim_boshqa", _("Boshqa chiqim (texnika, spisaniye)")),
-]
+from carieer.carieer.report.common import prepare
+
+QTY = ("nach_qty", "prixod_qty", "rasxod_qty", "kon_qty")
+VAL = ("nach_val", "prixod_val", "rasxod_val", "kon_val")
 
 
 def execute(filters=None):
-	filters = frappe._dict(filters or {})
-	return get_columns(), get_data(filters)
+	filters = prepare(filters, period="month")
+	currency = frappe.get_cached_value("Company", filters.company, "default_currency")
+	data = get_data(filters)
+	return get_columns(filters, currency), data, None, None, get_summary(data, currency)
 
 
-def get_columns():
+def get_columns(filters, currency):
 	cols = [
-		{"fieldname": "item_code", "label": _("Tovar"), "fieldtype": "Link", "options": "Item", "width": 140},
-		{"fieldname": "item_name", "label": _("Nomi"), "fieldtype": "Data", "width": 140},
-		{"fieldname": "warehouse", "label": _("Ombor"), "fieldtype": "Link", "options": "Warehouse", "width": 150},
-		{"fieldname": "stock_uom", "label": _("Birlik"), "fieldtype": "Data", "width": 60},
-		{"fieldname": "opening_qty", "label": _("Boshlang'ich qoldiq"), "fieldtype": "Float", "width": 120},
+		{
+			"label": _("Тип"),
+			"fieldname": "item_group",
+			"fieldtype": "Link",
+			"options": "Item Group",
+			"width": 120,
+		},
+		{
+			"label": _("Наименование"),
+			"fieldname": "item_code",
+			"fieldtype": "Link",
+			"options": "Item",
+			"width": 170,
+		},
+		{"label": _("Ед.изм."), "fieldname": "uom", "fieldtype": "Link", "options": "UOM", "width": 75},
 	]
-	for f, label in IN_COLS + OUT_COLS:
-		cols.append({"fieldname": f, "label": label, "fieldtype": "Float", "width": 110})
-	cols += [
-		{"fieldname": "closing_qty", "label": _("Yakuniy qoldiq"), "fieldtype": "Float", "width": 120},
-		{"fieldname": "closing_value", "label": _("Qoldiq qiymati"), "fieldtype": "Currency", "width": 130},
-	]
+	if filters.get("by_warehouse"):
+		cols.append(
+			{
+				"label": _("Омбор"),
+				"fieldname": "warehouse",
+				"fieldtype": "Link",
+				"options": "Warehouse",
+				"width": 150,
+			}
+		)
+	for key, label in (
+		("nach", _("Нач. остаток")),
+		("prixod", _("Приход")),
+		("rasxod", _("Расход")),
+		("kon", _("Кон. остаток")),
+	):
+		cols.append(
+			{
+				"label": f"{label}: " + _("кол-во"),
+				"fieldname": f"{key}_qty",
+				"fieldtype": "Float",
+				"width": 120,
+			}
+		)
+		cols.append(
+			{
+				"label": f"{label}: " + _("сумма"),
+				"fieldname": f"{key}_val",
+				"fieldtype": "Currency",
+				"options": currency,
+				"width": 130,
+			}
+		)
 	return cols
 
 
 def get_data(filters):
-	cond = ["sle.is_cancelled = 0", "sle.posting_date <= %(to_date)s"]
-	if filters.get("company"):
-		cond.append("sle.company = %(company)s")
-	if filters.get("item_code"):
-		cond.append("sle.item_code = %(item_code)s")
+	cond = ["sle.company = %(company)s", "sle.is_cancelled = 0", "sle.posting_date <= %(to_date)s"]
 	if filters.get("warehouse"):
-		lft, rgt = frappe.db.get_value("Warehouse", filters.warehouse, ["lft", "rgt"])
-		cond.append(f"sle.warehouse in (select name from `tabWarehouse` where lft >= {int(lft)} and rgt <= {int(rgt)})")
-
-	rows = frappe.db.sql(
-		f"""select sle.item_code, sle.warehouse, sle.posting_date, sle.actual_qty, sle.stock_value_difference,
-			sle.voucher_type, sle.voucher_no, se.purpose
-		from `tabStock Ledger Entry` sle
-		left join `tabStock Entry` se on sle.voucher_type = 'Stock Entry' and se.name = sle.voucher_no
-		where {" and ".join(cond)}""",
+		cond.append("sle.warehouse = %(warehouse)s")
+	if filters.get("item_group"):
+		cond.append("item.item_group = %(item_group)s")
+	sles = frappe.db.sql(
+		f"""select sle.item_code, sle.warehouse, sle.posting_date, sle.qty_after_transaction,
+			sle.stock_value_difference, item.item_group, item.stock_uom uom
+		from `tabStock Ledger Entry` sle join `tabItem` item on item.name = sle.item_code
+		where {" and ".join(cond)}
+		order by sle.item_code, sle.warehouse, sle.posting_datetime, sle.creation""",
 		filters,
 		as_dict=True,
 	)
-
-	qazish_se = set(frappe.get_all("Qazib Olish", filters={"docstatus": 1}, pluck="stock_entry"))
-	from_date = frappe.utils.getdate(filters.from_date)
-	out = {}
-	for r in rows:
-		key = (r.item_code, r.warehouse)
-		d = out.setdefault(key, frappe._dict(item_code=r.item_code, warehouse=r.warehouse, opening_qty=0, closing_qty=0, closing_value=0))
-		qty = flt(r.actual_qty)
-		d.closing_qty += qty
-		d.closing_value += flt(r.stock_value_difference)
-		if r.posting_date < from_date:
-			d.opening_qty += qty
+	by_warehouse = filters.get("by_warehouse")
+	rows, last_qty = {}, {}
+	for e in sles:
+		# Инвентаризация (Stock Reconciliation) actual_qty'ni 0 yozadi, yangi qoldiqni esa qty_after_transaction'da
+		# saqlaydi: shuning uchun harakat har doim oldingi qoldiqdan farq sifatida olinadi
+		prev = last_qty.get((e.item_code, e.warehouse), 0.0)
+		qty = flt(e.qty_after_transaction) - prev
+		last_qty[(e.item_code, e.warehouse)] = flt(e.qty_after_transaction)
+		val = flt(e.stock_value_difference)
+		key = (e.item_code, e.warehouse if by_warehouse else "")
+		r = rows.setdefault(
+			key,
+			frappe._dict(
+				item_code=e.item_code,
+				item_group=e.item_group,
+				uom=e.uom,
+				warehouse=key[1],
+				**dict.fromkeys(QTY + VAL, 0.0),
+			),
+		)
+		r.kon_qty += qty
+		r.kon_val += val
+		if e.posting_date < filters.from_date:
+			r.nach_qty += qty
+			r.nach_val += val
 			continue
-		col = classify(r, qty, qazish_se)
-		d[col] = flt(d.get(col)) + abs(qty)
-
-	items = {}
-	if out:
-		for it in frappe.get_all(
-			"Item", filters={"name": ["in", list({k[0] for k in out})]}, fields=["name", "item_name", "stock_uom"]
-		):
-			items[it.name] = it
+		# miqdorsiz qayta baholash (qty 0, summa bor): musbat - kirimga, manfiy - chiqimga
+		incoming = qty > 0 or (qty == 0 and val > 0)
+		if incoming:
+			r.prixod_qty += qty
+			r.prixod_val += val
+		else:
+			r.rasxod_qty -= qty
+			r.rasxod_val -= val
 
 	data = []
-	for (item_code, _wh), d in sorted(out.items()):
-		it = items.get(item_code) or {}
-		d.item_name = it.get("item_name")
-		d.stock_uom = it.get("stock_uom")
-		if not filters.get("show_zero") and not any(
-			flt(d.get(f)) for f in ["opening_qty", "closing_qty"] + [c[0] for c in IN_COLS + OUT_COLS]
-		):
+	for r in sorted(rows.values(), key=lambda r: (r.item_group or "", r.item_code, r.warehouse)):
+		if not any(abs(flt(r[f])) >= 0.0005 for f in QTY + VAL):
 			continue
-		data.append(d)
+		for f in QTY + VAL:
+			r[f] = flt(r[f], 3 if f in QTY else 2) or None
+		data.append(r)
 	return data
 
 
-def classify(r, qty, qazish_se):
-	vt, purpose = r.voucher_type, r.purpose
-	if qty > 0:
-		if vt == "Stock Entry" and r.voucher_no in qazish_se:
-			return "kirim_qazish"
-		if vt == "Stock Entry" and purpose in ("Manufacture", "Repack"):
-			return "kirim_ishlab"
-		if vt in ("Purchase Receipt", "Purchase Invoice"):
-			return "kirim_xarid"
-		if vt == "Stock Entry" and purpose == "Material Transfer":
-			return "kirim_kochirish"
-		return "kirim_boshqa"
-	if vt in ("Sales Invoice", "Delivery Note", "POS Invoice"):
-		return "chiqim_sotuv"
-	if vt == "Stock Entry" and purpose in ("Manufacture", "Repack", "Material Consumption for Manufacture"):
-		return "chiqim_ishlab"
-	if vt == "Stock Entry" and purpose == "Material Transfer":
-		return "chiqim_kochirish"
-	return "chiqim_boshqa"
+def get_summary(data, currency):
+	def total(f):
+		return sum(flt(r.get(f)) for r in data)
+
+	return [
+		{
+			"label": _("Нач. остаток"),
+			"value": total("nach_val"),
+			"datatype": "Currency",
+			"currency": currency,
+			"indicator": "Gray",
+		},
+		{
+			"label": _("Приход"),
+			"value": total("prixod_val"),
+			"datatype": "Currency",
+			"currency": currency,
+			"indicator": "Green" if abs(total("prixod_val")) >= 0.005 else "Gray",
+		},
+		{
+			"label": _("Расход"),
+			"value": total("rasxod_val"),
+			"datatype": "Currency",
+			"currency": currency,
+			"indicator": "Red" if abs(total("rasxod_val")) >= 0.005 else "Gray",
+		},
+		{
+			"label": _("Кон. остаток"),
+			"value": total("kon_val"),
+			"datatype": "Currency",
+			"currency": currency,
+			"indicator": "Blue" if abs(total("kon_val")) >= 0.005 else "Gray",
+		},
+	]

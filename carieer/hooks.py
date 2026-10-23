@@ -1,38 +1,54 @@
 app_name = "carieer"
-app_title = "Carieer"
+app_title = "Carier"
 app_publisher = "ismoil"
-app_description = "Karer, beton, texnika va hisobotlar (ERPNext ustida)"
+app_description = "Eko Karer: sotuv, kassa, nachislenie, ombor va hisobotlar (ERPNext ustida)"
 app_email = "devpy2869@gmail.com"
 app_license = "mit"
 
-required_apps = ["erpnext"]
+# ERPNext (buxgalteriya, ombor) va HRMS (xodimlar) ustida ishlaydi
+required_apps = ["erpnext", "hrms"]
 
-# Bosh sahifadagi (Desktop) "Karer" ikonkasi -> Karer bo'limi (barcha shortcut'lar shu yerda)
 add_to_apps_screen = [
 	{
 		"name": "carieer",
-		"logo": "/assets/carieer/karer-logo.svg",
-		"title": "Karer",
-		"route": "/desk/karer",
-		"has_permission": "carieer.utils.has_app_permission",
+		"logo": "/assets/carieer/icons/desktop_icons/solid/karer.svg",
+		"title": "Carier",
+		"route": "/desk",
+		"has_permission": "carieer.permissions.has_app_permission",
 	}
 ]
+
+# Formalar, ro'yxatlar va hisobotlar Frappe / ERPNext'ning o'z UI'si bilan ishlaydi (custom JS yo'q).
+# Bo'limlar (desktop ikonkasi + chap menyu): carieer/desktop_icon, carieer/workspace_sidebar
+
+# Menyuni tozalash: Karer xodimi (ERPNext'ning boshqa rollari bo'lmasa) faqat Carieer ikonkalarini ko'radi
+extend_bootinfo = "carieer.permissions.hide_foreign_icons"
 
 # O'rnatish / migrate
 after_install = "carieer.install.after_install"
 after_migrate = "carieer.install.after_migrate"
 
-# Tashqaridan (masalan Payment Entry formasidan) kiritilgan to'lovlar ham Karer Sotuv statusini yangilasin
 doc_events = {
+	# Tashqaridan (Kassa, Payment Entry) kiritilgan to'lovlar ham Sotuv'dagi qarz va holatni yangilasin
 	"Payment Entry": {
-		"on_submit": "carieer.carieer.doctype.karer_sotuv.karer_sotuv.on_payment_entry_change",
-		"on_cancel": "carieer.carieer.doctype.karer_sotuv.karer_sotuv.on_payment_entry_change",
+		"validate": "carieer.utils.validate_payment_kassa",
+		"on_submit": "carieer.carieer.doctype.sotuv.sotuv.on_payment_entry_change",
+		"on_cancel": "carieer.carieer.doctype.sotuv.sotuv.on_payment_entry_change",
 	},
-}
-
-# Vehicle ga qo'shilgan custom fieldlar install.py da yaratiladi (fixtures shart emas)
-
-# GPS Malumot jadvali cheksiz o'smasin: 90 kundan eski nuqtalar har kuni o'chiriladi
-scheduler_events = {
-	"daily": ["carieer.api.cleanup_gps"],
+	# Yangi xarajat / daromad kategoriyasi -> firmada shu modda hisobi
+	"Kassa Kategoriya": {
+		"on_update": "carieer.install.make_kategoriya_accounts",
+	},
+	# Kassa nazorati: har bir kassaning o'z hisobi va to'g'ri valyutasi bo'lsin
+	"Mode of Payment": {
+		"validate": "carieer.utils.validate_mode_of_payment",
+	},
+	# Teskari kiritilgan valyuta kursi (UZS -> USD = 11 900) bloklanadi
+	"Currency Exchange": {
+		"validate": "carieer.utils.validate_currency_exchange",
+	},
+	# Инвентаризация: karer tovari tan narxi 0 bo'lishi mumkin
+	"Stock Reconciliation": {
+		"before_validate": "carieer.events.stock_reconciliation_before_validate",
+	},
 }

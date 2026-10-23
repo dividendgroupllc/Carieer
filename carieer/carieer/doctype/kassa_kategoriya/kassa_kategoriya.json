@@ -1,0 +1,123 @@
+{
+ "actions": [],
+ "allow_import": 1,
+ "autoname": "field:kategoriya",
+ "creation": "2026-10-05 18:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "kategoriya",
+  "turi",
+  "taqsimot",
+  "cb1",
+  "guruh_1",
+  "guruh_2",
+  "hisob_nomi",
+  "sb1",
+  "izoh"
+ ],
+ "fields": [
+  {
+   "fieldname": "kategoriya",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Kategoriya",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "Ikkalasi",
+   "fieldname": "turi",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Turi",
+   "options": "Ikkalasi\nKirim\nChiqim"
+  },
+  {
+   "fieldname": "taqsimot",
+   "fieldtype": "Select",
+   "label": "Распределение (Оборот)",
+   "options": "\nПроизв\nПрибыль\nНа ОС\nДолг\nИнвестиция\nДивиденд\nКонвертация\nНе имеется"
+  },
+  {
+   "fieldname": "cb1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "guruh_1",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Категория верхнего уровня"
+  },
+  {
+   "fieldname": "guruh_2",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Категория 2 типа"
+  },
+  {
+   "description": "Bo'sh bo'lsa kategoriya nomi bilan bir xil nomli hisob ishlatiladi",
+   "fieldname": "hisob_nomi",
+   "fieldtype": "Data",
+   "label": "Hisob nomi (hisoblar rejasida)"
+  },
+  {
+   "fieldname": "sb1",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "izoh",
+   "fieldtype": "Small Text",
+   "label": "Izoh"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-13 22:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Kassa Kategoriya",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Menejer",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Karer Kassir"
+  },
+  {
+   "read": 1,
+   "role": "Karer Operator"
+  }
+ ],
+ "sort_field": "kategoriya",
+ "sort_order": "ASC",
+ "states": [],
+ "title_field": "kategoriya",
+ "track_changes": 1
+}

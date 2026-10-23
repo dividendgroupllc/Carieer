@@ -1,0 +1,75 @@
+{
+ "actions": [],
+ "creation": "2026-10-05 18:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "xizmat",
+  "qty",
+  "rate",
+  "amount",
+  "currency"
+ ],
+ "fields": [
+  {
+   "columns": 4,
+   "fieldname": "xizmat",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Наименование операции",
+   "link_filters": "[[\"Item\", \"disabled\", \"=\", 0], [\"Item\", \"is_sales_item\", \"=\", 1], [\"Item\", \"is_stock_item\", \"=\", 0]]",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "default": "1",
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Кол-во",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Цена",
+   "options": "currency",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Сумма",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Valyuta",
+   "options": "Currency",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-05 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Sotuv Xizmat",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 0
+}
