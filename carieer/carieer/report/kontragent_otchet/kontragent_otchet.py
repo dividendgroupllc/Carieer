@@ -29,6 +29,7 @@ from carieer.carieer.report.common import (
 	resolve_party,
 	turi_ok,
 )
+from carieer.utils import get_zavod
 
 PARTY_FIELD = {"Customer": "customer", "Supplier": "supplier", "Employee": "employee"}
 BOSQICH = (("nach", _("нач.")), ("obor", _("оборот")), ("kon", _("кон.")))
@@ -131,6 +132,16 @@ def get_data(filters):
 		filters,
 		as_dict=True,
 	)
+	# Акт сверка kontragentning birinchi harakatidan ochilsin: boshlang'ich qoldiq tarixi ham ko'rinadi
+	first_dates = {
+		(r.party_type, r.party): r.first_date
+		for r in frappe.db.sql(
+			f"""select party_type, party, min(posting_date) first_date from `tabGL Entry`
+			where {" and ".join(cond)} group by party_type, party""",
+			filters,
+			as_dict=True,
+		)
+	}
 	company_currency = frappe.get_cached_value("Company", filters.company, "default_currency")
 	foreign = next((r.currency for r in rows if r.currency != company_currency), "USD")
 	parties = {}
@@ -148,7 +159,9 @@ def get_data(filters):
 				"party_type": r.party_type,
 				"party": r.party,
 				"turi": kontragent_turi(r.party_type, r.party),
-				"akt_sverka": akt_link(filters, r.party_type, r.party),
+				"akt_sverka": akt_link(
+					filters, r.party_type, r.party, first_dates.get((r.party_type, r.party))
+				),
 				"cur_sum": company_currency,
 				"cur_usd": foreign,
 				**{f: 0.0 for f in AMOUNT_FIELDS},
@@ -301,7 +314,7 @@ def get_summary(t):
 	return out
 
 
-def akt_link(filters, party_type, party):
+def akt_link(filters, party_type, party, first_date=None):
 	field = PARTY_FIELD.get(party_type)
 	if not field:
 		return PARTY_LABELS.get(party_type, "")
@@ -309,7 +322,9 @@ def akt_link(filters, party_type, party):
 		{
 			"company": filters.company,
 			field: party,
-			"from_date": str(filters.from_date),
+			"from_date": str(min(first_date or filters.from_date, filters.from_date)),
+			# shu firmaning menyusi (firma filtri menyu nomidan olinadi)
+			"sidebar": f"Акт сверка {get_zavod(filters.company).get('name') or ''}".strip(),
 			"to_date": str(filters.to_date),
 		}
 	)

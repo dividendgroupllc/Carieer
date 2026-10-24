@@ -43,7 +43,7 @@ def resolve_parties(filters) -> bool:
 def get_columns():
 	cur = {"fieldtype": "Currency", "options": "currency", "width": 120}
 	return [
-		{"label": _("Дата"), "fieldname": "posting_date", "fieldtype": "Date", "width": 90},
+		{"label": _("Дата"), "fieldname": "posting_date", "fieldtype": "Date", "width": 105},
 		{"label": _("Ҳужжат"), "fieldname": "voucher_label", "fieldtype": "Data", "width": 110},
 		{
 			"label": _("Ҳужжат №"),
@@ -111,7 +111,8 @@ def get_data(filters):
 
 	# yig'ma jadval: har valyuta (sum / usd) uchun [kredit, debet] juftliklari
 	summary = {
-		g: {"opening": 0.0, "payment": [0.0, 0.0], "shipment": [0.0, 0.0], "closing": 0.0} for g in ("sum", "usd")
+		g: {"opening": 0.0, "payment": [0.0, 0.0], "shipment": [0.0, 0.0], "closing": 0.0}
+		for g in ("sum", "usd")
 	}
 	data = []
 	for cur in currencies:
@@ -125,6 +126,8 @@ def get_data(filters):
 				**split_balance(balances.get(cur, 0.0)),
 			}
 		)
+		# qoldiq nimadan iborat: davr boshigacha bo'lgan hujjatlar (qator ostida ochiladi)
+		data.extend(opening_details(filters, cur, balances.get(cur, 0.0)))
 	for g in gl:
 		cur = g.currency
 		grp = "sum" if cur == company_currency else "usd"
@@ -169,7 +172,14 @@ def get_data(filters):
 					row.update(split_balance(balances[cur]))
 				data.append(row)
 		else:
-			data.append({**base, "item_name": item_label(g.voucher_type, credit, debit), "amount": amount, **split_balance(balances[cur])})
+			data.append(
+				{
+					**base,
+					"item_name": item_label(g.voucher_type, credit, debit),
+					"amount": amount,
+					**split_balance(balances[cur]),
+				}
+			)
 
 	for cur in currencies:
 		grp = "sum" if cur == company_currency else "usd"
@@ -179,12 +189,84 @@ def get_data(filters):
 				"posting_date": filters.to_date,
 				"voucher_label": bold(_("Жами")),
 				"currency": cur,
-				"amount": sum(r.get("amount") or 0 for r in data if r.get("currency") == cur and r.get("voucher_no")),
-				"payment": sum(r.get("payment") or 0 for r in data if r.get("currency") == cur and r.get("voucher_no")),
+				"amount": sum(r.get("amount") or 0 for r in period_rows(data, cur)),
+				"payment": sum(r.get("payment") or 0 for r in period_rows(data, cur)),
 				**split_balance(balances.get(cur, 0.0)),
 			}
 		)
+	for row in data:
+		row.setdefault("indent", 0)
 	return data, summary
+
+
+def period_rows(data, currency):
+	"""Davr hujjatlari (boshlang'ich qoldiq tarkibidagi oldingi hujjatlarsiz)."""
+	return [r for r in data if r.get("currency") == currency and r.get("voucher_no") and not r.get("indent")]
+
+
+def opening_details(filters, currency, opening) -> list[dict]:
+	"""Boshlang'ich qoldiq tarkibi: davr boshigacha bo'lgan, qoldiq tomonidagi hujjatlar - eng oxirgisidan boshlab
+	qoldiq summasiga yetguncha (eski hujjatlar oldin yopilgan deb hisoblanadi, FIFO). Qisman yopilgani izohda."""
+	if abs(opening) < 0.005:
+		return []
+	side = "credit_in_account_currency - debit_in_account_currency"
+	if opening < 0:
+		side = "debit_in_account_currency - credit_in_account_currency"
+	docs = frappe.db.sql(
+		f"""select posting_date, voucher_type, voucher_no, sum({side}) amount, min(creation) creation
+		from `tabGL Entry`
+		where company=%(company)s and {filters.party_cond} and posting_date < %(from_date)s and is_cancelled=0
+			and account_currency=%(currency)s
+		group by posting_date, voucher_type, voucher_no
+		having amount > 0
+		order by posting_date desc, creation desc""",
+		{**filters, "currency": currency},
+		as_dict=True,
+	)
+	qolgan, tanlangan = abs(opening), []
+	for d in docs:
+		if qolgan < 0.005:
+			break
+		tanlangan.append((d, min(flt(d.amount), qolgan)))
+		qolgan -= flt(d.amount)
+
+	items = get_invoice_items(
+		[d.voucher_no for d, _x in tanlangan if d.voucher_type in ("Sales Invoice", "Purchase Invoice")]
+	)
+	komment = get_komments([d for d, _x in tanlangan])
+	rows = []
+	for d, ulush in reversed(tanlangan):
+		izoh = [_("олдинги давр")]
+		if ulush < flt(d.amount) - 0.005:
+			izoh.append(_("қолдиққа {0} кирди").format(frappe.format(ulush, {"fieldtype": "Currency"})))
+		if komment.get(d.voucher_no):
+			izoh.append(komment[d.voucher_no])
+		base = {
+			"indent": 1,
+			"posting_date": d.posting_date,
+			"voucher_type": d.voucher_type,
+			"voucher_no": d.voucher_no,
+			"voucher_label": voucher_label(d.voucher_type),
+			"currency": currency,
+			"komment": " · ".join(izoh),
+		}
+		lines = items.get(d.voucher_no)
+		if not lines:
+			rows.append({**base, "amount": flt(d.amount, 2)})
+			continue
+		total = sum(flt(i.base_net_amount) for i in lines) or 1
+		for i in lines:
+			rows.append(
+				{
+					**base,
+					"item_name": i.item_name,
+					"qty": i.qty,
+					"uom": i.uom,
+					"rate": i.rate,
+					"amount": flt(flt(d.amount) * flt(i.base_net_amount) / total, 2),
+				}
+			)
+	return rows
 
 
 def shipment_amount(voucher_type, credit, debit) -> float:
@@ -268,6 +350,7 @@ def get_summary_html(s, filters):
 
 	td = "padding:8px 10px;border:1px solid var(--border-color);"
 	head = "background:var(--subtle-accent);font-weight:600;"
+
 	def pair(grp, key):
 		v = s[grp][key]
 		if isinstance(v, list):
