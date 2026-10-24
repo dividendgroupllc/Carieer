@@ -1,0 +1,30 @@
+{
+ "app": "carieer",
+ "creation": "2026-10-24 15:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "Link",
+ "idx": 3,
+ "label": "Cash Flow Beton",
+ "link_type": "Workspace Sidebar",
+ "modified": "2026-10-24 15:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "Cash Flow Beton",
+ "owner": "Administrator",
+ "parent_icon": "Hisobotlar Beton",
+ "restrict_removal": 1,
+ "roles": [
+  {
+   "role": "Beton Kassir"
+  },
+  {
+   "role": "Beton Menejer"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "standard": 1,
+ "link_to": "Cash Flow Beton"
+}

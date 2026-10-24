@@ -13,7 +13,11 @@
   "eskiz_password",
   "eskiz_from",
   "kassa_section",
-  "kassa_minus_ruxsat"
+  "kassa_minus_ruxsat",
+  "gps_section",
+  "gps_token",
+  "gps_cb",
+  "gps_saqlash_kun"
  ],
  "fields": [
   {
@@ -77,12 +81,33 @@
    "fieldtype": "Check",
    "label": "Kassada minus qoldiqqa ruxsat berish",
    "permlevel": 1
+  },
+  {
+   "fieldname": "gps_section",
+   "fieldtype": "Section Break",
+   "label": "GPS"
+  },
+  {
+   "description": "Telefon (Traccar Client) va GPS trekkerlar shu token bilan ma'lumot yuboradi",
+   "fieldname": "gps_token",
+   "fieldtype": "Password",
+   "label": "GPS API token"
+  },
+  {
+   "fieldname": "gps_cb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "90",
+   "fieldname": "gps_saqlash_kun",
+   "fieldtype": "Int",
+   "label": "GPS nuqtalar necha kun saqlansin"
   }
  ],
  "index_web_pages_for_search": 0,
  "issingle": 1,
  "links": [],
- "modified": "2026-10-23 18:00:00.000000",
+ "modified": "2026-10-24 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Karer Sozlamalari",

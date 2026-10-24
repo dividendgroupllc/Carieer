@@ -1,0 +1,62 @@
+{
+ "creation": "2026-10-24 15:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "modified": "2026-10-24 15:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "Didox",
+ "owner": "Administrator",
+ "app": "carieer",
+ "header_icon": "file",
+ "idx": 0,
+ "module": "Carieer",
+ "standard": 1,
+ "title": "Didox",
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "doctype": "Workspace Sidebar Item",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Hisob-fakturalar",
+   "link_type": "DocType",
+   "parentfield": "items",
+   "parenttype": "Workspace Sidebar",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Didox Hujjat",
+   "idx": 1
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "doctype": "Workspace Sidebar Item",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Didox hisoboti",
+   "link_type": "Report",
+   "parentfield": "items",
+   "parenttype": "Workspace Sidebar",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Didox Hisobot",
+   "idx": 2
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "doctype": "Workspace Sidebar Item",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Didox sozlamalari",
+   "link_type": "DocType",
+   "parentfield": "items",
+   "parenttype": "Workspace Sidebar",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Didox Sozlamalari",
+   "idx": 3
+  }
+ ]
+}

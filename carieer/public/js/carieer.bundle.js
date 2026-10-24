@@ -1,3 +1,6 @@
+import "./desktop_groups";
+import "./sidebar_url";
+
 // Karer / Beton xodimi: ro'yxat va hisobotlarda firma filtrida o'z firmasi turadi. Rahbar (ikkala firma) - qaysi
 // bo'limdan kirgan bo'lsa (Kassa Karer / Kassa Beton ...) o'sha firma. Bo'lim almashganda filtr ham almashadi,
 // aks holda xodim tanlagani qoladi. Ma'lumotni baribir User Permission cheklaydi - bu faqat qulaylik.

@@ -1,0 +1,19 @@
+{
+ "creation": "2026-10-24 15:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "Kassa",
+ "filters_json": "{\"zavod\": \"Karer\"}",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Kassalar qoldig'i",
+ "method": "carieer.carieer.dashboard.kassa_qoldigi",
+ "modified": "2026-10-24 15:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Kassa qoldig'i Karer",
+ "owner": "Administrator",
+ "show_percentage_stats": 0,
+ "type": "Custom"
+}

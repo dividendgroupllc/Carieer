@@ -195,6 +195,65 @@ def make_report_roles():
 def make_custom_fields():
 	create_custom_fields(
 		{
+			# Texnika: turi, GPS qurilma va oxirgi joy (Vehicle «Map» ko'rinishi, «Texnikalar xaritasi»)
+			"Vehicle": [
+				{
+					"fieldname": "karer_section",
+					"fieldtype": "Section Break",
+					"label": "Texnika va GPS",
+					"insert_after": "employee",
+				},
+				{
+					"fieldname": "texnika_turi",
+					"fieldtype": "Select",
+					"label": "Texnika turi",
+					"options": "\nSamosval\nBetonovoz (mikser)\nEkskavator\nBuldozer\nPogruzchik\nKran\nYengil mashina\nBoshqa",
+					"insert_after": "karer_section",
+					"in_list_view": 1,
+					"in_standard_filter": 1,
+				},
+				{
+					"fieldname": "gps_imei",
+					"fieldtype": "Data",
+					"label": "GPS qurilma IMEI",
+					"insert_after": "texnika_turi",
+					"unique": 1,
+					"search_index": 1,
+					"description": "Traccar Client'dagi «Device identifier» yoki trekker IMEI",
+				},
+				{"fieldname": "karer_cb", "fieldtype": "Column Break", "insert_after": "gps_imei"},
+				{
+					"fieldname": "gps_vaqt",
+					"fieldtype": "Datetime",
+					"label": "Oxirgi GPS vaqti",
+					"insert_after": "karer_cb",
+					"read_only": 1,
+					"in_list_view": 1,
+				},
+				{
+					"fieldname": "latitude",
+					"fieldtype": "Float",
+					"label": "Latitude",
+					"precision": "7",
+					"insert_after": "gps_vaqt",
+					"read_only": 1,
+				},
+				{
+					"fieldname": "longitude",
+					"fieldtype": "Float",
+					"label": "Longitude",
+					"precision": "7",
+					"insert_after": "latitude",
+					"read_only": 1,
+				},
+				{
+					"fieldname": "gps_tezlik",
+					"fieldtype": "Float",
+					"label": "Tezlik (km/soat)",
+					"insert_after": "longitude",
+					"read_only": 1,
+				},
+			],
 			# Kassa qaysi firmaniki: kassa tanlash ro'yxatlari shu bo'yicha filtrlanadi
 			# Hisoblar jadvalidan o'zi qo'yiladi.
 			"Mode of Payment": [

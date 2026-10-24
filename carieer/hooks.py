@@ -53,10 +53,16 @@ doc_events = {
 	"Stock Reconciliation": {
 		"before_validate": "carieer.events.stock_reconciliation_before_validate",
 	},
+	# GPS IMEI yozilganda eski nuqtalarga ham mashina raqami qo'yiladi
+	"Vehicle": {
+		"on_update": "carieer.api.sync_vehicle_gps",
+	},
 }
 
-# Didox: firmalarning kiruvchi / chiquvchi elektron hujjatlari tarixi «Didox Hujjat» jurnaliga tortiladi
+# Didox: firmalarning kiruvchi / chiquvchi elektron hujjatlari tarixi «Didox Hujjat» jurnaliga tortiladi.
+# GPS Malumot jadvali cheksiz o'smasin: eski nuqtalar har kuni o'chiriladi.
 scheduler_events = {
+	"daily": ["carieer.api.cleanup_gps"],
 	"cron": {
 		"*/30 * * * *": ["carieer.didox.sync.sync_all"],
 	},

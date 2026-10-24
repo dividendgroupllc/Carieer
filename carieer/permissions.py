@@ -101,10 +101,12 @@ def hide_foreign_icons(bootinfo):
 
 def boot_firma(bootinfo):
 	"""hooks.py: extend_bootinfo. Ro'yxat / hisobotlarda firma filtri (public/js/carieer.bundle.js): bo'lim -> firma
-	(faqat xodimga ruxsat berilganlari) va standart firma. Karer / Beton rollari bo'lmasa - filtr qo'yilmaydi."""
+	(faqat xodimga ruxsat berilganlari) va standart firma. Karer / Beton rollari yoki System Manager bo'lmasa -
+	filtr qo'yilmaydi."""
 	from carieer.utils import company_for_bolim
 
-	if not set(frappe.get_roles()) & set(ALL_ROLES):
+	roles = set(frappe.get_roles())
+	if not roles & set(ALL_ROLES) and "System Manager" not in roles:
 		return
 	allowed = get_allowed_companies()
 	bolimlar = {}
