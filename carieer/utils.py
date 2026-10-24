@@ -30,6 +30,18 @@ def find_zavod(bolim: str | None) -> str | None:
 	return None
 
 
+def user_zavod(tip: str | None) -> str | None:
+	"""Sotuv «Тип»: xodimga User Permission (Zavod) berilgan bo'lsa - faqat uning zavodi (Beton operatori
+	Karer nomidan sotolmaydi). Bir nechta zavodi bo'lsa (rahbar) tanlagani qoladi. Cheklov yo'q - o'zgarmaydi."""
+	from frappe.core.doctype.user_permission.user_permission import get_permitted_documents
+
+	allowed = get_permitted_documents("Zavod")
+	if not allowed or tip in allowed:
+		return tip
+	default = frappe.defaults.get_user_default("Zavod")
+	return default if default in allowed else allowed[0]
+
+
 def company_for_bolim(bolim: str | None) -> str | None:
 	"""Bo'lim -> firma (dashboard uchun). Zavod yozuvi bo'lmasa - nomida shu so'z bo'lgan firma."""
 	zavod = find_zavod(bolim)

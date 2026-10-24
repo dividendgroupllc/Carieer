@@ -1,6 +1,12 @@
 [pre_model_sync]
 # Patches added in this section will be executed before doctypes are migrated
+carieer.patches.make_karer_omborchi_role
+carieer.patches.make_bolim_roles
 
 [post_model_sync]
 # Patches added in this section will be executed after doctypes are migrated
 carieer.patches.sotuv_ss_from_stock_ledger
+carieer.patches.rename_eko_karer_to_eko_carier
+carieer.patches.workspace_per_lavozim
+carieer.patches.omborchi_permissions
+carieer.patches.beton_bolimi

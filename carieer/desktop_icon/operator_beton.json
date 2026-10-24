@@ -1,0 +1,32 @@
+{
+ "creation": "2026-10-23 18:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "modified": "2026-10-23 18:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "Operator Beton",
+ "owner": "Administrator",
+ "app": "carieer",
+ "hidden": 0,
+ "icon": "sotuv",
+ "icon_type": "Link",
+ "idx": 4,
+ "label": "Operator Beton",
+ "link_to": "Operator Beton",
+ "link_type": "Workspace Sidebar",
+ "logo_url": "",
+ "parent_icon": "",
+ "restrict_removal": 1,
+ "roles": [
+  {
+   "role": "Beton Operator"
+  },
+  {
+   "role": "Beton Menejer"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "standard": 1
+}

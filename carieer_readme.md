@@ -1,9 +1,11 @@
-# Carieer — Eko Karer (ERPNext v16 ustida)
+# Carieer — Eko Karer va Eko Beton (ERPNext v16 ustida)
 
-Google Sheets'dagi «Эко Карьер» jadvalining o'rnini bosadigan tizim: **sotuv posti, kassa, начисление, приход,
-приход ОС, инвентаризация va jadvaldagi barcha hisobotlar** (Оборотка, Акт сверка, ДДС, Cash Flow, P&L, Баланс ...).
+Google Sheets'dagi «Эко Карьер» va «Эко Бетон» jadvallarining o'rnini bosadigan tizim: **sotuv posti, kassa,
+начисление, приход, приход ОС, инвентаризация, beton ishlab chiqarish (retsept) va jadvaldagi barcha hisobotlar**
+(Оборотка, Акт сверка, ДДС, Cash Flow, P&L, Баланс ...).
 
-> Faqat **Eko Karer** firmasi. Eko Beton (ishlab chiqarish, retsept, texnika / GPS) — alohida loyiha.
+> Ikki firma — ikki bo'lim: **Karer** va **Beton**. Har bir bo'limning o'z rollari, workspace'lari va xodimlari bor
+> (3-bo'lim). Texnika / GPS — alohida loyiha.
 >
 > **Formalarda custom JS yo'q.** Forma, ro'yxat, hisobot va menyu Frappe / ERPNext'ning o'z UI'si bilan ishlaydi.
 > Mantiq Python'da (`validate`, `on_submit`), filtrlar DocType va Report JSON'ida.
@@ -38,9 +40,9 @@ Desktop'dagi har bir ikonka jadvaldagi bitta varaq. Xodim faqat o'z roliga tegis
 | Контрагент отчет нев | **Kontragent Oylik** — kontragent × oy: Приход, Продажа, Услуга, Деньги | Kassir, Menejer |
 | Материальный отчет | **Material Hisobot** — tovar bo'yicha qoldiq, kirim, chiqim | Kassir, Menejer |
 
-Rollar: **Karer Operator** (sotuv posti), **Karer Kassir**, **Karer Menejer**. Xodim faqat o'z firmasini ko'radi
-(User Permission → Company / Zavod), desktop'da faqat Carieer ikonkalari (`permissions.hide_foreign_icons`).
-Ikonka kimga ko'rinishi — `desktop_icon/*.json` dagi `roles`.
+Rollar: **Karer / Beton Operator** (sotuv posti), **Kassir**, **Omborchi**, **Menejer** (masalan «Beton Kassir»).
+Xodim faqat o'z firmasini ko'radi (User Permission → Company / Zavod), desktop'da faqat o'z bo'limining Carieer
+ikonkalari (`permissions.hide_foreign_icons`). Ikonka kimga ko'rinishi — `desktop_icon/*.json` dagi `roles`.
 
 ## 2. O'rnatish
 
@@ -55,14 +57,43 @@ bench build --app carieer
 # kontragentlar, kurs) - carieer/data/dispetcher.json dan
 bench --site SITE execute carieer.install.setup_karer --kwargs "{'karer_company': 'Eko Karer'}"
 
-# xodimlar (lavozim: Operator | Kassir | Menejer)
+# Beton firmasi: omborlar (Beton ombori, Beton xomashyo), «Beton ...» kassalari, Zavod «Beton», 7 ta retsept (BOM),
+# Karer <-> Beton firmalararo mijoz / ta'minotchi
+bench --site SITE execute carieer.install.setup_beton --kwargs "{'beton_company': 'Eko Beton'}"
+
+# xodimlar (lavozim: Operator | Kassir | Omborchi | Menejer, bolim: Karer | Beton | "Karer,Beton")
 bench --site SITE execute carieer.install.setup_user \
-    --kwargs "{'email': 'kassir@ekokarer.uz', 'full_name': 'Karer Kassir', 'lavozim': 'Kassir', 'password': 'Parol123!'}"
+    --kwargs "{'email': 'kassir@karer.uz', 'full_name': 'Karer Kassir', 'lavozim': 'Kassir', 'bolim': 'Karer', 'password': '...'}"
+bench --site SITE execute carieer.install.setup_user \
+    --kwargs "{'email': 'kassir@beton.uz', 'full_name': 'Beton Kassir', 'lavozim': 'Kassir', 'bolim': 'Beton', 'password': '...'}"
+# rahbar - ikkala firma
+bench --site SITE execute carieer.install.setup_user \
+    --kwargs "{'email': 'rahbar@karer.uz', 'full_name': 'Rahbar', 'lavozim': 'Menejer', 'bolim': 'Karer,Beton', 'password': '...'}"
 ```
 
 Kod yangilangandan keyin: `bench --site SITE migrate && bench build --app carieer`.
 
 ## 3. Kundalik ish
+
+### Eko Beton
+
+| Bo'lim | Karer | Beton | User (misol) |
+|---|---|---|---|
+| Sotuv posti | Operator Karer | Operator Beton | operator@karer.uz / operator@beton.uz |
+| Kassa | Kassa Karer | Kassa Beton | kassir@karer.uz / kassir@beton.uz |
+| Ombor | Ombor Karer | Ombor Beton | omborchi@karer.uz / omborchi@beton.uz |
+| Rahbariyat | Menejer Karer | Menejer Beton | menejer@karer.uz / menejer@beton.uz |
+
+- **Retsept** (Рецептура) — har bir marka uchun BOM (1 куб): Цемент, Клинец, Шебень, Сув, Хим.добавка, Антимороз.
+  Retseptni menejer o'zgartiradi (BOM nusxasi → «Is Default»).
+- **Sotuv = ishlab chiqarish.** Beton operatori markani sotib tasdiqlaganda retsept bo'yicha «Производство» (Stock Entry
+  Manufacture) o'zi yoziladi: xomashyo «Beton xomashyo» omboridan ayriladi, beton «Beton ombori»ga kirib sotiladi.
+  Tan narx (Цена СС) = sarflangan xomashyo qiymati. Sotuv bekor qilinsa, ishlab chiqarish ham bekor bo'ladi.
+- **Karer → Beton.** Karer operatori mijoz sifatida «Beton» firmasini tanlab shag'al sotsa, Beton firmasida xarid
+  fakturasi (Приход) o'zi yaratiladi (tovar Beton xomashyo omboriga kiradi). Ikki tomon qarzi «Фирмалараро қарзлар»
+  hisobotida, farq 0 bo'lishi kerak. Firmalararo sotuv faqat so'mda.
+- **Hisobotlar:** «Расход сырья по рецепту» (Retsept Sarfi — me'yor / fakt / farq), «СС бетон» (Beton Tannarxi — oyma-oy
+  1 куб tannarxi xomashyo bo'yicha), qolganlari Karer bilan umumiy (firma filtri bilan).
 
 **Tovar.** Karer mahsuloti (qum, sheben, klinets) — «Maintain Stock» ✅, tan narxi **0** (yerdan qazib olinadi).
 Qoldiq **Инвентаризация** (Stock Reconciliation) bilan kiritiladi, tan narx 0 ruxsat etilgan. Sotuv qoldiq yetmasa

@@ -1,0 +1,47 @@
+{
+ "app": "carieer",
+ "creation": "2026-10-23 12:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 1,
+ "icon_type": "App",
+ "idx": 1,
+ "label": "Carier",
+ "link": "/desk",
+ "link_type": "External",
+ "logo_url": "/assets/carieer/icons/desktop_icons/solid/karer.svg",
+ "modified": "2026-10-23 18:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "Carier",
+ "owner": "Administrator",
+ "roles": [
+  {
+   "role": "Karer Operator"
+  },
+  {
+   "role": "Karer Kassir"
+  },
+  {
+   "role": "Karer Omborchi"
+  },
+  {
+   "role": "Karer Menejer"
+  },
+  {
+   "role": "Beton Operator"
+  },
+  {
+   "role": "Beton Kassir"
+  },
+  {
+   "role": "Beton Omborchi"
+  },
+  {
+   "role": "Beton Menejer"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "standard": 1
+}

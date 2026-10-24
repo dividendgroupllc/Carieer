@@ -25,6 +25,7 @@ frappe.ui.form.on("Sotuv Tovar", {
 				item_name: v.item_name,
 				uom: v.uom,
 				warehouse: v.warehouse,
+				bom: v.bom,
 				qty: flt(row.qty) || 1,
 				rate: flt(row.rate) || v.rate,
 			});
@@ -41,6 +42,15 @@ frappe.ui.form.on("Sotuv Xizmat", {
 });
 
 frappe.ui.form.on("Sotuv", {
+	onload(frm) {
+		// «Тип» (zavod): Beton xodimi - Beton, Karer xodimi - Karer. Ikkala zavodi bor (rahbar) - o'zi tanlaydi.
+		const zavodlar = (frappe.defaults.get_user_permissions().Zavod || []).map((p) => p.doc);
+		frm.toggle_display("tip", zavodlar.length > 1);
+		if (!frm.is_new()) return;
+		frappe
+			.xcall("carieer.carieer.doctype.sotuv.sotuv.get_user_zavod", { tip: frm.doc.tip })
+			.then((tip) => tip && tip !== frm.doc.tip && frm.set_value("tip", tip));
+	},
 	items_remove: (frm) => sotuv_calc(frm),
 	xizmatlar_remove: (frm) => sotuv_calc(frm),
 });

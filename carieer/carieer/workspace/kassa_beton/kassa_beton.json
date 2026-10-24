@@ -1,0 +1,205 @@
+{
+ "creation": "2026-10-23 18:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "modified": "2026-10-23 18:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "Kassa Beton",
+ "owner": "Administrator",
+ "app": "carieer",
+ "charts": [],
+ "content": "[{\"id\": \"h0\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Jurnallar</b></span>\", \"col\": 12}}, {\"id\": \"s0_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Касса бетон\", \"col\": 3}}, {\"id\": \"s0_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Начисление бетон\", \"col\": 3}}, {\"id\": \"s0_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Продажа бетон\", \"col\": 3}}, {\"id\": \"s0_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sotuv: to'lov qatorlari\", \"col\": 3}}, {\"id\": \"sp0\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>ERPNext hujjatlari</b></span>\", \"col\": 12}}, {\"id\": \"s1_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Payment Entry\", \"col\": 3}}, {\"id\": \"s1_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Journal Entry\", \"col\": 3}}, {\"id\": \"s1_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Sales Invoice\", \"col\": 3}}, {\"id\": \"s1_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Purchase Invoice (Приход)\", \"col\": 3}}, {\"id\": \"sp1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h2\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Hisobotlar</b></span>\", \"col\": 12}}, {\"id\": \"s2_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"ДДС\", \"col\": 3}}, {\"id\": \"s2_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Cash Flow\", \"col\": 3}}, {\"id\": \"s2_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Оборотка Контрагентов\", \"col\": 3}}, {\"id\": \"s2_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Акт сверка\", \"col\": 3}}, {\"id\": \"s2_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Кардорликлар\", \"col\": 3}}, {\"id\": \"s2_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"БД контрагент\", \"col\": 3}}, {\"id\": \"s2_6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Постав/Клиент\", \"col\": 3}}, {\"id\": \"s2_7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Постав Клиент Факт\", \"col\": 3}}, {\"id\": \"s2_8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Контрагент отчет нев\", \"col\": 3}}, {\"id\": \"s2_9\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Отчет\", \"col\": 3}}, {\"id\": \"s2_10\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Фирмалараро қарзлар\", \"col\": 3}}, {\"id\": \"s2_11\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"СС бетон\", \"col\": 3}}, {\"id\": \"sp2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h3\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Справочники</b></span>\", \"col\": 12}}, {\"id\": \"s3_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kategoriyalar\", \"col\": 3}}, {\"id\": \"s3_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Hisoblar (Счета)\", \"col\": 3}}, {\"id\": \"s3_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kurs\", \"col\": 3}}, {\"id\": \"s3_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Mijozlar\", \"col\": 3}}, {\"id\": \"s3_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ta'minotchilar\", \"col\": 3}}, {\"id\": \"sp3\", \"type\": \"spacer\", \"data\": {\"col\": 12}}]",
+ "custom_blocks": [],
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "organization",
+ "idx": 5,
+ "is_hidden": 0,
+ "label": "Kassa Beton",
+ "links": [],
+ "module": "Carieer",
+ "number_cards": [],
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [
+  {
+   "role": "Beton Kassir"
+  },
+  {
+   "role": "Beton Menejer"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "sequence_id": 5.0,
+ "shortcuts": [
+  {
+   "type": "DocType",
+   "label": "Касса бетон",
+   "link_to": "Kassa",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Начисление бетон",
+   "link_to": "Nachislenie",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Продажа бетон",
+   "link_to": "Sotuv",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Sotuv: to'lov qatorlari",
+   "link_to": "Sotuv Tolov",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Payment Entry",
+   "link_to": "Payment Entry",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Journal Entry",
+   "link_to": "Journal Entry",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Sales Invoice",
+   "link_to": "Sales Invoice",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Purchase Invoice (Приход)",
+   "link_to": "Purchase Invoice",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "type": "Report",
+   "label": "ДДС",
+   "link_to": "DDS",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "Cash Flow",
+   "link_to": "Pul Oqimi",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "Оборотка Контрагентов",
+   "link_to": "Kontragent Otchet",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "Акт сверка",
+   "link_to": "Akt Sverka",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "Кардорликлар",
+   "link_to": "Qarzdorlik",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "БД контрагент",
+   "link_to": "BD Kontragent",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "Постав/Клиент",
+   "link_to": "Postav Klient",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "Постав Клиент Факт",
+   "link_to": "Postav Klient Fakt",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "Контрагент отчет нев",
+   "link_to": "Kontragent Oylik",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "Отчет",
+   "link_to": "Kontrol Hisobot",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "Фирмалараро қарзлар",
+   "link_to": "Firmalararo Qarzlar",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "СС бетон",
+   "link_to": "Beton Tannarxi",
+   "color": "Grey"
+  },
+  {
+   "type": "DocType",
+   "label": "Kategoriyalar",
+   "link_to": "Kassa Kategoriya",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Hisoblar (Счета)",
+   "link_to": "Mode of Payment",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Kurs",
+   "link_to": "Currency Exchange",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Mijozlar",
+   "link_to": "Customer",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Ta'minotchilar",
+   "link_to": "Supplier",
+   "color": "Grey",
+   "doc_view": "List"
+  }
+ ],
+ "title": "Kassa Beton",
+ "type": "Workspace"
+}

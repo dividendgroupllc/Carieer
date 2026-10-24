@@ -52,6 +52,7 @@
   "didox_hujjat",
   "didox_holati",
   "journal_entry",
+  "firmalararo_xarid",
   "cb_7",
   "izoh",
   "amended_from"
@@ -106,7 +107,6 @@
    "fetch_from": "tip.company",
    "fieldname": "company",
    "fieldtype": "Link",
-   "ignore_user_permissions": 1,
    "in_standard_filter": 1,
    "label": "Firma",
    "options": "Company",
@@ -397,6 +397,15 @@
    "options": "Journal Entry",
    "read_only": 1,
    "no_copy": 1
+  },
+  {
+   "description": "Mijoz - boshqa firmamiz (Karer -> Beton): o'sha firmada o'zi yaratilgan xarid fakturasi",
+   "fieldname": "firmalararo_xarid",
+   "fieldtype": "Link",
+   "label": "Firmalararo xarid (Приход)",
+   "options": "Purchase Invoice",
+   "read_only": 1,
+   "no_copy": 1
   }
  ],
  "index_web_pages_for_search": 0,
@@ -442,6 +451,21 @@
    "amend": 1,
    "cancel": 1,
    "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Beton Menejer",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
    "export": 1,
    "print": 1,
    "read": 1,
@@ -451,11 +475,32 @@
    "write": 1
   },
   {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Beton Kassir",
+   "submit": 1,
+   "write": 1
+  },
+  {
    "create": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "Karer Operator",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Beton Operator",
    "submit": 1,
    "write": 1
   }
