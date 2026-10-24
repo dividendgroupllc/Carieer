@@ -29,7 +29,6 @@ from carieer.carieer.report.common import (
 	resolve_party,
 	turi_ok,
 )
-from carieer.utils import get_zavod
 
 PARTY_FIELD = {"Customer": "customer", "Supplier": "supplier", "Employee": "employee"}
 BOSQICH = (("nach", _("нач.")), ("obor", _("оборот")), ("kon", _("кон.")))
@@ -323,8 +322,6 @@ def akt_link(filters, party_type, party, first_date=None):
 			"company": filters.company,
 			field: party,
 			"from_date": str(min(first_date or filters.from_date, filters.from_date)),
-			# shu firmaning menyusi (firma filtri menyu nomidan olinadi)
-			"sidebar": f"Акт сверка {get_zavod(filters.company).get('name') or ''}".strip(),
 			"to_date": str(filters.to_date),
 		}
 	)
