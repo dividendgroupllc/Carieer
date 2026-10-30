@@ -6,9 +6,10 @@
 # Avans bo'lsa (oldindan to'lagan) - qaysi to'lov ortib qolgani ko'rsatiladi.
 #
 # Manba - GL (buxgalteriya daftari): sotuv, nachislenie, kassa, boshlang'ich qoldiq, to'lovlar hammasi hisobga olinadi.
-# Taqsimot (filtr «Taqsimot»): standart - jadvaldagidek FIFO: to'lov eng eski hujjatlarni yopadi, qoldiq eng yangi
-# sotuvlarda qoladi va yoshi bo'yicha 0-7 / 7+ / 14+ / 21+ kun ustunlariga bo'linadi. «ERPNext» - to'lov aynan qaysi
-# hujjatga yozilgan bo'lsa (Payment Ledger) o'sha hujjat yopiladi. To'langan hujjatlar qarzga kirmaydi, lekin tarixda turadi.
+# Taqsimot: to'lov aynan qaysi sotuvga qilingan bo'lsa («To'lov qabul qilish», Payment Ledger) o'sha sotuv yopiladi -
+# Sotuv formasidagi qarz bilan bir xil. Hujjatga bog'lanmagan to'lov (Kassa, avans) jadvaldagidek FIFO: eng eski qarzni
+# yopadi, qoldiq eng yangi sotuvlarda qoladi va yoshi bo'yicha 0-7 / 7+ / 14+ / 21+ kun ustunlariga bo'linadi.
+# To'langan hujjatlar qarzga kirmaydi, lekin tarixda turadi.
 
 import frappe
 from frappe import _
@@ -179,11 +180,7 @@ def get_data(filters, only_debt=False):
 	for e in entries:
 		by_party.setdefault((e.party_type, e.party, e.currency), []).append(e)
 	details = get_details(entries, filters.turi)
-	if filters.get("taqsimot") == "ERPNext":
-		to_doc, by_pay = get_allocations(filters)
-	else:
-		# jadvaldagidek: to'lov eng eski hujjatlarni yopadi (FIFO), qoldiq - eng yangi sotuvlarda
-		to_doc, by_pay = {}, {}
+	to_doc, by_pay = get_allocations(filters)
 
 	parties = []
 	for (party_type, party, currency), rows in by_party.items():

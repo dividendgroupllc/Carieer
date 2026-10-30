@@ -34,27 +34,18 @@
    "wildcard_filter": 0
   },
   {
+   "default": "1",
    "fieldname": "hammasi",
    "fieldtype": "Check",
    "label": "To'langan hujjatlar ham (tarix)",
    "mandatory": 0,
-   "wildcard_filter": 0,
-   "default": "1"
+   "wildcard_filter": 0
   },
   {
    "fieldname": "show_zero",
    "fieldtype": "Check",
    "label": "Нол қолдиқларни кўрсатиш",
    "mandatory": 0,
-   "wildcard_filter": 0
-  },
-  {
-   "default": "FIFO",
-   "fieldname": "taqsimot",
-   "fieldtype": "Select",
-   "label": "Тўловни тақсимлаш",
-   "mandatory": 0,
-   "options": "FIFO\nERPNext",
    "wildcard_filter": 0
   }
  ],
