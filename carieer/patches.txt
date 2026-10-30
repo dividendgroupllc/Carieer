@@ -11,3 +11,4 @@ carieer.patches.workspace_per_lavozim
 carieer.patches.omborchi_permissions
 carieer.patches.beton_bolimi
 carieer.patches.qazib_olish_title
+carieer.patches.firmalararo_supplier_group

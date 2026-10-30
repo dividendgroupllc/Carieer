@@ -73,7 +73,7 @@ class QazibOlish(Document):
 				)
 			row.item_name = item.item_name
 			row.uom = item.stock_uom
-			row.sex = row.sex or default_sex(row.item_name)
+			row.tsex = row.tsex or default_tsex(row.item_name)
 
 	def on_submit(self):
 		se = frappe.new_doc("Stock Entry")
@@ -126,11 +126,11 @@ def items_title(items) -> str:
 	)[:140]
 
 
-def default_sex(item_name: str | None) -> str | None:
+def default_tsex(item_name: str | None) -> str | None:
 	"""Tovar nomidan цех: «Шебень» -> «Шебень цех» (jadvaldagi ro'yxatda bo'lsa)."""
-	options = (frappe.get_meta("Qazib Olish Tovar").get_field("sex").options or "").split("\n")
-	sex = f"{item_name} цех" if item_name else None
-	return sex if sex in options else None
+	options = (frappe.get_meta("Qazib Olish Tovar").get_field("tsex").options or "").split("\n")
+	tsex = f"{item_name} цех" if item_name else None
+	return tsex if tsex in options else None
 
 
 @frappe.whitelist()

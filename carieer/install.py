@@ -1045,7 +1045,7 @@ def setup_firmalararo():
 	selling = frappe.get_single("Selling Settings")
 	customer_group = selling.customer_group or frappe.db.get_value("Customer Group", {"is_group": 0}, "name")
 	territory = selling.territory or frappe.db.get_value("Territory", {"is_group": 0}, "name")
-	supplier_group = frappe.db.get_value("Supplier Group", {"is_group": 0}, "name")
+	supplier_group = oddiy_supplier_group()
 	out = {}
 	for company in companies:
 		others = [c for c in companies if c != company]
@@ -1067,6 +1067,17 @@ def setup_firmalararo():
 			doc.save()
 			out.setdefault(company, {})[doctype] = doc.name
 	return out
+
+
+def oddiy_supplier_group() -> str | None:
+	"""Ichki ta'minotchi (boshqa firmamiz) guruhi: «Налог» / «Прочие лица» bo'lmasin - aks holda hisobotlarda soliq
+	bo'lib ketadi va Qarzdorlik «Поставщик»da ko'rinmaydi."""
+	return frappe.db.get_single_value("Buying Settings", "supplier_group") or frappe.db.get_value(
+		"Supplier Group",
+		{"is_group": 0, "name": ["not in", KONTRAGENT_GURUHLARI]},
+		"name",
+		order_by="creation asc",
+	)
 
 
 

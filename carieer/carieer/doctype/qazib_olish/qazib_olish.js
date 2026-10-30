@@ -66,12 +66,12 @@ frappe.ui.form.on("Qazib Olish Tovar", {
 		if (!row.item_code) return;
 		frappe.db.get_value("Item", row.item_code, ["item_name", "stock_uom"]).then((r) => {
 			const v = r.message || {};
-			const sex = `${v.item_name} цех`;
-			const options = (frappe.meta.get_docfield(cdt, "sex").options || "").split("\n");
+			const tsex = `${v.item_name} цех`;
+			const options = (frappe.meta.get_docfield(cdt, "tsex").options || "").split("\n");
 			frappe.model.set_value(cdt, cdn, {
 				item_name: v.item_name,
 				uom: v.stock_uom,
-				...(!row.sex && options.includes(sex) ? { sex } : {}),
+				...(!row.tsex && options.includes(tsex) ? { tsex } : {}),
 			});
 		});
 	},
