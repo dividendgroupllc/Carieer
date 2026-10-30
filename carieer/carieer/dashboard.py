@@ -1,9 +1,9 @@
 # «Panel Karer» / «Panel Beton» raqamli kartalari (Number Card, turi Custom).
-# Karta filtri: {"zavod": "Karer"}. Summalar firma valyutasida (so'm): USD sotuv va kassalar kurs bilan.
+# Karta filtri: {"zavod": "Karer"}. Summalar firma valyutasida (so'm), to'liq: USD sotuv va kassalar kurs bilan.
 
 import frappe
 from frappe import _
-from frappe.utils import get_first_day, nowdate
+from frappe.utils import fmt_money, get_first_day, nowdate
 
 from carieer.permissions import check_company
 from carieer.utils import get_company_currency, kassalar_jami
@@ -18,8 +18,10 @@ def get_company(filters) -> str:
 	return company
 
 
-def money(value, company) -> dict:
-	return {"value": value or 0, "fieldtype": "Currency", "currency": get_company_currency(company)}
+def money(value, company) -> str:
+	"""To'liq summa tiyingacha («73,400,000.00 so'm»): kartaga tayyor matn berilsa Frappe uni «73.40 M» qilib
+	qisqartirmaydi."""
+	return fmt_money(value or 0, precision=2, currency=get_company_currency(company))
 
 
 def sotuv_summa(company, from_date) -> float:
@@ -31,21 +33,21 @@ def sotuv_summa(company, from_date) -> float:
 
 
 @frappe.whitelist()
-def bugungi_sotuv(filters=None) -> dict:
+def bugungi_sotuv(filters=None) -> str:
 	frappe.has_permission("Sotuv", "read", throw=True)
 	company = get_company(filters)
 	return money(sotuv_summa(company, nowdate()), company)
 
 
 @frappe.whitelist()
-def oylik_sotuv(filters=None) -> dict:
+def oylik_sotuv(filters=None) -> str:
 	frappe.has_permission("Sotuv", "read", throw=True)
 	company = get_company(filters)
 	return money(sotuv_summa(company, get_first_day(nowdate())), company)
 
 
 @frappe.whitelist()
-def debitor_qarz(filters=None) -> dict:
+def debitor_qarz(filters=None) -> str:
 	"""Mijozlarning bizga qarzi (Кардорликлар jami): mijoz hisoblaridagi debet - kredit."""
 	frappe.has_permission("Sotuv", "read", throw=True)
 	company = get_company(filters)
@@ -58,7 +60,7 @@ def debitor_qarz(filters=None) -> dict:
 
 
 @frappe.whitelist()
-def kassa_qoldigi(filters=None) -> dict:
+def kassa_qoldigi(filters=None) -> str:
 	frappe.has_permission("Kassa", "read", throw=True)
 	company = get_company(filters)
 	return money(kassalar_jami(company), company)
@@ -90,14 +92,14 @@ def kassa_harakati(company) -> tuple[float, float]:
 
 
 @frappe.whitelist()
-def bugungi_kirim(filters=None) -> dict:
+def bugungi_kirim(filters=None) -> str:
 	frappe.has_permission("Kassa", "read", throw=True)
 	company = get_company(filters)
 	return money(kassa_harakati(company)[0], company)
 
 
 @frappe.whitelist()
-def bugungi_chiqim(filters=None) -> dict:
+def bugungi_chiqim(filters=None) -> str:
 	frappe.has_permission("Kassa", "read", throw=True)
 	company = get_company(filters)
 	return money(kassa_harakati(company)[1], company)

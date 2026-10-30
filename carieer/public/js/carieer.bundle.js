@@ -34,6 +34,40 @@ carieer.sidebar_for_company = function (company, prefer) {
 	}
 };
 
+// Sahifa yangilanganda (F5) Frappe menyuni o'zi tanlaydi: eslab qolgan narsasi menyu bandi nomi bo'yicha
+// («Sotuvlar»), qidirgani hujjat turi bo'yicha («Sotuv») - mos kelmaydi va shu hujjat bor birinchi menyu
+// (masalan «Panel Beton») ochiladi, firma filtri ham o'sha firmaga o'tib ketadi. Shu tab'da oxirgi turgan
+// menyu saqlanadi va u shu sahifani o'z ichiga olsa - o'sha menyu qaytadi.
+const SIDEBAR_KEY = "carieer_sidebar";
+$(window).on("beforeunload", () => {
+	try {
+		sessionStorage.setItem(SIDEBAR_KEY, frappe.app?.sidebar?.sidebar_title || "");
+	} catch (e) {
+		// sessionStorage yo'q (maxfiy rejim) - Frappe'ning o'z tanlovi qoladi
+	}
+});
+const resolve_sidebar = frappe.ui.Sidebar.prototype.resolve_sidebar;
+frappe.ui.Sidebar.prototype.resolve_sidebar = function (entity, module) {
+	if (!this.sidebar_title) {
+		let saved = null;
+		try {
+			saved = sessionStorage.getItem(SIDEBAR_KEY);
+		} catch (e) {
+			saved = null;
+		}
+		const candidates = this.get_workspace_sidebars(entity);
+		// hisobot menyularining birinchi bandi URL («/desk/query-report/Balans?sidebar=...»)
+		const by_url = (frappe.boot.workspace_sidebar_item[(saved || "").toLowerCase()]?.items || []).some(
+			(item) => item.url && decodeURIComponent(item.url.split("?")[0]).endsWith("/" + entity)
+		);
+		if (saved && (candidates.includes(saved) || by_url)) {
+			this.preferred_sidebars = candidates.includes(saved) ? candidates : [saved, ...candidates];
+			return saved;
+		}
+	}
+	return resolve_sidebar.call(this, entity, module);
+};
+
 $(document).on("form-refresh", (e, frm) => {
 	if (frm?.doc?.company && !frm.is_new()) carieer.sidebar_for_company(frm.doc.company);
 });
