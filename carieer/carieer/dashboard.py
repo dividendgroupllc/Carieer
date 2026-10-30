@@ -1,10 +1,12 @@
 # «Panel Karer» / «Panel Beton» raqamli kartalari (Number Card, turi Custom).
 # Karta filtri: {"zavod": "Karer"}. Summalar firma valyutasida (so'm), to'liq: USD sotuv va kassalar kurs bilan.
+# «Qazib olindi» kartalari - miqdor birligi bilan («200 Куб»).
 
 import frappe
 from frappe import _
 from frappe.utils import fmt_money, get_first_day, nowdate
 
+from carieer.carieer.report.common import fmt_qty
 from carieer.permissions import check_company
 from carieer.utils import get_company_currency, kassalar_jami
 
@@ -103,3 +105,27 @@ def bugungi_chiqim(filters=None) -> str:
 	frappe.has_permission("Kassa", "read", throw=True)
 	company = get_company(filters)
 	return money(kassa_harakati(company)[1], company)
+
+
+def qazib_olindi(company, from_date) -> str:
+	"""Qazib olingan tovar miqdori birligi bilan: «200 Куб» (birliklar har xil bo'lsa «200 Куб · 5 Tonne»)."""
+	rows = frappe.db.sql(
+		"""select i.uom, sum(i.qty) qty from `tabQazib Olish Tovar` i
+		join `tabQazib Olish` q on q.name = i.parent
+		where q.company = %s and q.docstatus = 1 and q.posting_date between %s and %s
+		group by i.uom order by qty desc""",
+		(company, from_date, nowdate()),
+	)
+	return " · ".join(f"{fmt_qty(qty)} {uom or ''}".strip() for uom, qty in rows) or "0"
+
+
+@frappe.whitelist()
+def bugun_qazib_olindi(filters=None) -> str:
+	frappe.has_permission("Qazib Olish", "read", throw=True)
+	return qazib_olindi(get_company(filters), nowdate())
+
+
+@frappe.whitelist()
+def oylik_qazib_olindi(filters=None) -> str:
+	frappe.has_permission("Qazib Olish", "read", throw=True)
+	return qazib_olindi(get_company(filters), get_first_day(nowdate()))
