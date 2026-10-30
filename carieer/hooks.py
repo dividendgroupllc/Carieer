@@ -21,6 +21,9 @@ add_to_apps_screen = [
 # Formalar, ro'yxatlar va hisobotlar Frappe / ERPNext'ning o'z UI'si bilan ishlaydi.
 # Ro'yxat va hisobotlarda firma filtri - xodimning o'z firmasi (Karer / Beton bo'limiga qarab)
 app_include_js = "carieer.bundle.js"
+
+# Mijoz formasi: «Didox'dan to'ldirish» (INN bo'yicha rekvizitlar)
+doctype_js = {"Customer": "public/js/customer.js"}
 # Bo'limlar (desktop ikonkasi + chap menyu): carieer/desktop_icon, carieer/workspace_sidebar
 
 # Menyuni tozalash: Karer xodimi (ERPNext'ning boshqa rollari bo'lmasa) faqat Carieer ikonkalarini ko'radi
@@ -52,6 +55,10 @@ doc_events = {
 	# Инвентаризация: karer tovari tan narxi 0 bo'lishi mumkin
 	"Stock Reconciliation": {
 		"before_validate": "carieer.events.stock_reconciliation_before_validate",
+	},
+	# Mijoz INN / JShShIR formati (Didox hisob-fakturasi uchun)
+	"Customer": {
+		"validate": "carieer.events.customer_validate",
 	},
 	# GPS IMEI yozilganda eski nuqtalarga ham mashina raqami qo'yiladi
 	"Vehicle": {

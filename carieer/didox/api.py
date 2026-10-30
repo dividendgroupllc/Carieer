@@ -166,3 +166,24 @@ def eimzo_kalitlari() -> list[str]:
 		if domen.strip() and kalit.strip():
 			out += [domen.strip(), kalit.strip()]
 	return out
+
+
+@frappe.whitelist()
+def rekvizitlar(inn: str) -> dict:
+	"""Mijoz formasi: INN / JShShIR bo'yicha soliq bazasidagi rekvizitlar (Didox orqali)."""
+	check("Customer", "write")
+	inn = (inn or "").replace(" ", "")
+	if not inn.isdigit() or len(inn) not in (9, 14):
+		frappe.throw(_("Avval to'g'ri INN (9 raqam) yoki JShShIR (14 raqam) kiriting"))
+	firmalar = frappe.get_cached_doc("Didox Sozlamalari").firmalar
+	if not firmalar:
+		frappe.throw(_("Didox hali ulanmagan: Didox Sozlamalari'da firma va token kiritilmagan"))
+	info = DidoxClient(firmalar[0].company).org_info(inn)
+	return {
+		"nomi": info.get("shortName") or info.get("name"),
+		"bank_hisob": info.get("account"),
+		"mfo": info.get("mfo"),
+		"qqs_kodi": info.get("VATRegCode"),
+		"direktor": info.get("director"),
+		"yuridik_manzil": info.get("address"),
+	}

@@ -55,10 +55,29 @@ frappe.ui.form.on("Sotuv", {
 	xizmatlar_remove: (frm) => sotuv_calc(frm),
 });
 
-// Didox hisob-faktura (tasdiqlangan sotuv)
+// Tasdiqlangan sotuv: ERPNext hujjatlari (hisob-faktura, ombor harakati) va Didox hisob-faktura
 frappe.ui.form.on("Sotuv", {
 	refresh(frm) {
-		if (frm.doc.docstatus !== 1 || frm.doc.korrektirovka) return;
+		if (frm.doc.docstatus !== 1) return;
+		if (frm.doc.sales_invoice) {
+			frm.add_custom_button(
+				__("Sales Invoice (qarz va to'lovlar)"),
+				() => frappe.set_route("Form", "Sales Invoice", frm.doc.sales_invoice),
+				__("ERPNext")
+			);
+			frm.add_custom_button(
+				__("Ombor harakati"),
+				() =>
+					frappe.set_route("query-report", "Stock Ledger", {
+						company: frm.doc.company,
+						from_date: frm.doc.posting_date,
+						to_date: frm.doc.posting_date,
+						voucher_no: frm.doc.sales_invoice,
+					}),
+				__("ERPNext")
+			);
+		}
+		if (frm.doc.korrektirovka) return;
 		frappe.require("/assets/carieer/js/didox.js", () => sotuv_didox_buttons(frm));
 	},
 });

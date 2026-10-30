@@ -36,6 +36,7 @@ def after_migrate():
 	make_roles()
 	make_custom_fields()
 	hide_item_fields()
+	customer_rekvizit_labels()
 	set_uzs_symbol()
 
 
@@ -323,6 +324,47 @@ def make_custom_fields():
 					"label": "Shartnoma sanasi",
 					"insert_after": "shartnoma_raqami",
 				},
+				# Korxona rekvizitlari: «Didox'dan to'ldirish» tugmasi INN bo'yicha soliq bazasidan oladi.
+				# Hisob-faktura baribir yuborish paytida Didox'dagi eng yangi ma'lumot bilan to'ldiriladi.
+				{
+					"fieldname": "rekvizit_section",
+					"fieldtype": "Section Break",
+					"label": "Bank rekvizitlari va rahbar",
+					"insert_after": "shartnoma_sanasi",
+				},
+				{
+					"fieldname": "bank_hisob",
+					"fieldtype": "Data",
+					"label": "Hisob raqami (Р/С)",
+					"insert_after": "rekvizit_section",
+				},
+				{
+					"fieldname": "mfo",
+					"fieldtype": "Data",
+					"label": "Bank MFO",
+					"insert_after": "bank_hisob",
+				},
+				{
+					"fieldname": "qqs_kodi",
+					"fieldtype": "Data",
+					"label": "QQS to'lovchi reg. kodi",
+					"insert_after": "mfo",
+				},
+				{"fieldname": "rekvizit_cb", "fieldtype": "Column Break", "insert_after": "qqs_kodi"},
+				{
+					"fieldname": "direktor",
+					"fieldtype": "Data",
+					"label": "Direktor",
+					"insert_after": "rekvizit_cb",
+				},
+				{
+					"fieldname": "yuridik_manzil",
+					"fieldtype": "Small Text",
+					"label": "Yuridik manzil",
+					"insert_after": "direktor",
+				},
+				# ERPNext'ning soliq kategoriyasi maydonlari o'z bo'limida qolsin
+				{"fieldname": "rekvizit_end", "fieldtype": "Section Break", "insert_after": "yuridik_manzil"},
 			],
 		},
 		update=True,
@@ -389,6 +431,23 @@ ITEM_HIDDEN_FIELDS = [
 	"serial_no_series",
 	"use_serial_no_wise_valuation",
 ]
+
+
+def customer_rekvizit_labels():
+	"""Mijoz formasida ERPNext'ning «Tax» yorlig'i Didox rekvizitlari joyi bo'ladi: INN, shartnoma, bank."""
+	from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+
+	for fieldname, prop, value, prop_type in (
+		("tax_tab", "label", "Rekvizitlar (Didox)", "Data"),
+		("tax_id", "label", "INN / JShShIR", "Data"),
+		(
+			"tax_id",
+			"description",
+			"Korxona: INN (9 raqam), yakka tadbirkor: JShShIR (14 raqam). Didox hisob-fakturasi uchun kerak.",
+			"Small Text",
+		),
+	):
+		make_property_setter("Customer", fieldname, prop, value, prop_type, validate_fields_for_doctype=False)
 
 
 def hide_item_fields():
