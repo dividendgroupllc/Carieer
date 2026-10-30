@@ -15,6 +15,29 @@ carieer.firma = function () {
 	return info.bolimlar[bolim] || info.default;
 };
 
+// Hujjat boshqa firmaniki bo'lsa (masalan «Panel Beton» menyusidan Karer sotuvi ochildi), menyu o'sha firmaning
+// shu nomli bo'limiga almashadi: «Panel Beton» -> «Panel Karer». Aks holda ro'yxat va hisobotlar noto'g'ri firma
+// bilan ochiladi. `prefer` - shu firmaning aynan qaysi bo'limi kerakligi («Kassa», «Ombor»).
+carieer.sidebar_for_company = function (company, prefer) {
+	const info = frappe.boot.carieer_firma;
+	const sidebar = frappe.app?.sidebar;
+	if (!info || !sidebar || !company) return;
+	const bolim = Object.keys(info.bolimlar).find((b) => info.bolimlar[b] === company);
+	if (!bolim) return;
+	const title = sidebar.sidebar_title || "";
+	const current = Object.keys(info.bolimlar).find((b) => title.endsWith(" " + b));
+	let target = prefer ? `${prefer} ${bolim}` : null;
+	if (!target && current && current !== bolim) target = title.slice(0, -current.length) + bolim;
+	if (target && target !== title && frappe.boot.workspace_sidebar_item[target.toLowerCase()]) {
+		sidebar.setup(target);
+		frappe.breadcrumbs.update();
+	}
+};
+
+$(document).on("form-refresh", (e, frm) => {
+	if (frm?.doc?.company && !frm.is_new()) carieer.sidebar_for_company(frm.doc.company);
+});
+
 // Ro'yxat: hujjatning firma maydoni - «company» (Mode of Payment'da - «firma»)
 function firma_field(meta) {
 	return ["company", "firma"].find((fieldname) =>

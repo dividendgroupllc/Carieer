@@ -55,32 +55,91 @@ frappe.ui.form.on("Sotuv", {
 	xizmatlar_remove: (frm) => sotuv_calc(frm),
 });
 
-// Tasdiqlangan sotuv: ERPNext hujjatlari (hisob-faktura, ombor harakati) va Didox hisob-faktura
+// Tasdiqlangan sotuv: to'lov qabul qilish, ERPNext hujjatlari (hisob-faktura, ombor harakati), Didox
 frappe.ui.form.on("Sotuv", {
 	refresh(frm) {
 		if (frm.doc.docstatus !== 1) return;
+		if (!frm.doc.korrektirovka && flt(frm.doc.outstanding_amount) > 0) {
+			frm.add_custom_button(__("To'lov qabul qilish"), () => sotuv_tolov_dialog(frm)).addClass(
+				"btn-primary"
+			);
+		}
 		if (frm.doc.sales_invoice) {
+			// menyu shu firmaning Kassa / Ombor bo'limi bo'ladi (boshqa firma menyusi qolib ketmasin)
 			frm.add_custom_button(
 				__("Sales Invoice (qarz va to'lovlar)"),
-				() => frappe.set_route("Form", "Sales Invoice", frm.doc.sales_invoice),
+				() => {
+					carieer.sidebar_for_company(frm.doc.company, "Kassa");
+					frappe.set_route("Form", "Sales Invoice", frm.doc.sales_invoice);
+				},
 				__("ERPNext")
 			);
 			frm.add_custom_button(
 				__("Ombor harakati"),
-				() =>
+				() => {
+					carieer.sidebar_for_company(frm.doc.company, "Ombor");
 					frappe.set_route("query-report", "Stock Ledger", {
 						company: frm.doc.company,
 						from_date: frm.doc.posting_date,
 						to_date: frm.doc.posting_date,
 						voucher_no: frm.doc.sales_invoice,
-					}),
+					});
+				},
 				__("ERPNext")
 			);
 		}
-		if (frm.doc.korrektirovka) return;
+		if (frm.doc.korrektirovka || !frappe.boot.carieer_didox) return;
 		frappe.require("/assets/carieer/js/didox.js", () => sotuv_didox_buttons(frm));
 	},
 });
+
+// «Оплаты» jadvaliga qator qo'shib «Update» qilish bilan bir xil: to'lov Payment Entry bo'lib o'tadi
+function sotuv_tolov_dialog(frm) {
+	const d = new frappe.ui.Dialog({
+		title: __("To'lov qabul qilish: {0}", [frm.doc.customer_name || frm.doc.customer]),
+		fields: [
+			{
+				fieldname: "qarz",
+				fieldtype: "HTML",
+				options: `<p>${__("Qarz")}: <b>${format_currency(
+					frm.doc.outstanding_amount,
+					frm.doc.currency
+				)}</b></p>`,
+			},
+			{
+				fieldname: "mode_of_payment",
+				fieldtype: "Link",
+				options: "Mode of Payment",
+				label: __("Kassa (Счёт)"),
+				reqd: 1,
+				get_query: () => ({ filters: { firma: frm.doc.company, enabled: 1 } }),
+			},
+			{
+				fieldname: "summa",
+				fieldtype: "Float",
+				label: __("Summa (kassa valyutasida)"),
+				reqd: 1,
+				default: flt(frm.doc.outstanding_amount),
+			},
+			{ fieldname: "sana", fieldtype: "Date", label: __("Sana"), default: frappe.datetime.get_today() },
+			{ fieldname: "kim", fieldtype: "Data", label: __("Kim to'ladi") },
+			{ fieldname: "izoh", fieldtype: "Data", label: __("Izoh") },
+		],
+		primary_action_label: __("To'lovni saqlash"),
+		primary_action(v) {
+			frm.add_child("tolovlar", {
+				mode_of_payment: v.mode_of_payment,
+				summa: v.summa,
+				sana: v.sana,
+				kim: v.kim,
+				izoh: v.izoh,
+			});
+			d.hide();
+			frm.save("Update");
+		},
+	});
+	d.show();
+}
 
 function sotuv_didox_buttons(frm) {
 	const ochirilgan = ["O'chirilgan", "Qoralama o'chirilgan"].includes(frm.doc.didox_holati);
