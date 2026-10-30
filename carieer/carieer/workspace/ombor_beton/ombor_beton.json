@@ -2,13 +2,13 @@
  "creation": "2026-10-23 18:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
- "modified": "2026-10-23 18:00:00.000000",
+ "modified": "2026-10-30 14:00:00.000000",
  "modified_by": "Administrator",
  "name": "Ombor Beton",
  "owner": "Administrator",
  "app": "carieer",
  "charts": [],
- "content": "[{\"id\": \"h0\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Jurnallar</b></span>\", \"col\": 12}}, {\"id\": \"s0_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Инвентаризация\", \"col\": 3}}, {\"id\": \"s0_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Производство / Перемещение\", \"col\": 3}}, {\"id\": \"s0_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Purchase Invoice (Приход)\", \"col\": 3}}, {\"id\": \"sp0\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Hisobotlar</b></span>\", \"col\": 12}}, {\"id\": \"s1_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Материальный отчет\", \"col\": 3}}, {\"id\": \"s1_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Приход (hisobot)\", \"col\": 3}}, {\"id\": \"s1_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ombor qoldig'i\", \"col\": 3}}, {\"id\": \"s1_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ombor harakati\", \"col\": 3}}, {\"id\": \"s1_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Расход сырья по рецепту\", \"col\": 3}}, {\"id\": \"s1_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"СС бетон\", \"col\": 3}}, {\"id\": \"sp1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h2\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Справочники</b></span>\", \"col\": 12}}, {\"id\": \"s2_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tovarlar\", \"col\": 3}}, {\"id\": \"s2_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Omborlar\", \"col\": 3}}, {\"id\": \"s2_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Рецептура (BOM)\", \"col\": 3}}, {\"id\": \"sp2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}]",
+ "content": "[{\"id\": \"h0\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Jurnallar</b></span>\", \"col\": 12}}, {\"id\": \"s0_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Инвентаризация\", \"col\": 3}}, {\"id\": \"s0_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Все движения склада\", \"col\": 3}}, {\"id\": \"s0_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Purchase Invoice (Приход)\", \"col\": 3}}, {\"id\": \"s0_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Производство\", \"col\": 3}}, {\"id\": \"s0_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Перемещ.\", \"col\": 3}}, {\"id\": \"sp0\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Hisobotlar</b></span>\", \"col\": 12}}, {\"id\": \"s1_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Материальный отчет\", \"col\": 3}}, {\"id\": \"s1_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Приход (hisobot)\", \"col\": 3}}, {\"id\": \"s1_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ombor qoldig'i\", \"col\": 3}}, {\"id\": \"s1_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ombor harakati\", \"col\": 3}}, {\"id\": \"s1_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Расход сырья по рецепту\", \"col\": 3}}, {\"id\": \"s1_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"СС бетон\", \"col\": 3}}, {\"id\": \"s1_6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"ОСТАТОК ОБЩ\", \"col\": 3}}, {\"id\": \"s1_7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"ОСТАТОК ОБЩ суммовой\", \"col\": 3}}, {\"id\": \"s1_8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Сырьё СС\", \"col\": 3}}, {\"id\": \"s1_9\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"СС сырьё на период\", \"col\": 3}}, {\"id\": \"s1_10\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"СС ОБЩ\", \"col\": 3}}, {\"id\": \"sp1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h2\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Справочники</b></span>\", \"col\": 12}}, {\"id\": \"s2_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tovarlar\", \"col\": 3}}, {\"id\": \"s2_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Omborlar\", \"col\": 3}}, {\"id\": \"s2_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Рецептура (BOM)\", \"col\": 3}}, {\"id\": \"sp2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}]",
  "custom_blocks": [],
  "for_user": "",
  "hide_custom": 0,
@@ -45,7 +45,7 @@
   },
   {
    "type": "DocType",
-   "label": "Производство / Перемещение",
+   "label": "Все движения склада",
    "link_to": "Stock Entry",
    "color": "Grey",
    "doc_view": "List"
@@ -113,6 +113,52 @@
    "link_to": "BOM",
    "color": "Grey",
    "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Производство",
+   "link_to": "Stock Entry",
+   "color": "Grey",
+   "doc_view": "List",
+   "stats_filter": "[[\"Stock Entry\", \"purpose\", \"=\", \"Manufacture\"]]"
+  },
+  {
+   "type": "DocType",
+   "label": "Перемещ.",
+   "link_to": "Stock Entry",
+   "color": "Grey",
+   "doc_view": "List",
+   "stats_filter": "[[\"Stock Entry\", \"purpose\", \"=\", \"Material Transfer\"]]"
+  },
+  {
+   "type": "Report",
+   "label": "ОСТАТОК ОБЩ",
+   "link_to": "Ostatok Obsh",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "ОСТАТОК ОБЩ суммовой",
+   "link_to": "Ostatok Obsh Summovoy",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "Сырьё СС",
+   "link_to": "Syrye SS",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "СС сырьё на период",
+   "link_to": "Ss Syrye Period",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "СС ОБЩ",
+   "link_to": "Ss Obsh",
+   "color": "Grey"
   }
  ],
  "title": "Ombor Beton",

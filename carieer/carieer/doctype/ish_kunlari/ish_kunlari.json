@@ -1,0 +1,108 @@
+{
+ "actions": [],
+ "creation": "2026-10-30 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "oy_boshi",
+  "oy_oxiri",
+  "cb_1",
+  "ish_kunlari",
+  "ish_soatlari"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Фирма",
+   "options": "Company",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "remember_last_selected_value": 1
+  },
+  {
+   "fieldname": "oy_boshi",
+   "fieldtype": "Date",
+   "label": "Начало месяца",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "oy_oxiri",
+   "fieldtype": "Date",
+   "label": "Конец месяца",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "ish_kunlari",
+   "fieldtype": "Int",
+   "label": "Рабочие дни",
+   "in_list_view": 1,
+   "description": "Bo'sh = oyning dushanba-shanba kunlari"
+  },
+  {
+   "fieldname": "ish_soatlari",
+   "fieldtype": "Float",
+   "label": "Рабочие часы",
+   "in_list_view": 1,
+   "description": "Bo'sh = ish kunlari × 8"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-30 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Ish Kunlari",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Karer Menejer"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Beton Menejer"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "hash",
+ "description": "Рабочие дни: oydagi ish kunlari va ish soatlari (Расчёт ЗП uchun)",
+ "title_field": "oy_boshi",
+ "track_changes": 1
+}

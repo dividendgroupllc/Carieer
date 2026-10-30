@@ -1,26 +1,43 @@
-# Material Hisobot ("Материальный отчет"): davr uchun har bir tovar bo'yicha
-#   Нач. остаток -> Приход -> Расход -> Кон. остаток (miqdor ombor birligida va summa so'mda).
-# Manba: Stock Ledger Entry (Sotuv, Приход, Инвентаризация, Stock Entry - ombor harakati bo'lgan barcha hujjatlar).
-# Karer tovari tan narxi 0 (yerdan qazib olinadi): uning summasi 0, miqdori esa to'liq ko'rinadi.
+# Material Hisobot ("Материальный отчет" / «Мат отчет»): davr uchun har bir tovar bo'yicha jadvaldagi ustunlar:
+#   Нач. остаток | Закуп | Производство | Расход производство | Продажа | Инвентаризация | Прочее | Кон. остаток
+#   Кон. = Нач. + Закуп + Производство - Расход пр-во - Продажа + Инвентаризация + Прочее
+# Закуп - xarid (Purchase Invoice / Receipt), Производство / Расход пр-во - «Производство» (Stock Entry Manufacture)
+# kirimi / xomashyo sarfi, Продажа - Sales Invoice / Delivery Note, Инвентаризация - sanoq farqi (+ ortiqcha, - kamomad),
+# Прочее - ko'chirish (Material Transfer: omborlar bo'yicha alohida bo'lmasa 0), Material Receipt / Issue va boshqalar.
+# «Ko'rinish»: Кол-во (ombor birligida) yoki Сумма (so'mda).
+# Manba: Stock Ledger Entry. Karer tovari tan narxi 0 (yerdan qazib olinadi): uning summasi 0, miqdori esa to'liq ko'rinadi.
 
 import frappe
 from frappe import _
 from frappe.utils import flt
 
 from carieer.carieer.report.common import prepare
+from carieer.carieer.report.ombor import PURCHASE_TYPES, SALES_TYPES, get_sles, with_movement
 
-QTY = ("nach_qty", "prixod_qty", "rasxod_qty", "kon_qty")
-VAL = ("nach_val", "prixod_val", "rasxod_val", "kon_val")
+# (kalit, sarlavha, ishora): ishora - harakat qaysi tomonga yoziladi (-1: chiqim musbat ko'rinadi)
+USTUNLAR = (
+	("nach", "Нач. остаток", 1),
+	("zakup", "Закуп", 1),
+	("proizv", "Производство", 1),
+	("rasxod_pr", "Расход производство", -1),
+	("prodaja", "Продажа", -1),
+	("inventar", "Инвентаризация", 1),
+	("prochee", "Прочее", 1),
+	("kon", "Кон. остаток", 1),
+)
+KEYS = tuple(k for k, _l, _s in USTUNLAR)
+SIGN = {k: s for k, _l, s in USTUNLAR}
 
 
 def execute(filters=None):
 	filters = prepare(filters, period="month")
 	currency = frappe.get_cached_value("Company", filters.company, "default_currency")
+	summa = filters.get("korinish") == "Сумма"
 	data = get_data(filters)
-	return get_columns(filters, currency), data, None, None, get_summary(data, currency)
+	return get_columns(filters, currency, summa), data, None, None, get_summary(data, currency)
 
 
-def get_columns(filters, currency):
+def get_columns(filters, currency, summa):
 	cols = [
 		{
 			"label": _("Тип"),
@@ -48,56 +65,49 @@ def get_columns(filters, currency):
 				"width": 150,
 			}
 		)
-	for key, label in (
-		("nach", _("Нач. остаток")),
-		("prixod", _("Приход")),
-		("rasxod", _("Расход")),
-		("kon", _("Кон. остаток")),
-	):
-		cols.append(
-			{
-				"label": f"{label}: " + _("кол-во"),
-				"fieldname": f"{key}_qty",
-				"fieldtype": "Float",
-				"width": 120,
-			}
-		)
-		cols.append(
-			{
-				"label": f"{label}: " + _("сумма"),
-				"fieldname": f"{key}_val",
-				"fieldtype": "Currency",
-				"options": currency,
-				"width": 130,
-			}
-		)
+	for key, label, _sign in USTUNLAR:
+		if summa:
+			cols.append(
+				{
+					"label": _(label),
+					"fieldname": f"{key}_val",
+					"fieldtype": "Currency",
+					"options": currency,
+					"width": 135,
+				}
+			)
+		else:
+			cols.append(
+				{
+					"label": _(label),
+					"fieldname": f"{key}_qty",
+					"fieldtype": "Float",
+					"precision": "3",
+					"width": 120,
+				}
+			)
 	return cols
 
 
+def turi(e) -> str:
+	"""Harakat -> jadvaldagi ustun."""
+	if e.voucher_type in PURCHASE_TYPES:
+		return "zakup"
+	if e.voucher_type in SALES_TYPES:
+		return "prodaja"
+	if e.voucher_type == "Stock Reconciliation":
+		return "inventar"
+	if e.voucher_type == "Stock Entry" and e.purpose == "Manufacture":
+		# miqdorsiz qayta baholash (qty 0, summa bor): musbat - kirimga, manfiy - chiqimga
+		return "proizv" if e.qty > 0 or (e.qty == 0 and e.val > 0) else "rasxod_pr"
+	return "prochee"
+
+
 def get_data(filters):
-	cond = ["sle.company = %(company)s", "sle.is_cancelled = 0", "sle.posting_date <= %(to_date)s"]
-	if filters.get("warehouse"):
-		cond.append("sle.warehouse = %(warehouse)s")
-	if filters.get("item_group"):
-		cond.append("item.item_group = %(item_group)s")
-	sles = frappe.db.sql(
-		f"""select sle.item_code, sle.warehouse, sle.posting_date, sle.qty_after_transaction,
-			sle.stock_value_difference, item.item_group, item.stock_uom uom
-		from `tabStock Ledger Entry` sle join `tabItem` item on item.name = sle.item_code
-		where {" and ".join(cond)}
-		order by sle.item_code, sle.warehouse, sle.posting_datetime, sle.creation""",
-		filters,
-		as_dict=True,
-	)
 	by_warehouse = filters.get("by_warehouse")
-	rows, last_qty = {}, {}
-	for e in sles:
-		# Инвентаризация (Stock Reconciliation) actual_qty'ni 0 yozadi, yangi qoldiqni esa qty_after_transaction'da
-		# saqlaydi: shuning uchun harakat har doim oldingi qoldiqdan farq sifatida olinadi
-		prev = last_qty.get((e.item_code, e.warehouse), 0.0)
-		qty = flt(e.qty_after_transaction) - prev
-		last_qty[(e.item_code, e.warehouse)] = flt(e.qty_after_transaction)
-		val = flt(e.stock_value_difference)
+	fields = [f"{k}_{t}" for k in KEYS for t in ("qty", "val")]
+	rows = {}
+	for e in with_movement(get_sles(filters)):
 		key = (e.item_code, e.warehouse if by_warehouse else "")
 		r = rows.setdefault(
 			key,
@@ -106,30 +116,21 @@ def get_data(filters):
 				item_group=e.item_group,
 				uom=e.uom,
 				warehouse=key[1],
-				**dict.fromkeys(QTY + VAL, 0.0),
+				**dict.fromkeys(fields, 0.0),
 			),
 		)
-		r.kon_qty += qty
-		r.kon_val += val
-		if e.posting_date < filters.from_date:
-			r.nach_qty += qty
-			r.nach_val += val
-			continue
-		# miqdorsiz qayta baholash (qty 0, summa bor): musbat - kirimga, manfiy - chiqimga
-		incoming = qty > 0 or (qty == 0 and val > 0)
-		if incoming:
-			r.prixod_qty += qty
-			r.prixod_val += val
-		else:
-			r.rasxod_qty -= qty
-			r.rasxod_val -= val
+		r.kon_qty += e.qty
+		r.kon_val += e.val
+		col = "nach" if e.posting_date < filters.from_date else turi(e)
+		r[f"{col}_qty"] += SIGN[col] * e.qty
+		r[f"{col}_val"] += SIGN[col] * e.val
 
 	data = []
 	for r in sorted(rows.values(), key=lambda r: (r.item_group or "", r.item_code, r.warehouse)):
-		if not any(abs(flt(r[f])) >= 0.0005 for f in QTY + VAL):
+		if not any(abs(flt(r[f])) >= 0.0005 for f in fields):
 			continue
-		for f in QTY + VAL:
-			r[f] = flt(r[f], 3 if f in QTY else 2) or None
+		for f in fields:
+			r[f] = flt(r[f], 3 if f.endswith("_qty") else 2) or None
 		data.append(r)
 	return data
 
@@ -138,33 +139,22 @@ def get_summary(data, currency):
 	def total(f):
 		return sum(flt(r.get(f)) for r in data)
 
-	return [
-		{
-			"label": _("Нач. остаток"),
-			"value": total("nach_val"),
-			"datatype": "Currency",
-			"currency": currency,
-			"indicator": "Gray",
-		},
-		{
-			"label": _("Приход"),
-			"value": total("prixod_val"),
-			"datatype": "Currency",
-			"currency": currency,
-			"indicator": "Green" if abs(total("prixod_val")) >= 0.005 else "Gray",
-		},
-		{
-			"label": _("Расход"),
-			"value": total("rasxod_val"),
-			"datatype": "Currency",
-			"currency": currency,
-			"indicator": "Red" if abs(total("rasxod_val")) >= 0.005 else "Gray",
-		},
-		{
-			"label": _("Кон. остаток"),
-			"value": total("kon_val"),
-			"datatype": "Currency",
-			"currency": currency,
-			"indicator": "Blue" if abs(total("kon_val")) >= 0.005 else "Gray",
-		},
-	]
+	cards = []
+	for key, label, indicator in (
+		("nach", "Нач. остаток", "Gray"),
+		("zakup", "Закуп", "Green"),
+		("rasxod_pr", "Расход производство", "Orange"),
+		("prodaja", "Продажа", "Red"),
+		("kon", "Кон. остаток", "Blue"),
+	):
+		value = total(f"{key}_val")
+		cards.append(
+			{
+				"label": _(label),
+				"value": value,
+				"datatype": "Currency",
+				"currency": currency,
+				"indicator": indicator if abs(value) >= 0.005 else "Gray",
+			}
+		)
+	return cards

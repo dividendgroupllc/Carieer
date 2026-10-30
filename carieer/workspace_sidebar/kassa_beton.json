@@ -2,7 +2,7 @@
  "creation": "2026-10-23 18:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "modified": "2026-10-24 16:00:00.000000",
+ "modified": "2026-10-30 15:00:00.000000",
  "modified_by": "Administrator",
  "name": "Kassa Beton",
  "owner": "Administrator",
@@ -94,7 +94,7 @@
    "parentfield": "items",
    "parenttype": "Workspace Sidebar",
    "show_arrow": 0,
-   "label": "ERPNext hujjatlari",
+   "label": "Hisobotlar",
    "link_type": "DocType",
    "type": "Section Break",
    "icon": "folder",
@@ -109,86 +109,11 @@
    "parentfield": "items",
    "parenttype": "Workspace Sidebar",
    "show_arrow": 0,
-   "label": "Payment Entry",
-   "link_to": "Payment Entry",
-   "link_type": "DocType",
-   "type": "Link",
-   "idx": 7
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "doctype": "Workspace Sidebar Item",
-   "indent": 0,
-   "keep_closed": 0,
-   "parentfield": "items",
-   "parenttype": "Workspace Sidebar",
-   "show_arrow": 0,
-   "label": "Journal Entry",
-   "link_to": "Journal Entry",
-   "link_type": "DocType",
-   "type": "Link",
-   "idx": 8
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "doctype": "Workspace Sidebar Item",
-   "indent": 0,
-   "keep_closed": 0,
-   "parentfield": "items",
-   "parenttype": "Workspace Sidebar",
-   "show_arrow": 0,
-   "label": "Sales Invoice",
-   "link_to": "Sales Invoice",
-   "link_type": "DocType",
-   "type": "Link",
-   "idx": 9
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "doctype": "Workspace Sidebar Item",
-   "indent": 0,
-   "keep_closed": 0,
-   "parentfield": "items",
-   "parenttype": "Workspace Sidebar",
-   "show_arrow": 0,
-   "label": "Purchase Invoice (Приход)",
-   "link_to": "Purchase Invoice",
-   "link_type": "DocType",
-   "type": "Link",
-   "idx": 10
-  },
-  {
-   "child": 0,
-   "collapsible": 1,
-   "doctype": "Workspace Sidebar Item",
-   "indent": 1,
-   "keep_closed": 0,
-   "parentfield": "items",
-   "parenttype": "Workspace Sidebar",
-   "show_arrow": 0,
-   "label": "Hisobotlar",
-   "link_type": "DocType",
-   "type": "Section Break",
-   "icon": "folder",
-   "idx": 11
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "doctype": "Workspace Sidebar Item",
-   "indent": 0,
-   "keep_closed": 0,
-   "parentfield": "items",
-   "parenttype": "Workspace Sidebar",
-   "show_arrow": 0,
    "label": "ДДС",
    "link_to": "DDS",
    "link_type": "Report",
    "type": "Link",
-   "idx": 12
+   "idx": 7
   },
   {
    "child": 1,
@@ -203,7 +128,7 @@
    "link_to": "Pul Oqimi",
    "link_type": "Report",
    "type": "Link",
-   "idx": 13
+   "idx": 8
   },
   {
    "child": 1,
@@ -218,7 +143,7 @@
    "link_to": "Kontragent Otchet",
    "link_type": "Report",
    "type": "Link",
-   "idx": 14
+   "idx": 9
   },
   {
    "child": 1,
@@ -233,7 +158,7 @@
    "link_to": "Akt Sverka",
    "link_type": "Report",
    "type": "Link",
-   "idx": 15
+   "idx": 10
   },
   {
    "child": 1,
@@ -248,7 +173,7 @@
    "link_to": "Qarzdorlik",
    "link_type": "Report",
    "type": "Link",
-   "idx": 16
+   "idx": 11
   },
   {
    "child": 1,
@@ -263,7 +188,7 @@
    "link_to": "BD Kontragent",
    "link_type": "Report",
    "type": "Link",
-   "idx": 17
+   "idx": 12
   },
   {
    "child": 1,
@@ -278,7 +203,7 @@
    "link_to": "Postav Klient",
    "link_type": "Report",
    "type": "Link",
-   "idx": 18
+   "idx": 13
   },
   {
    "child": 1,
@@ -293,7 +218,7 @@
    "link_to": "Postav Klient Fakt",
    "link_type": "Report",
    "type": "Link",
-   "idx": 19
+   "idx": 14
   },
   {
    "child": 1,
@@ -308,7 +233,7 @@
    "link_to": "Kontragent Oylik",
    "link_type": "Report",
    "type": "Link",
-   "idx": 20
+   "idx": 15
   },
   {
    "child": 1,
@@ -323,7 +248,7 @@
    "link_to": "Kontrol Hisobot",
    "link_type": "Report",
    "type": "Link",
-   "idx": 21
+   "idx": 16
   },
   {
    "child": 1,
@@ -338,7 +263,7 @@
    "link_to": "Firmalararo Qarzlar",
    "link_type": "Report",
    "type": "Link",
-   "idx": 22
+   "idx": 17
   },
   {
    "child": 1,
@@ -353,7 +278,37 @@
    "link_to": "Beton Tannarxi",
    "link_type": "Report",
    "type": "Link",
-   "idx": 23
+   "idx": 18
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "doctype": "Workspace Sidebar Item",
+   "indent": 0,
+   "keep_closed": 0,
+   "parentfield": "items",
+   "parenttype": "Workspace Sidebar",
+   "show_arrow": 0,
+   "type": "Link",
+   "idx": 19,
+   "label": "Расчёт ЗП",
+   "link_type": "Report",
+   "link_to": "Raschet ZP"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "doctype": "Workspace Sidebar Item",
+   "indent": 0,
+   "keep_closed": 0,
+   "parentfield": "items",
+   "parenttype": "Workspace Sidebar",
+   "show_arrow": 0,
+   "type": "Link",
+   "idx": 20,
+   "label": "Зарплата",
+   "link_type": "Report",
+   "link_to": "Zarplata"
   },
   {
    "child": 0,
@@ -368,7 +323,7 @@
    "link_type": "DocType",
    "type": "Section Break",
    "icon": "folder",
-   "idx": 24
+   "idx": 21
   },
   {
    "child": 1,
@@ -383,7 +338,7 @@
    "link_to": "Kassa Kategoriya",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 25
+   "idx": 22
   },
   {
    "child": 1,
@@ -398,7 +353,7 @@
    "link_to": "Mode of Payment",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 26
+   "idx": 23
   },
   {
    "child": 1,
@@ -413,7 +368,7 @@
    "link_to": "Currency Exchange",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 27
+   "idx": 24
   },
   {
    "child": 1,
@@ -428,7 +383,7 @@
    "link_to": "Customer",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 28
+   "idx": 25
   },
   {
    "child": 1,
@@ -443,7 +398,7 @@
    "link_to": "Supplier",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 29
+   "idx": 26
   }
  ],
  "module": "Carieer",
