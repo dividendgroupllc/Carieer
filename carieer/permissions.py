@@ -6,7 +6,6 @@ Menyu: Karer / Beton xodimi faqat Carieer bo'limlarini (o'z workspace'larini) ko
 
 import frappe
 from frappe import _
-from frappe.utils import cint
 
 # Bo'lim = firma (Zavod): rol nomi «<Bo'lim> <Lavozim>», masalan «Beton Kassir»
 BOLIMLAR = ("Karer", "Beton")
@@ -106,7 +105,6 @@ def boot_firma(bootinfo):
 	filtr qo'yilmaydi."""
 	from carieer.utils import company_for_bolim
 
-	bootinfo.carieer_didox = cint(frappe.db.get_single_value("Didox Sozlamalari", "yoqilgan"))
 	roles = set(frappe.get_roles())
 	if not roles & set(ALL_ROLES) and "System Manager" not in roles:
 		return

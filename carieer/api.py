@@ -416,3 +416,75 @@ def cleanup_gps():
 	"""hooks.py -> scheduler (har kuni): eski GPS nuqtalarni o'chiradi (Karer Sozlamalari -> necha kun saqlansin)."""
 	days = cint(frappe.db.get_single_value("Karer Sozlamalari", "gps_saqlash_kun")) or 90
 	frappe.db.delete("GPS Malumot", {"vaqt": ("<", add_days(now_datetime(), -days))})
+
+
+# ------------------------------------------------------------------ Sotuv: «To'lov qabul qilish» dialogi
+def tolov_kursi(sotuv, mode_of_payment: str, sana=None) -> tuple[str, float]:
+	"""Kassa valyutasi va kurs: 1 birlik kassa valyutasi = kurs birlik sotuv valyutasida (Sotuv.set_tolovlar bilan bir xil)."""
+	from carieer.utils import get_company_currency, get_kassa_info, get_rate
+
+	info = get_kassa_info(mode_of_payment, sotuv.company)
+	if not info.account:
+		frappe.throw(_("{0} kassasida {1} firmasi uchun hisob yo'q").format(mode_of_payment, sotuv.company))
+	if info.currency == sotuv.currency:
+		return info.currency, 1.0
+	base = get_company_currency(sotuv.company)
+	sana = sana or nowdate()
+	return info.currency, get_rate(info.currency, base, sana) / get_rate(sotuv.currency, base, sana)
+
+
+@frappe.whitelist()
+def tolov_malumoti(sotuv: str, mode_of_payment: str) -> dict:
+	"""Tanlangan kassa valyutasi, kurs va qarz shu valyutada."""
+	doc = frappe.get_doc("Sotuv", sotuv)
+	doc.check_permission("read")
+	currency, kurs = tolov_kursi(doc, mode_of_payment)
+	return {
+		"currency": currency,
+		"sotuv_currency": doc.currency,
+		"kurs": kurs,
+		"qarz": flt(doc.outstanding_amount),
+		"qarz_kassada": flt(flt(doc.outstanding_amount) / kurs, 2) if kurs else 0,
+	}
+
+
+@frappe.whitelist(methods=["POST"])
+def sotuv_tolov(
+	sotuv: str, mode_of_payment: str, summa: float, kurs: float | None = None, sana=None, izoh=None
+):
+	"""To'lovni «Оплаты» ga qo'shib saqlaydi (Payment Entry yaratiladi). Xato bo'lsa hech narsa o'zgarmaydi."""
+	doc = frappe.get_doc("Sotuv", sotuv)
+	doc.check_permission("write")
+	if doc.docstatus != 1:
+		frappe.throw(_("Avval sotuvni tasdiqlang"))
+	summa = flt(summa)
+	if summa <= 0:
+		frappe.throw(_("To'lov summasi 0 dan katta bo'lishi kerak"))
+	currency, default_kurs = tolov_kursi(doc, mode_of_payment, sana)
+	kurs = flt(kurs) if currency != doc.currency and flt(kurs) > 0 else default_kurs
+	if currency != doc.currency:
+		# qarz dollarda to'liq yopilsa yaxlitlash farqi (1 sentdan kam) kursga singadi: qarz aniq 0 bo'ladi
+		ortiq = summa * kurs - flt(doc.outstanding_amount)
+		if 0 < ortiq <= kurs * 0.01:
+			kurs = flt(doc.outstanding_amount) / summa
+	if flt(summa * kurs, 2) > flt(doc.outstanding_amount) + 0.01:
+		frappe.throw(
+			_("To'lov summasi {0}, qarz esa {1}. Summa kassa valyutasida ({2}) yoziladi.").format(
+				frappe.format(summa * kurs, {"fieldtype": "Currency", "options": doc.currency}),
+				frappe.format(doc.outstanding_amount, {"fieldtype": "Currency", "options": doc.currency}),
+				currency,
+			),
+			title=_("Summa qarzdan katta"),
+		)
+	doc.append(
+		"tolovlar",
+		{
+			"mode_of_payment": mode_of_payment,
+			"summa": summa,
+			"kurs": kurs,
+			"sana": sana or nowdate(),
+			"izoh": izoh,
+		},
+	)
+	doc.save()
+	return {"status": doc.status, "outstanding_amount": doc.outstanding_amount}

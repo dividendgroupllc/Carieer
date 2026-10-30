@@ -88,13 +88,49 @@ frappe.ui.form.on("Sotuv", {
 				__("ERPNext")
 			);
 		}
-		if (frm.doc.korrektirovka || !frappe.boot.carieer_didox) return;
+		if (frm.doc.korrektirovka) return;
 		frappe.require("/assets/carieer/js/didox.js", () => sotuv_didox_buttons(frm));
 	},
 });
 
-// «Оплаты» jadvaliga qator qo'shib «Update» qilish bilan bir xil: to'lov Payment Entry bo'lib o'tadi
+// «Оплаты» jadvaliga qator qo'shib «Update» qilish bilan bir xil: to'lov Payment Entry bo'lib o'tadi.
+// Summa kassa valyutasida: USD kassa tanlansa qarz kurs bilan dollarga o'tkaziladi.
+function sotuv_tolov_nima_uchun(frm) {
+	const qatorlar = [
+		...(frm.doc.items || []).map((r) => [r.item_name || r.item_code, r.qty, r.uom, r.rate]),
+		...(frm.doc.xizmatlar || []).map((r) => [r.xizmat, r.qty, "", r.rate]),
+	];
+	return qatorlar
+		.map(
+			([nomi, qty, uom, rate]) =>
+				`<li>${frappe.utils.escape_html(nomi)}: ${flt(qty)} ${frappe.utils.escape_html(
+					uom || ""
+				)} × ${format_currency(rate, frm.doc.currency)}</li>`
+		)
+		.join("");
+}
+
 function sotuv_tolov_dialog(frm) {
+	let info = null;
+	const summa_hint = () => {
+		if (!info) return;
+		const summa = flt(d.get_value("summa"));
+		const kurs = info.currency === info.sotuv_currency ? 1 : flt(d.get_value("kurs"));
+		let jami = summa * kurs;
+		// dollarda to'liq yopilganda 1 sentdan kam yaxlitlash farqi hisobga olinmaydi (server ham shunday)
+		if (jami > flt(info.qarz) && jami - flt(info.qarz) <= kurs * 0.01) jami = flt(info.qarz);
+		const qolgan = flt(info.qarz) - jami;
+		d.set_df_property(
+			"summa",
+			"description",
+			info.currency === info.sotuv_currency
+				? __("To'lovdan keyin qarz: {0}", [format_currency(Math.max(qolgan, 0), info.sotuv_currency)])
+				: __("= {0}. To'lovdan keyin qarz: {1}", [
+						format_currency(jami, info.sotuv_currency),
+						format_currency(Math.max(qolgan, 0), info.sotuv_currency),
+				  ])
+		);
+	};
 	const d = new frappe.ui.Dialog({
 		title: __("To'lov qabul qilish: {0}", [frm.doc.customer_name || frm.doc.customer]),
 		fields: [
@@ -104,7 +140,9 @@ function sotuv_tolov_dialog(frm) {
 				options: `<p>${__("Qarz")}: <b>${format_currency(
 					frm.doc.outstanding_amount,
 					frm.doc.currency
-				)}</b></p>`,
+				)}</b> ${__("(jami {0})", [format_currency(frm.doc.amount, frm.doc.currency)])}</p>
+				<p class="text-muted small">${__("Nima uchun")}:</p>
+				<ul class="small">${sotuv_tolov_nima_uchun(frm)}</ul>`,
 			},
 			{
 				fieldname: "mode_of_payment",
@@ -113,29 +151,58 @@ function sotuv_tolov_dialog(frm) {
 				label: __("Kassa (Счёт)"),
 				reqd: 1,
 				get_query: () => ({ filters: { firma: frm.doc.company, enabled: 1 } }),
+				onchange() {
+					const kassa = d.get_value("mode_of_payment");
+					if (!kassa) return;
+					frappe
+						.call("carieer.api.tolov_malumoti", { sotuv: frm.doc.name, mode_of_payment: kassa })
+						.then((r) => {
+							info = r.message;
+							const boshqa = info.currency !== info.sotuv_currency;
+							d.set_df_property("summa", "label", __("Summa ({0})", [info.currency]));
+							d.set_df_property("kurs", "hidden", !boshqa);
+							d.set_df_property(
+								"kurs",
+								"label",
+								__("Kurs (1 {0} necha {1})", [info.currency, info.sotuv_currency])
+							);
+							if (boshqa) d.set_value("kurs", flt(info.kurs, 2));
+							d.set_value("summa", flt(info.qarz_kassada, 2)).then(summa_hint);
+						});
+				},
 			},
 			{
 				fieldname: "summa",
 				fieldtype: "Float",
-				label: __("Summa (kassa valyutasida)"),
+				label: __("Summa"),
 				reqd: 1,
-				default: flt(frm.doc.outstanding_amount),
+				description: __("Avval kassani tanlang: summa o'sha kassa valyutasida yoziladi"),
+				onchange: summa_hint,
 			},
+			{ fieldname: "kurs", fieldtype: "Float", hidden: 1, onchange: summa_hint },
 			{ fieldname: "sana", fieldtype: "Date", label: __("Sana"), default: frappe.datetime.get_today() },
-			{ fieldname: "kim", fieldtype: "Data", label: __("Kim to'ladi") },
 			{ fieldname: "izoh", fieldtype: "Data", label: __("Izoh") },
 		],
 		primary_action_label: __("To'lovni saqlash"),
 		primary_action(v) {
-			frm.add_child("tolovlar", {
-				mode_of_payment: v.mode_of_payment,
-				summa: v.summa,
-				sana: v.sana,
-				kim: v.kim,
-				izoh: v.izoh,
-			});
-			d.hide();
-			frm.save("Update");
+			frappe
+				.call({
+					method: "carieer.api.sotuv_tolov",
+					args: {
+						sotuv: frm.doc.name,
+						mode_of_payment: v.mode_of_payment,
+						summa: v.summa,
+						kurs: v.kurs,
+						sana: v.sana,
+						izoh: v.izoh,
+					},
+					freeze: true,
+				})
+				.then(() => {
+					d.hide();
+					frappe.show_alert({ message: __("To'lov saqlandi"), indicator: "green" });
+					frm.reload_doc();
+				});
 		},
 	});
 	d.show();
