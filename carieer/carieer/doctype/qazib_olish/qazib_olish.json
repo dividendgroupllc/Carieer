@@ -1,0 +1,232 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-10-30 18:00:00.000000",
+ "description": "Karerdan qazib olingan tovar (Клинец, Шебень, Қум): Google Sheets «Производство»",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "asosiy_section",
+  "naming_series",
+  "posting_date",
+  "posting_time",
+  "cb_1",
+  "company",
+  "warehouse",
+  "cb_2",
+  "xodim",
+  "xodim_nomi",
+  "texnika",
+  "tovar_section",
+  "items",
+  "total_qty",
+  "cb_3",
+  "izoh",
+  "ombor_section",
+  "stock_entry",
+  "title",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "asosiy_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "QO-.YYYY.-",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Seriya",
+   "options": "QO-.YYYY.-",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Дата",
+   "reqd": 1
+  },
+  {
+   "default": "Now",
+   "fieldname": "posting_time",
+   "fieldtype": "Time",
+   "label": "Vaqt"
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Firma",
+   "options": "Company",
+   "remember_last_selected_value": 1,
+   "reqd": 1
+  },
+  {
+   "description": "Qazib olingan tovar shu omborga kirim bo'ladi",
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Qaysi omborga",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "xodim",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Сотрудник",
+   "options": "Employee"
+  },
+  {
+   "fetch_from": "xodim.employee_name",
+   "fieldname": "xodim_nomi",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Xodim ismi",
+   "read_only": 1
+  },
+  {
+   "fieldname": "texnika",
+   "fieldtype": "Link",
+   "label": "Texnika (ekskavator)",
+   "options": "Vehicle"
+  },
+  {
+   "fieldname": "tovar_section",
+   "fieldtype": "Section Break",
+   "label": "Qazib olingan tovarlar"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Tovarlar",
+   "options": "Qazib Olish Tovar",
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Jami miqdor",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cb_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "izoh",
+   "fieldtype": "Small Text",
+   "label": "Izoh"
+  },
+  {
+   "fieldname": "ombor_section",
+   "fieldtype": "Section Break",
+   "label": "ERPNext"
+  },
+  {
+   "description": "Tan narxi 0: tosh qazib olinadi, sotib olinmaydi (Google Sheets'da ham «Себестоимость» 0)",
+   "fieldname": "stock_entry",
+   "fieldtype": "Link",
+   "label": "Ombor kirimi (Stock Entry)",
+   "no_copy": 1,
+   "options": "Stock Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Sarlavha",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Qazib Olish",
+   "print_hide": 1,
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-30 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Qazib Olish",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Menejer",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Omborchi",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Karer Operator",
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "search_fields": "title,xodim_nomi",
+ "show_title_field_in_link": 0,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

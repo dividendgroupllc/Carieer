@@ -2,7 +2,7 @@
  "creation": "2026-10-24 15:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "modified": "2026-10-30 15:00:00.000000",
+ "modified": "2026-10-30 18:00:00.000000",
  "modified_by": "Administrator",
  "name": "Panel Karer",
  "owner": "Administrator",
@@ -80,6 +80,21 @@
    "doctype": "Workspace Sidebar Item",
    "indent": 0,
    "keep_closed": 0,
+   "parentfield": "items",
+   "parenttype": "Workspace Sidebar",
+   "show_arrow": 0,
+   "label": "Qazib olish",
+   "link_to": "Qazib Olish",
+   "link_type": "DocType",
+   "type": "Link",
+   "idx": 5
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "doctype": "Workspace Sidebar Item",
+   "indent": 0,
+   "keep_closed": 0,
    "label": "Kassa",
    "link_type": "DocType",
    "parentfield": "items",
@@ -87,7 +102,7 @@
    "show_arrow": 0,
    "type": "Link",
    "link_to": "Kassa",
-   "idx": 5
+   "idx": 6
   },
   {
    "child": 1,
@@ -102,7 +117,7 @@
    "show_arrow": 0,
    "type": "Link",
    "link_to": "Qarzdorlik",
-   "idx": 6
+   "idx": 7
   },
   {
    "child": 1,
@@ -117,7 +132,7 @@
    "show_arrow": 0,
    "type": "Link",
    "link_to": "Balans",
-   "idx": 7
+   "idx": 8
   },
   {
    "child": 1,
@@ -132,7 +147,7 @@
    "show_arrow": 0,
    "type": "Link",
    "link_to": "Foyda Zarar",
-   "idx": 8
+   "idx": 9
   }
  ]
 }
