@@ -62,3 +62,42 @@ def kassa_qoldigi(filters=None) -> dict:
 	frappe.has_permission("Kassa", "read", throw=True)
 	company = get_company(filters)
 	return money(kassalar_jami(company), company)
+
+
+def kassa_harakati(company) -> tuple[float, float]:
+	"""Bugun kassalarga tushgan va ulardan chiqqan pul (so'mda): Kassa, Sotuv to'lovi, Payment Entry - hammasi
+	kassa hisoblaridagi buxgalteriya yozuvidan. Kassalar orasidagi o'tkazma (ikkala tomoni kassa) kirmaydi."""
+	accounts = frappe.db.sql_list(
+		"""select distinct a.default_account from `tabMode of Payment Account` a
+		join `tabMode of Payment` m on m.name = a.parent
+		where a.company = %s and m.enabled = 1 and ifnull(a.default_account, '') != ''""",
+		company,
+	)
+	if not accounts:
+		return 0.0, 0.0
+	kirim, chiqim = frappe.db.sql(
+		"""select sum(debit), sum(credit) from `tabGL Entry`
+		where company = %(company)s and is_cancelled = 0 and posting_date = %(today)s and account in %(accounts)s
+			and voucher_no not in (
+				select voucher_no from `tabGL Entry`
+				where company = %(company)s and is_cancelled = 0 and posting_date = %(today)s
+					and account in %(accounts)s
+				group by voucher_no having sum(debit) > 0 and sum(credit) > 0
+			)""",
+		{"company": company, "today": nowdate(), "accounts": accounts},
+	)[0]
+	return kirim or 0.0, chiqim or 0.0
+
+
+@frappe.whitelist()
+def bugungi_kirim(filters=None) -> dict:
+	frappe.has_permission("Kassa", "read", throw=True)
+	company = get_company(filters)
+	return money(kassa_harakati(company)[0], company)
+
+
+@frappe.whitelist()
+def bugungi_chiqim(filters=None) -> dict:
+	frappe.has_permission("Kassa", "read", throw=True)
+	company = get_company(filters)
+	return money(kassa_harakati(company)[1], company)

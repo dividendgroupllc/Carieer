@@ -14,7 +14,7 @@
    "label": "Top mijozlar"
   }
  ],
- "content": "[{\"id\": \"h0\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Karer</b></span>\", \"col\": 12}}, {\"id\": \"n0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Bugungi sotuv\", \"col\": 3}}, {\"id\": \"n1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Oylik sotuv\", \"col\": 3}}, {\"id\": \"n2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Debitor qarz\", \"col\": 3}}, {\"id\": \"n3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Kassa qoldig'i\", \"col\": 3}}, {\"id\": \"c0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Sotuv oylik\", \"col\": 12}}, {\"id\": \"c1\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Sotuv kunlik\", \"col\": 6}}, {\"id\": \"c2\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Top mijozlar\", \"col\": 6}}]",
+ "content": "[{\"id\": \"h0\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Karer</b></span>\", \"col\": 12}}, {\"id\": \"n0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Bugungi sotuv\", \"col\": 4}}, {\"id\": \"n1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Bugungi kirim\", \"col\": 4}}, {\"id\": \"n2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Bugungi chiqim\", \"col\": 4}}, {\"id\": \"n3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Kassa qoldig'i\", \"col\": 4}}, {\"id\": \"n4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Oylik sotuv\", \"col\": 4}}, {\"id\": \"n5\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Debitor qarz\", \"col\": 4}}, {\"id\": \"s0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kunlik otchet (Отчет)\", \"col\": 4}}, {\"id\": \"s1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Yangi sotuv\", \"col\": 4}}, {\"id\": \"s2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Kassa\", \"col\": 4}}, {\"id\": \"q0\", \"type\": \"quick_list\", \"data\": {\"quick_list_name\": \"Oxirgi sotuvlar\", \"col\": 4}}, {\"id\": \"q2\", \"type\": \"quick_list\", \"data\": {\"quick_list_name\": \"Oxirgi to'lovlar\", \"col\": 4}}, {\"id\": \"q1\", \"type\": \"quick_list\", \"data\": {\"quick_list_name\": \"Oxirgi kassa yozuvlari\", \"col\": 4}}, {\"id\": \"c0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Sotuv oylik\", \"col\": 12}}, {\"id\": \"c1\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Sotuv kunlik\", \"col\": 6}}, {\"id\": \"c2\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Top mijozlar\", \"col\": 6}}]",
  "creation": "2026-10-24 15:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -26,7 +26,7 @@
  "is_hidden": 0,
  "label": "Panel Karer",
  "links": [],
- "modified": "2026-10-24 15:00:00.000000",
+ "modified": "2026-10-30 15:30:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Panel Karer",
@@ -36,24 +36,51 @@
    "number_card_name": "Bugungi sotuv Karer"
   },
   {
+   "label": "Bugungi kirim",
+   "number_card_name": "Bugungi kirim Karer"
+  },
+  {
+   "label": "Bugungi chiqim",
+   "number_card_name": "Bugungi chiqim Karer"
+  },
+  {
+   "label": "Kassa qoldig'i",
+   "number_card_name": "Kassa qoldig'i Karer"
+  },
+  {
    "label": "Oylik sotuv",
    "number_card_name": "Oylik sotuv Karer"
   },
   {
    "label": "Debitor qarz",
    "number_card_name": "Debitor qarz Karer"
-  },
-  {
-   "label": "Kassa qoldig'i",
-   "number_card_name": "Kassa qoldig'i Karer"
   }
  ],
  "owner": "Administrator",
  "parent_page": "",
  "public": 1,
- "quick_lists": [],
+ "quick_lists": [
+  {
+   "document_type": "Sotuv",
+   "label": "Oxirgi sotuvlar",
+   "quick_list_filter": "[[\"Sotuv\", \"company\", \"=\", \"Carieer\"], [\"Sotuv\", \"docstatus\", \"=\", 1]]"
+  },
+  {
+   "document_type": "Payment Entry",
+   "label": "Oxirgi to'lovlar",
+   "quick_list_filter": "[[\"Payment Entry\", \"company\", \"=\", \"Carieer\"], [\"Payment Entry\", \"docstatus\", \"=\", 1]]"
+  },
+  {
+   "document_type": "Kassa",
+   "label": "Oxirgi kassa yozuvlari",
+   "quick_list_filter": "[[\"Kassa\", \"company\", \"=\", \"Carieer\"], [\"Kassa\", \"docstatus\", \"=\", 1]]"
+  }
+ ],
  "restrict_to_domain": "",
  "roles": [
+  {
+   "role": "Karer Operator"
+  },
   {
    "role": "Karer Kassir"
   },
@@ -65,7 +92,28 @@
   }
  ],
  "sequence_id": 0,
- "shortcuts": [],
+ "shortcuts": [
+  {
+   "type": "Report",
+   "label": "Kunlik otchet (Отчет)",
+   "link_to": "Kontrol Hisobot",
+   "color": "Blue"
+  },
+  {
+   "type": "DocType",
+   "label": "Yangi sotuv",
+   "link_to": "Sotuv",
+   "doc_view": "New",
+   "color": "Green"
+  },
+  {
+   "type": "DocType",
+   "label": "Kassa",
+   "link_to": "Kassa",
+   "doc_view": "List",
+   "color": "Grey"
+  }
+ ],
  "title": "Panel Karer",
  "type": "Workspace"
 }

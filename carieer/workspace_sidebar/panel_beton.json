@@ -2,7 +2,7 @@
  "creation": "2026-10-24 15:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "modified": "2026-10-24 15:00:00.000000",
+ "modified": "2026-10-30 15:00:00.000000",
  "modified_by": "Administrator",
  "name": "Panel Beton",
  "owner": "Administrator",
@@ -49,6 +49,21 @@
    "doctype": "Workspace Sidebar Item",
    "indent": 0,
    "keep_closed": 0,
+   "label": "Kunlik otchet (Отчет)",
+   "link_type": "Report",
+   "parentfield": "items",
+   "parenttype": "Workspace Sidebar",
+   "show_arrow": 0,
+   "type": "Link",
+   "link_to": "Kontrol Hisobot",
+   "idx": 3
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "doctype": "Workspace Sidebar Item",
+   "indent": 0,
+   "keep_closed": 0,
    "label": "Sotuvlar",
    "link_type": "DocType",
    "parentfield": "items",
@@ -57,7 +72,7 @@
    "type": "Link",
    "link_to": "Sotuv",
    "filters": "[[\"Sotuv\", \"tip\", \"=\", \"Beton\"]]",
-   "idx": 3
+   "idx": 4
   },
   {
    "child": 1,
@@ -72,7 +87,7 @@
    "show_arrow": 0,
    "type": "Link",
    "link_to": "Kassa",
-   "idx": 4
+   "idx": 5
   },
   {
    "child": 1,
@@ -87,7 +102,7 @@
    "show_arrow": 0,
    "type": "Link",
    "link_to": "Qarzdorlik",
-   "idx": 5
+   "idx": 6
   },
   {
    "child": 1,
@@ -102,7 +117,7 @@
    "show_arrow": 0,
    "type": "Link",
    "link_to": "Balans",
-   "idx": 6
+   "idx": 7
   },
   {
    "child": 1,
@@ -117,7 +132,7 @@
    "show_arrow": 0,
    "type": "Link",
    "link_to": "Foyda Zarar",
-   "idx": 7
+   "idx": 8
   }
  ]
 }
