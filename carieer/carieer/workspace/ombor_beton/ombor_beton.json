@@ -2,13 +2,13 @@
  "creation": "2026-10-23 18:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
- "modified": "2026-10-23 18:00:00.000000",
+ "modified": "2026-10-30 20:00:00.000000",
  "modified_by": "Administrator",
  "name": "Ombor Beton",
  "owner": "Administrator",
  "app": "carieer",
  "charts": [],
- "content": "[{\"id\": \"h0\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Jurnallar</b></span>\", \"col\": 12}}, {\"id\": \"s0_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Инвентаризация\", \"col\": 3}}, {\"id\": \"s0_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Производство / Перемещение\", \"col\": 3}}, {\"id\": \"s0_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Purchase Invoice (Приход)\", \"col\": 3}}, {\"id\": \"sp0\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Hisobotlar</b></span>\", \"col\": 12}}, {\"id\": \"s1_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Материальный отчет\", \"col\": 3}}, {\"id\": \"s1_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Приход (hisobot)\", \"col\": 3}}, {\"id\": \"s1_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ombor qoldig'i\", \"col\": 3}}, {\"id\": \"s1_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ombor harakati\", \"col\": 3}}, {\"id\": \"s1_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Расход сырья по рецепту\", \"col\": 3}}, {\"id\": \"s1_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"СС бетон\", \"col\": 3}}, {\"id\": \"sp1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h2\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Справочники</b></span>\", \"col\": 12}}, {\"id\": \"s2_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tovarlar\", \"col\": 3}}, {\"id\": \"s2_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Omborlar\", \"col\": 3}}, {\"id\": \"s2_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Рецептура (BOM)\", \"col\": 3}}, {\"id\": \"sp2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}]",
+ "content": "[{\"id\": \"h0\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Jurnallar</b></span>\", \"col\": 12}}, {\"id\": \"s0_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Инвентаризация\", \"col\": 3}}, {\"id\": \"s0_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Производство / Перемещение\", \"col\": 3}}, {\"id\": \"s0_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Purchase Invoice (Приход)\", \"col\": 3}}, {\"id\": \"sp0\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Hisobotlar</b></span>\", \"col\": 12}}, {\"id\": \"s1_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Материальный отчет\", \"col\": 3}}, {\"id\": \"s1_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Приход (hisobot)\", \"col\": 3}}, {\"id\": \"s1_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ombor qoldig'i\", \"col\": 3}}, {\"id\": \"s1_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ombor harakati\", \"col\": 3}}, {\"id\": \"s1_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Расход сырья по рецепту\", \"col\": 3}}, {\"id\": \"s1_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"СС бетон\", \"col\": 3}}, {\"id\": \"sp1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h2\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Справочники</b></span>\", \"col\": 12}}, {\"id\": \"s2_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tovarlar\", \"col\": 3}}, {\"id\": \"xizmat\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Xizmatlar\", \"col\": 3}}, {\"id\": \"s2_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Omborlar\", \"col\": 3}}, {\"id\": \"s2_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Рецептура (BOM)\", \"col\": 3}}, {\"id\": \"sp2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}]",
  "custom_blocks": [],
  "for_user": "",
  "hide_custom": 0,
@@ -98,7 +98,8 @@
    "label": "Tovarlar",
    "link_to": "Item",
    "color": "Grey",
-   "doc_view": "List"
+   "doc_view": "List",
+   "stats_filter": "[[\"Item\", \"is_stock_item\", \"=\", 1]]"
   },
   {
    "type": "DocType",
@@ -113,6 +114,14 @@
    "link_to": "BOM",
    "color": "Grey",
    "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Xizmatlar",
+   "link_to": "Item",
+   "color": "Grey",
+   "doc_view": "List",
+   "stats_filter": "[[\"Item\", \"is_stock_item\", \"=\", 0]]"
   }
  ],
  "title": "Ombor Beton",

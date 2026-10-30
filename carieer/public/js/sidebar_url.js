@@ -19,3 +19,13 @@ frappe.set_route = function (...args) {
 	}
 	return set_route.apply(this, args);
 };
+
+// Menyudagi URL turidagi ichki havola («Ombor qoldig'i» -> /desk/query-report/Ombor%20qoldigi) Frappe shablonida
+// target="_blank" bilan chiziladi va yangi tabda ochiladi. Tizim ichidagi sahifa shu tabda ochilsin;
+// Ctrl / Cmd / Shift bilan bosilsa - odatdagidek yangi tab.
+$(document).on("click", ".body-sidebar a.item-anchor[target='_blank']", function (e) {
+	const href = $(this).attr("href") || "";
+	if (!href.startsWith("/desk/") || e.ctrlKey || e.metaKey || e.shiftKey) return;
+	e.preventDefault();
+	frappe.set_route(href);
+});

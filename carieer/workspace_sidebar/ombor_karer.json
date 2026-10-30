@@ -2,7 +2,7 @@
  "creation": "2026-10-23 18:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "modified": "2026-10-30 18:00:00.000000",
+ "modified": "2026-10-30 20:20:00.000000",
  "modified_by": "Administrator",
  "name": "Ombor Karer",
  "owner": "Administrator",
@@ -155,10 +155,10 @@
    "parenttype": "Workspace Sidebar",
    "show_arrow": 0,
    "label": "Ombor qoldig'i",
-   "link_to": "Stock Balance",
-   "link_type": "Report",
+   "link_type": "URL",
    "type": "Link",
-   "idx": 10
+   "idx": 10,
+   "url": "/desk/query-report/Ombor%20qoldigi"
   },
   {
    "child": 1,
@@ -203,7 +203,24 @@
    "link_to": "Item",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 13
+   "idx": 13,
+   "filters": "[[\"Item\", \"is_stock_item\", \"=\", 1]]"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "doctype": "Workspace Sidebar Item",
+   "indent": 0,
+   "keep_closed": 0,
+   "parentfield": "items",
+   "parenttype": "Workspace Sidebar",
+   "show_arrow": 0,
+   "label": "Xizmatlar",
+   "link_to": "Item",
+   "link_type": "DocType",
+   "type": "Link",
+   "filters": "[[\"Item\", \"is_stock_item\", \"=\", 0]]",
+   "idx": 14
   },
   {
    "child": 1,
@@ -218,7 +235,7 @@
    "link_to": "Warehouse",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 14
+   "idx": 15
   }
  ],
  "module": "Carieer",

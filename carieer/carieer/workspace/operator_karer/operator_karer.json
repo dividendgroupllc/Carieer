@@ -2,7 +2,7 @@
  "creation": "2026-10-23 18:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
- "modified": "2026-10-30 18:00:00.000000",
+ "modified": "2026-10-30 20:10:00.000000",
  "modified_by": "Administrator",
  "name": "Operator Karer",
  "owner": "Administrator",
@@ -66,7 +66,7 @@
   {
    "type": "Report",
    "label": "Ombor qoldig'i",
-   "link_to": "Stock Balance",
+   "link_to": "Ombor qoldigi",
    "color": "Grey"
   },
   {
@@ -81,7 +81,8 @@
    "label": "Tovarlar",
    "link_to": "Item",
    "color": "Grey",
-   "doc_view": "List"
+   "doc_view": "List",
+   "stats_filter": "[[\"Item\", \"is_stock_item\", \"=\", 1]]"
   },
   {
    "type": "DocType",

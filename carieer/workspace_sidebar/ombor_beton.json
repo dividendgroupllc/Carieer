@@ -2,7 +2,7 @@
  "creation": "2026-10-23 18:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "modified": "2026-10-23 18:00:00.000000",
+ "modified": "2026-10-30 20:00:00.000000",
  "modified_by": "Administrator",
  "name": "Ombor Beton",
  "owner": "Administrator",
@@ -218,7 +218,24 @@
    "link_to": "Item",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 14
+   "idx": 14,
+   "filters": "[[\"Item\", \"is_stock_item\", \"=\", 1]]"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "doctype": "Workspace Sidebar Item",
+   "indent": 0,
+   "keep_closed": 0,
+   "parentfield": "items",
+   "parenttype": "Workspace Sidebar",
+   "show_arrow": 0,
+   "label": "Xizmatlar",
+   "link_to": "Item",
+   "link_type": "DocType",
+   "type": "Link",
+   "filters": "[[\"Item\", \"is_stock_item\", \"=\", 0]]",
+   "idx": 15
   },
   {
    "child": 1,
@@ -233,7 +250,7 @@
    "link_to": "Warehouse",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 15
+   "idx": 16
   },
   {
    "child": 1,
@@ -248,7 +265,7 @@
    "link_to": "BOM",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 16
+   "idx": 17
   }
  ],
  "module": "Carieer",

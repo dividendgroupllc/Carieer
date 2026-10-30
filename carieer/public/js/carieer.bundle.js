@@ -46,21 +46,31 @@ $(window).on("beforeunload", () => {
 		// sessionStorage yo'q (maxfiy rejim) - Frappe'ning o'z tanlovi qoladi
 	}
 });
+// Menyuda sahifa URL band bilan berilgan («/desk/query-report/Balans?sidebar=...», «Ombor qoldig'i» ->
+// /desk/query-report/Ombor%20qoldigi): Frappe faqat link_to bo'yicha qidiradi va bunday menyuni topmaydi.
+function sidebar_has_url(title, entity) {
+	return (frappe.boot.workspace_sidebar_item[(title || "").toLowerCase()]?.items || []).some(
+		(item) => item.url && decodeURIComponent(item.url.split("?")[0]).endsWith("/" + entity)
+	);
+}
+
 const resolve_sidebar = frappe.ui.Sidebar.prototype.resolve_sidebar;
 frappe.ui.Sidebar.prototype.resolve_sidebar = function (entity, module) {
-	if (!this.sidebar_title) {
+	const candidates = this.get_workspace_sidebars(entity);
+	const current = this.sidebar_title;
+	if (current && !candidates.includes(current) && sidebar_has_url(current, entity)) {
+		// joriy menyudagi URL band bosildi - menyu o'zgarmaydi
+		this.preferred_sidebars = [current, ...candidates];
+		return current;
+	}
+	if (!current) {
 		let saved = null;
 		try {
 			saved = sessionStorage.getItem(SIDEBAR_KEY);
 		} catch (e) {
 			saved = null;
 		}
-		const candidates = this.get_workspace_sidebars(entity);
-		// hisobot menyularining birinchi bandi URL («/desk/query-report/Balans?sidebar=...»)
-		const by_url = (frappe.boot.workspace_sidebar_item[(saved || "").toLowerCase()]?.items || []).some(
-			(item) => item.url && decodeURIComponent(item.url.split("?")[0]).endsWith("/" + entity)
-		);
-		if (saved && (candidates.includes(saved) || by_url)) {
+		if (saved && (candidates.includes(saved) || sidebar_has_url(saved, entity))) {
 			this.preferred_sidebars = candidates.includes(saved) ? candidates : [saved, ...candidates];
 			return saved;
 		}

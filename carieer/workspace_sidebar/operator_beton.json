@@ -2,7 +2,7 @@
  "creation": "2026-10-23 18:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "modified": "2026-10-23 18:00:00.000000",
+ "modified": "2026-10-30 20:00:00.000000",
  "modified_by": "Administrator",
  "name": "Operator Beton",
  "owner": "Administrator",
@@ -203,7 +203,8 @@
    "link_to": "Item",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 13
+   "idx": 13,
+   "filters": "[[\"Item\", \"is_stock_item\", \"=\", 1]]"
   },
   {
    "child": 1,

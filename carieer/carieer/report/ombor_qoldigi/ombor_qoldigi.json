@@ -1,0 +1,60 @@
+{
+ "add_total_row": 0,
+ "add_translate_data": 0,
+ "columns": [],
+ "creation": "2026-10-30 17:36:28.456504",
+ "disable_prepared_report_automation": 0,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "doctype_to_sync": [],
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "json": "{\"columns\":[{\"label\":\"Item\",\"fieldname\":\"item_code\",\"fieldtype\":\"Link\",\"options\":\"Item\",\"width\":100,\"id\":\"item_code\",\"name\":\"Item\",\"editable\":false,\"compareValue\":null},{\"label\":\"Item Name\",\"fieldname\":\"item_name\",\"width\":150,\"id\":\"item_name\",\"name\":\"Item Name\",\"editable\":false,\"compareValue\":null},{\"label\":\"Item Group\",\"fieldname\":\"item_group\",\"fieldtype\":\"Link\",\"options\":\"Item Group\",\"width\":100,\"id\":\"item_group\",\"name\":\"Item Group\",\"editable\":false,\"compareValue\":null},{\"label\":\"Warehouse\",\"fieldname\":\"warehouse\",\"fieldtype\":\"Link\",\"options\":\"Warehouse\",\"width\":100,\"id\":\"warehouse\",\"name\":\"Warehouse\",\"editable\":false,\"compareValue\":null},{\"label\":\"Stock UOM\",\"fieldname\":\"stock_uom\",\"fieldtype\":\"Link\",\"options\":\"UOM\",\"width\":90,\"id\":\"stock_uom\",\"name\":\"Stock UOM\",\"editable\":false,\"compareValue\":null},{\"label\":\"Balance Qty\",\"fieldname\":\"bal_qty\",\"fieldtype\":\"Float\",\"width\":100,\"convertible\":\"qty\",\"id\":\"bal_qty\",\"name\":\"Balance Qty\",\"editable\":false,\"compareValue\":null},{\"label\":\"Opening Qty\",\"fieldname\":\"opening_qty\",\"fieldtype\":\"Float\",\"width\":100,\"convertible\":\"qty\",\"id\":\"opening_qty\",\"name\":\"Opening Qty\",\"editable\":false,\"compareValue\":null},{\"label\":\"In Qty\",\"fieldname\":\"in_qty\",\"fieldtype\":\"Float\",\"width\":80,\"convertible\":\"qty\",\"id\":\"in_qty\",\"name\":\"In Qty\",\"editable\":false,\"compareValue\":null},{\"label\":\"Out Qty\",\"fieldname\":\"out_qty\",\"fieldtype\":\"Float\",\"width\":80,\"convertible\":\"qty\",\"id\":\"out_qty\",\"name\":\"Out Qty\",\"editable\":false,\"compareValue\":null}],\"filters\":{}}",
+ "letter_head": null,
+ "modified": "2026-10-30 17:37:05.120699",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Ombor qoldigi",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Stock Ledger Entry",
+ "reference_report": "Stock Balance",
+ "report_name": "Ombor qoldigi",
+ "report_type": "Custom Report",
+ "roles": [
+  {
+   "role": "Stock User"
+  },
+  {
+   "role": "Accounts Manager"
+  },
+  {
+   "role": "Karer Menejer"
+  },
+  {
+   "role": "Karer Operator"
+  },
+  {
+   "role": "Karer Kassir"
+  },
+  {
+   "role": "Beton Operator"
+  },
+  {
+   "role": "Beton Kassir"
+  },
+  {
+   "role": "Beton Menejer"
+  },
+  {
+   "role": "Karer Omborchi"
+  },
+  {
+   "role": "Beton Omborchi"
+  }
+ ],
+ "snapshot_report": 0,
+ "timeout": 0
+}
