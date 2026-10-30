@@ -17,6 +17,7 @@ from carieer.carieer.report.akt_sverka.akt_sverka import (
 	get_invoice_items,
 	get_komments,
 	item_label,
+	opening_documents,
 	voucher_label,
 )
 from carieer.carieer.report.common import (
@@ -144,6 +145,7 @@ def get_data(filters):
 	company_currency = frappe.get_cached_value("Company", filters.company, "default_currency")
 	foreign = next((r.currency for r in rows if r.currency != company_currency), "USD")
 	parties = {}
+	openings = {}
 	for r in rows:
 		v = "sum" if r.currency == company_currency else "usd"
 		opening = flt(r.opening_credit) - flt(r.opening_debit)  # musbat - kredit (biz qarzdormiz)
@@ -165,6 +167,8 @@ def get_data(filters):
 				"cur_usd": foreign,
 				**{f: 0.0 for f in AMOUNT_FIELDS},
 			}
+		if abs(opening) >= 0.005:
+			openings[(r.party_type, r.party, r.currency)] = opening
 		row[f"nach_kr_{v}"] += max(opening, 0)
 		row[f"nach_dt_{v}"] += max(-opening, 0)
 		row[f"obor_kr_{v}"] += flt(r.period_credit)
@@ -177,10 +181,11 @@ def get_data(filters):
 	totals = {f: sum(flt(r[f]) for r in data) for f in AMOUNT_FIELDS}
 	totals.update(cur_sum=company_currency, cur_usd=foreign)
 	details = get_details(filters, cond, company_currency)
+	opening_rows = get_opening_details(filters, openings, company_currency)
 	tree = []
 	for row in data:
 		key = (row["party_type"], row["party"])
-		children = details.get(key, [])
+		children = opening_rows.get(key, []) + details.get(key, [])
 		row.update(name="|".join(key), indent=0, mahsulot=mahsulot_jami(children))
 		if children:
 			row["sana"] = children[-1]["sana"]
@@ -191,6 +196,59 @@ def get_data(filters):
 		# jadvaldagi kabi «Общая задолженность» qatori ro'yxat tepasida
 		tree.insert(0, {"name": "total", "indent": 0, "turi": bold(_("Общая задолженность")), **totals})
 	return blank(tree), totals
+
+
+def get_opening_details(filters, openings, company_currency) -> dict:
+	"""Начальное сальдо qaysi hujjatlardan iborat: davr boshigacha bo'lgan xarid / sotuv / начисление
+	(eng oxirgilaridan, qoldiq summasiga yetguncha). {(party_type, party): [qator, ...]}"""
+	picked = []
+	for (party_type, party, currency), opening in openings.items():
+		params = {**filters, "party_type": party_type, "party": party}
+		for d, ulush in opening_documents(
+			params, "party_type=%(party_type)s and party=%(party)s", currency, opening
+		):
+			picked.append((party_type, party, currency, opening, d, ulush))
+	vouchers = [p[4].voucher_no for p in picked]
+	items = get_invoice_items(
+		[p[4].voucher_no for p in picked if p[4].voucher_type in ("Sales Invoice", "Purchase Invoice")]
+	)
+	nachislenie = nachislenie_lines(vouchers)
+	out = {}
+	for party_type, party, currency, opening, d, ulush in picked:
+		v = "sum" if currency == company_currency else "usd"
+		side = "kr" if opening > 0 else "dt"
+		lines = items.get(d.voucher_no) or (
+			[nachislenie[d.voucher_no]] if d.voucher_no in nachislenie else []
+		)
+		izoh = [_("бошланғич қолдиқ")]
+		if ulush < flt(d.amount) - 0.005:
+			izoh.append(_("қолдиққа {0} кирди").format(frappe.format(ulush, {"fieldtype": "Currency"})))
+		out.setdefault((party_type, party), []).append(
+			{
+				"name": f"{party_type}|{party}|nach|{d.voucher_no}|{currency}",
+				"indent": 1,
+				"sana": d.posting_date,
+				"voucher_type": d.voucher_type,
+				"voucher_no": d.voucher_no,
+				"turi": voucher_label(d.voucher_type),
+				"mahsulot": " · ".join(filter(None, (", ".join(tovar_qatori(i) for i in lines), *izoh))),
+				"lines": lines,
+				f"nach_{side}_{v}": flt(ulush, 2),
+			}
+		)
+	return out
+
+
+def nachislenie_lines(vouchers) -> dict:
+	"""Начисление (xizmat): kategoriya, miqdor, narx - tovar qatori kabi ko'rsatiladi va jamlanadi."""
+	return {
+		n.journal_entry: frappe._dict(item_name=n.kategoriya, qty=n.qty, uom="", rate=n.rate)
+		for n in frappe.get_all(
+			"Nachislenie",
+			filters={"journal_entry": ["in", vouchers or [""]], "docstatus": 1},
+			fields=["journal_entry", "kategoriya", "qty", "rate"],
+		)
+	}
 
 
 def get_details(filters, cond, company_currency) -> dict:
@@ -217,15 +275,7 @@ def get_details(filters, cond, company_currency) -> dict:
 			as_list=True,
 		)
 	)
-	# Начисление (xizmat): kategoriya, miqdor, narx - tovar qatori kabi ko'rsatiladi va jamlanadi
-	nachislenie = {
-		n.journal_entry: frappe._dict(item_name=n.kategoriya, qty=n.qty, uom="", rate=n.rate)
-		for n in frappe.get_all(
-			"Nachislenie",
-			filters={"journal_entry": ["in", [g.voucher_no for g in gl] or [""]], "docstatus": 1},
-			fields=["journal_entry", "kategoriya", "qty", "rate"],
-		)
-	}
+	nachislenie = nachislenie_lines([g.voucher_no for g in gl])
 	out = {}
 	for g in gl:
 		v = "sum" if g.currency == company_currency else "usd"

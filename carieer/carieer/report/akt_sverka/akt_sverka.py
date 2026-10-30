@@ -204,9 +204,10 @@ def period_rows(data, currency):
 	return [r for r in data if r.get("currency") == currency and r.get("voucher_no") and not r.get("indent")]
 
 
-def opening_details(filters, currency, opening) -> list[dict]:
+def opening_documents(params, party_cond: str, currency: str, opening: float) -> list[tuple]:
 	"""Boshlang'ich qoldiq tarkibi: davr boshigacha bo'lgan, qoldiq tomonidagi hujjatlar - eng oxirgisidan boshlab
-	qoldiq summasiga yetguncha (eski hujjatlar oldin yopilgan deb hisoblanadi, FIFO). Qisman yopilgani izohda."""
+	qoldiq summasiga yetguncha (eski hujjatlar oldin yopilgan deb hisoblanadi, FIFO).
+	[(hujjat, qoldiqqa kirgan summa), ...] sana tartibida. params: company, from_date va party_cond qiymatlari."""
 	if abs(opening) < 0.005:
 		return []
 	side = "credit_in_account_currency - debit_in_account_currency"
@@ -215,12 +216,12 @@ def opening_details(filters, currency, opening) -> list[dict]:
 	docs = frappe.db.sql(
 		f"""select posting_date, voucher_type, voucher_no, sum({side}) amount, min(creation) creation
 		from `tabGL Entry`
-		where company=%(company)s and {filters.party_cond} and posting_date < %(from_date)s and is_cancelled=0
+		where company=%(company)s and {party_cond} and posting_date < %(from_date)s and is_cancelled=0
 			and account_currency=%(currency)s
 		group by posting_date, voucher_type, voucher_no
 		having amount > 0
 		order by posting_date desc, creation desc""",
-		{**filters, "currency": currency},
+		{**params, "currency": currency},
 		as_dict=True,
 	)
 	qolgan, tanlangan = abs(opening), []
@@ -229,13 +230,18 @@ def opening_details(filters, currency, opening) -> list[dict]:
 			break
 		tanlangan.append((d, min(flt(d.amount), qolgan)))
 		qolgan -= flt(d.amount)
+	return list(reversed(tanlangan))
 
+
+def opening_details(filters, currency, opening) -> list[dict]:
+	"""Akt: «Бошланғич қолдиқ» ostidagi qatorlar (tovar, miqdor, narx). Qisman yopilgan hujjat izohda."""
+	tanlangan = opening_documents(filters, filters.party_cond, currency, opening)
 	items = get_invoice_items(
 		[d.voucher_no for d, _x in tanlangan if d.voucher_type in ("Sales Invoice", "Purchase Invoice")]
 	)
 	komment = get_komments([d for d, _x in tanlangan])
 	rows = []
-	for d, ulush in reversed(tanlangan):
+	for d, ulush in tanlangan:
 		izoh = [_("олдинги давр")]
 		if ulush < flt(d.amount) - 0.005:
 			izoh.append(_("қолдиққа {0} кирди").format(frappe.format(ulush, {"fieldtype": "Currency"})))
