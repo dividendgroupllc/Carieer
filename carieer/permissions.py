@@ -1,4 +1,5 @@
-"""Rollar (Karer / Beton: Operator, Kassir, Omborchi, Menejer), firma bo'yicha ruxsat va menyu (desktop / sidebar) tozaligi.
+"""Rollar (Karer / Beton: Operator, Kassir, Omborchi, Menejer; Beton: Ishlab chiqarish), firma bo'yicha ruxsat va
+menyu (desktop / sidebar) tozaligi.
 
 Ma'lumot cheklovi ERPNext'ning o'z mexanizmi bilan: User Permission -> Company.
 Menyu: Karer / Beton xodimi faqat Carieer bo'limlarini (o'z workspace'larini) ko'radi.
@@ -10,15 +11,25 @@ from frappe import _
 # Bo'lim = firma (Zavod): rol nomi «<Bo'lim> <Lavozim>», masalan «Beton Kassir»
 BOLIMLAR = ("Karer", "Beton")
 LAVOZIMLAR = ("Operator", "Kassir", "Omborchi", "Menejer")
+# Faqat bitta bo'limda bo'ladigan lavozimlar: beton retsept bo'yicha ishlab chiqariladi, karerda bunday ish yo'q
+BOLIM_LAVOZIMLARI = {
+	"Karer": LAVOZIMLAR,
+	"Beton": (*LAVOZIMLAR, "Ishlab chiqarish"),
+}
 
-KARER_ROLES = tuple(f"Karer {lavozim}" for lavozim in LAVOZIMLAR)
-BETON_ROLES = tuple(f"Beton {lavozim}" for lavozim in LAVOZIMLAR)
+KARER_ROLES = tuple(f"Karer {lavozim}" for lavozim in BOLIM_LAVOZIMLARI["Karer"])
+BETON_ROLES = tuple(f"Beton {lavozim}" for lavozim in BOLIM_LAVOZIMLARI["Beton"])
 ALL_ROLES = KARER_ROLES + BETON_ROLES
 
 
 def lavozim_roles(lavozim: str) -> tuple[str, ...]:
-	"""Lavozim -> ikkala bo'limdagi rollari: «Kassir» -> («Karer Kassir», «Beton Kassir»)."""
-	return tuple(f"{bolim} {lavozim}" for bolim in BOLIMLAR)
+	"""Lavozim -> shu lavozim bor bo'limlardagi rollari: «Kassir» -> («Karer Kassir», «Beton Kassir»)."""
+	return tuple(f"{bolim} {lavozim}" for bolim in BOLIMLAR if lavozim in BOLIM_LAVOZIMLARI[bolim])
+
+
+def role_lavozim(role: str) -> str:
+	"""«Beton Ishlab chiqarish» -> «Ishlab chiqarish» (lavozim bir necha so'zdan bo'lishi mumkin)."""
+	return role.split(" ", 1)[1]
 
 
 OPERATOR_ROLES = lavozim_roles("Operator")

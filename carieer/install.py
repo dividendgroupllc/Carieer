@@ -16,7 +16,7 @@ Bir marta, qo'lda (firma yaratilgandan keyin):
 
 Xodim qo'shish (rol + faqat o'z firmasi):
   bench --site SITE execute carieer.install.setup_user --kwargs "{'email': 'kassir@beton.uz', 'full_name': 'Ali Valiyev', 'lavozim': 'Kassir', 'bolim': 'Beton', 'password': 'Parol123!'}"
-    lavozim: Operator | Kassir | Omborchi | Menejer
+    lavozim: Operator | Kassir | Omborchi | Menejer | "Ishlab chiqarish" (faqat Beton)
     bolim:   Karer | Beton | "Karer,Beton" (ikkala firma - masalan rahbar uchun)
 """
 
@@ -24,7 +24,7 @@ import frappe
 from frappe import _
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
-from carieer.permissions import ALL_ROLES, BETON_ROLES, BOLIMLAR, LAVOZIMLAR
+from carieer.permissions import ALL_ROLES, BETON_ROLES, BOLIM_LAVOZIMLARI, BOLIMLAR, role_lavozim
 
 
 def after_install():
@@ -111,6 +111,20 @@ LAVOZIM_PERMS = {
 		"Stock Reconciliation": ("read", "write", "create", "submit", "report", "print"),  # Инвентаризация
 		"Stock Ledger Entry": RR,
 	},
+	# Beton: retsept bo'yicha ishlab chiqarish (Производство), retsept va xomashyo sarfi, sex xodimlari davomati
+	"Ishlab chiqarish": {
+		"Item": R,
+		"UOM": R,
+		"Warehouse": R,
+		"Company": R,
+		"Account": R,  # Stock Entry: xomashyo / tayyor mahsulot hisoblarini tekshiradi
+		"Cost Center": R,
+		"Employee": R,  # Посещение: sex xodimlari
+		"BOM": RR,
+		"Stock Entry": ("read", "write", "create", "submit", "report", "print"),
+		"Stock Entry Type": R,
+		"Stock Ledger Entry": RR,  # Material Hisobot, Ombor qoldig'i, retsept sarfi
+	},
 	"Menejer": {
 		"Accounts Settings": R,  # Hisoblar rejasi (Chart of Accounts) sahifasi
 		"Customer": CRW,
@@ -147,8 +161,7 @@ def make_standard_permissions(roles=ALL_ROLES):
 	from frappe.permissions import add_permission, update_permission_property
 
 	for role in roles:
-		lavozim = role.split()[-1]
-		for doctype, rights in LAVOZIM_PERMS[lavozim].items():
+		for doctype, rights in LAVOZIM_PERMS[role_lavozim(role)].items():
 			if not frappe.db.exists("DocType", doctype):
 				continue
 			if not frappe.db.exists(
@@ -161,7 +174,7 @@ def make_standard_permissions(roles=ALL_ROLES):
 
 # ERPNext hisobotlari (menyuda bor) -> qaysi lavozimlar ochadi. Hisobotning o'z rollari saqlanadi.
 REPORT_ROLES = {
-	"Stock Balance": ("Operator", "Kassir", "Omborchi", "Menejer"),  # ombor qoldig'i
+	"Stock Balance": ("Operator", "Kassir", "Omborchi", "Menejer", "Ishlab chiqarish"),  # ombor qoldig'i
 	"Stock Ledger": ("Operator", "Kassir", "Omborchi", "Menejer"),  # ombor harakati tarixi
 }
 
@@ -174,7 +187,12 @@ def make_report_roles():
 	for report, lavozimlar in REPORT_ROLES.items():
 		if not frappe.db.exists("Report", report):
 			continue
-		roles = {f"{bolim} {lavozim}" for bolim in BOLIMLAR for lavozim in lavozimlar}
+		roles = {
+			f"{bolim} {lavozim}"
+			for bolim in BOLIMLAR
+			for lavozim in lavozimlar
+			if lavozim in BOLIM_LAVOZIMLARI[bolim]
+		}
 		name = frappe.db.get_value("Custom Role", {"report": report}, "name")
 		if name:
 			doc = frappe.get_doc("Custom Role", name)
@@ -1285,12 +1303,10 @@ def seed_kontragentlar(data: dict, company: str) -> dict:
 def setup_user(
 	email: str, full_name: str, lavozim: str, password: str | None = None, bolim: str = "Karer"
 ):
-	"""Xodim yaratadi / yangilaydi. lavozim: Operator | Kassir | Omborchi | Menejer, bolim: Karer | Beton |
-	«Karer,Beton» (ikkala firma). Beriladi: «<bolim> <lavozim>» roli va faqat shu bo'lim firmasi
-	(User Permission -> Company va Zavod). Boshqa karer / beton rollari olib tashlanadi."""
+	"""Xodim yaratadi / yangilaydi. lavozim: Operator | Kassir | Omborchi | Menejer | Ishlab chiqarish (faqat Beton),
+	bolim: Karer | Beton | «Karer,Beton» (ikkala firma). Beriladi: «<bolim> <lavozim>» roli va faqat shu bo'lim
+	firmasi (User Permission -> Company va Zavod). Boshqa karer / beton rollari olib tashlanadi."""
 	frappe.only_for("System Manager")
-	if lavozim not in LAVOZIMLAR:
-		frappe.throw(_("lavozim: Operator, Kassir, Omborchi yoki Menejer"))
 	from carieer.utils import find_zavod
 
 	bolimlar = [b.strip().capitalize() for b in (bolim or "Karer").split(",") if b.strip()]
@@ -1298,6 +1314,8 @@ def setup_user(
 	for b in bolimlar:
 		if b not in BOLIMLAR:
 			frappe.throw(_("bolim: Karer, Beton yoki «Karer,Beton»"))
+		if lavozim not in BOLIM_LAVOZIMLARI[b]:
+			frappe.throw(_("{0} bo'limida lavozim: {1}").format(b, ", ".join(BOLIM_LAVOZIMLARI[b])))
 		nomi = find_zavod(b)
 		company = nomi and frappe.db.get_value("Zavod", nomi, "company")
 		if not company:

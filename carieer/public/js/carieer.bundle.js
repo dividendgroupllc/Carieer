@@ -11,7 +11,9 @@ carieer.firma = function () {
 	const info = frappe.boot.carieer_firma;
 	if (!info) return null;
 	const sidebar = frappe.app?.sidebar?.sidebar_title || "";
-	const bolim = Object.keys(info.bolimlar).find((b) => sidebar.includes(b));
+	// «Эко Бетон» (jadval varaqlari nomi bilan) menyusi ham Beton bo'limi
+	const ru = { Karer: "Карьер", Beton: "Бетон" };
+	const bolim = Object.keys(info.bolimlar).find((b) => sidebar.includes(b) || sidebar.includes(ru[b]));
 	return info.bolimlar[bolim] || info.default;
 };
 

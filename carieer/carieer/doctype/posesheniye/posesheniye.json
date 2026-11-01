@@ -1,0 +1,153 @@
+{
+ "actions": [],
+ "creation": "2026-10-30 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "asosiy_section",
+  "naming_series",
+  "company",
+  "cb_1",
+  "sana",
+  "cb_2",
+  "jami_soat",
+  "xodimlar_section",
+  "xodimlar",
+  "izoh"
+ ],
+ "fields": [
+  {
+   "fieldname": "asosiy_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Серия",
+   "options": "POS-.YYYY.-",
+   "default": "POS-.YYYY.-",
+   "reqd": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Фирма",
+   "options": "Company",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "remember_last_selected_value": 1
+  },
+  {
+   "fieldname": "cb_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sana",
+   "fieldtype": "Date",
+   "label": "Дата",
+   "reqd": 1,
+   "default": "Today",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "jami_soat",
+   "fieldtype": "Float",
+   "label": "Жами соат",
+   "read_only": 1,
+   "precision": "2",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "xodimlar_section",
+   "fieldtype": "Section Break",
+   "label": "Посещение"
+  },
+  {
+   "fieldname": "xodimlar",
+   "fieldtype": "Table",
+   "label": "Сотрудники",
+   "options": "Posesheniye Qator"
+  },
+  {
+   "fieldname": "izoh",
+   "fieldtype": "Small Text",
+   "label": "Изоҳ"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-30 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Carieer",
+ "name": "Posesheniye",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "System Manager"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Karer Menejer"
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "share": 1,
+   "write": 1,
+   "role": "Beton Menejer"
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "write": 1,
+   "role": "Karer Operator"
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "write": 1,
+   "role": "Beton Operator"
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "write": 1,
+   "role": "Beton Ishlab chiqarish"
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "autoname": "naming_series:",
+ "description": "Посещение: xodimlarning kunlik kelish / ketish vaqti (bir kun = bitta hujjat)",
+ "title_field": "sana",
+ "track_changes": 1
+}

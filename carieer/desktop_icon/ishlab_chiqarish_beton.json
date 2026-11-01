@@ -1,0 +1,32 @@
+{
+ "creation": "2026-10-30 16:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "modified": "2026-10-30 16:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "Ishlab chiqarish Beton",
+ "owner": "Administrator",
+ "app": "carieer",
+ "hidden": 0,
+ "icon": "ishlab_chiqarish",
+ "icon_type": "Link",
+ "idx": 12,
+ "label": "Ishlab chiqarish Beton",
+ "link_to": "Ishlab chiqarish Beton",
+ "link_type": "Workspace Sidebar",
+ "logo_url": "",
+ "parent_icon": "",
+ "restrict_removal": 1,
+ "roles": [
+  {
+   "role": "Beton Ishlab chiqarish"
+  },
+  {
+   "role": "Beton Menejer"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "standard": 1
+}

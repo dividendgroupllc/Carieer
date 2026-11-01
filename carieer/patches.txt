@@ -10,5 +10,6 @@ carieer.patches.rename_eko_karer_to_eko_carier
 carieer.patches.workspace_per_lavozim
 carieer.patches.omborchi_permissions
 carieer.patches.beton_bolimi
+carieer.patches.beton_ishlab_chiqarish
 carieer.patches.qazib_olish_title
 carieer.patches.firmalararo_supplier_group
