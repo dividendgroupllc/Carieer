@@ -6,7 +6,7 @@ frappe.provide("carieer");
 
 carieer.DESKTOP_GROUPS = [
 	{ suffix: " Beton", title: __("Beton Zavod"), extra: ["Эко Бетон"] },
-	{ suffix: " Karer", title: __("Karer"), extra: ["Didox"] },
+	{ suffix: " Karer", title: __("Karer"), extra: ["Didox", "Эко Карьер"] },
 ];
 
 carieer.desktop_group = function (label) {

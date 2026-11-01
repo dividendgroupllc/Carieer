@@ -1,0 +1,280 @@
+{
+ "creation": "2026-11-01 19:30:00.000000",
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "modified": "2026-11-01 19:30:00.000000",
+ "modified_by": "Administrator",
+ "name": "Эко Карьер",
+ "owner": "Administrator",
+ "app": "carieer",
+ "charts": [],
+ "custom_blocks": [],
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "organization",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Эко Карьер",
+ "links": [],
+ "module": "Carieer",
+ "number_cards": [],
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "sequence_id": 5.0,
+ "title": "Эко Карьер",
+ "content": "[{\"id\": \"h0\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Ввод данных</b></span>\", \"col\": 12}}, {\"id\": \"s0_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Касса карьер\", \"col\": 3}}, {\"id\": \"s0_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Начисление карьер\", \"col\": 3}}, {\"id\": \"s0_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Приход\", \"col\": 3}}, {\"id\": \"s0_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Приход ОС\", \"col\": 3}}, {\"id\": \"s0_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Продажа карьер\", \"col\": 3}}, {\"id\": \"s0_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Производство\", \"col\": 3}}, {\"id\": \"s0_6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Инвентаризация\", \"col\": 3}}, {\"id\": \"sp0\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Справочники (Диспетчер)</b></span>\", \"col\": 12}}, {\"id\": \"s1_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Номенклатура\", \"col\": 3}}, {\"id\": \"s1_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Тип продукции\", \"col\": 3}}, {\"id\": \"s1_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ед. изм.\", \"col\": 3}}, {\"id\": \"s1_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Курс\", \"col\": 3}}, {\"id\": \"s1_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Типы услуг и категории\", \"col\": 3}}, {\"id\": \"s1_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Счета (кассы)\", \"col\": 3}}, {\"id\": \"s1_6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Сотрудники\", \"col\": 3}}, {\"id\": \"s1_7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Клиенты\", \"col\": 3}}, {\"id\": \"s1_8\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Поставщики\", \"col\": 3}}, {\"id\": \"sp1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h2\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Отчёты: финансы</b></span>\", \"col\": 12}}, {\"id\": \"s2_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Баланс\", \"col\": 3}}, {\"id\": \"s2_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Баланс бпр\", \"col\": 3}}, {\"id\": \"s2_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"P&L\", \"col\": 3}}, {\"id\": \"s2_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"P&L Разбитый\", \"col\": 3}}, {\"id\": \"s2_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Cash Flow\", \"col\": 3}}, {\"id\": \"s2_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"ДДС\", \"col\": 3}}, {\"id\": \"sp2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h3\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Отчёты: контрагенты</b></span>\", \"col\": 12}}, {\"id\": \"s3_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Оборотка Контрагентов\", \"col\": 3}}, {\"id\": \"s3_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Акт сверка\", \"col\": 3}}, {\"id\": \"s3_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Карздорликлар\", \"col\": 3}}, {\"id\": \"s3_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"БД контрагент\", \"col\": 3}}, {\"id\": \"s3_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"ПоставКлиент\", \"col\": 3}}, {\"id\": \"s3_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Постав Клиент Факт\", \"col\": 3}}, {\"id\": \"s3_6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Контрагент отчет нев\", \"col\": 3}}, {\"id\": \"s3_7\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Фирмалараро қарзлар\", \"col\": 3}}, {\"id\": \"sp3\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h4\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Отчёты: склад</b></span>\", \"col\": 12}}, {\"id\": \"s4_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Мат отчет\", \"col\": 3}}, {\"id\": \"s4_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Склад\", \"col\": 3}}, {\"id\": \"s4_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Приход (ҳисобот)\", \"col\": 3}}, {\"id\": \"sp4\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h5\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Прочие отчёты</b></span>\", \"col\": 12}}, {\"id\": \"s5_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Отчет\", \"col\": 3}}, {\"id\": \"s5_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"ПР Срав.\", \"col\": 3}}, {\"id\": \"s5_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"ПР Срав. Общ\", \"col\": 3}}, {\"id\": \"sp5\", \"type\": \"spacer\", \"data\": {\"col\": 12}}]",
+ "shortcuts": [
+  {
+   "type": "DocType",
+   "label": "Касса карьер",
+   "color": "Grey",
+   "link_to": "Kassa",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Начисление карьер",
+   "color": "Grey",
+   "link_to": "Nachislenie",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Приход",
+   "color": "Grey",
+   "link_to": "Purchase Invoice",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Приход ОС",
+   "color": "Grey",
+   "link_to": "Prixod OS",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Продажа карьер",
+   "color": "Grey",
+   "link_to": "Sotuv",
+   "doc_view": "List",
+   "stats_filter": "[[\"Sotuv\", \"tip\", \"=\", \"Karer\"]]"
+  },
+  {
+   "type": "DocType",
+   "label": "Производство",
+   "color": "Grey",
+   "link_to": "Qazib Olish",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Инвентаризация",
+   "color": "Grey",
+   "link_to": "Stock Reconciliation",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Номенклатура",
+   "color": "Grey",
+   "link_to": "Item",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Тип продукции",
+   "color": "Grey",
+   "link_to": "Item Group",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Ед. изм.",
+   "color": "Grey",
+   "link_to": "UOM",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Курс",
+   "color": "Grey",
+   "link_to": "Currency Exchange",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Типы услуг и категории",
+   "color": "Grey",
+   "link_to": "Kassa Kategoriya",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Счета (кассы)",
+   "color": "Grey",
+   "link_to": "Mode of Payment",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Сотрудники",
+   "color": "Grey",
+   "link_to": "Employee",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Клиенты",
+   "color": "Grey",
+   "link_to": "Customer",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Поставщики",
+   "color": "Grey",
+   "link_to": "Supplier",
+   "doc_view": "List"
+  },
+  {
+   "type": "Report",
+   "label": "Баланс",
+   "color": "Grey",
+   "link_to": "Balans"
+  },
+  {
+   "type": "Report",
+   "label": "Баланс бпр",
+   "color": "Grey",
+   "link_to": "Balans Bpr"
+  },
+  {
+   "type": "Report",
+   "label": "P&L",
+   "color": "Grey",
+   "link_to": "Foyda Zarar"
+  },
+  {
+   "type": "Report",
+   "label": "P&L Разбитый",
+   "color": "Grey",
+   "link_to": "Pl Razbityi"
+  },
+  {
+   "type": "Report",
+   "label": "Cash Flow",
+   "color": "Grey",
+   "link_to": "Pul Oqimi"
+  },
+  {
+   "type": "Report",
+   "label": "ДДС",
+   "color": "Grey",
+   "link_to": "DDS"
+  },
+  {
+   "type": "Report",
+   "label": "Оборотка Контрагентов",
+   "color": "Grey",
+   "link_to": "Kontragent Otchet"
+  },
+  {
+   "type": "Report",
+   "label": "Акт сверка",
+   "color": "Grey",
+   "link_to": "Akt Sverka"
+  },
+  {
+   "type": "Report",
+   "label": "Карздорликлар",
+   "color": "Grey",
+   "link_to": "Qarzdorlik"
+  },
+  {
+   "type": "Report",
+   "label": "БД контрагент",
+   "color": "Grey",
+   "link_to": "BD Kontragent"
+  },
+  {
+   "type": "Report",
+   "label": "ПоставКлиент",
+   "color": "Grey",
+   "link_to": "Postav Klient"
+  },
+  {
+   "type": "Report",
+   "label": "Постав Клиент Факт",
+   "color": "Grey",
+   "link_to": "Postav Klient Fakt"
+  },
+  {
+   "type": "Report",
+   "label": "Контрагент отчет нев",
+   "color": "Grey",
+   "link_to": "Kontragent Oylik"
+  },
+  {
+   "type": "Report",
+   "label": "Фирмалараро қарзлар",
+   "color": "Grey",
+   "link_to": "Firmalararo Qarzlar"
+  },
+  {
+   "type": "Report",
+   "label": "Мат отчет",
+   "color": "Grey",
+   "link_to": "Material Hisobot"
+  },
+  {
+   "type": "Report",
+   "label": "Склад",
+   "color": "Grey",
+   "link_to": "Ombor qoldigi"
+  },
+  {
+   "type": "Report",
+   "label": "Приход (ҳисобот)",
+   "color": "Grey",
+   "link_to": "Prixod"
+  },
+  {
+   "type": "Report",
+   "label": "Отчет",
+   "color": "Grey",
+   "link_to": "Kontrol Hisobot"
+  },
+  {
+   "type": "Report",
+   "label": "ПР Срав.",
+   "color": "Grey",
+   "link_to": "Pr Srav"
+  },
+  {
+   "type": "URL",
+   "label": "ПР Срав. Общ",
+   "color": "Grey",
+   "url": "/desk/query-report/Pr%20Srav?guruhlash=Наименование&sidebar=Эко%20Карьер"
+  }
+ ],
+ "roles": [
+  {
+   "role": "Karer Operator"
+  },
+  {
+   "role": "Karer Kassir"
+  },
+  {
+   "role": "Karer Omborchi"
+  },
+  {
+   "role": "Karer Menejer"
+  },
+  {
+   "role": "System Manager"
+  }
+ ]
+}
