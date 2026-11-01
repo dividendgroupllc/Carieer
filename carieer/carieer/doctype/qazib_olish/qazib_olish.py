@@ -15,6 +15,8 @@ from carieer.utils import get_zavod, validate_warehouse_company
 
 # Forma: tovar ro'yxatida faqat karer mahsulotlari (Клинец, Шебень, Қум, Тош ...)
 TOVAR_GURUHLARI = ("Полуфабрикат", "Готовый продукт")
+# Stock Entry Type (patches/qazib_olish_stock_entry_type)
+QAZIB_TURI = "Qazib olish"
 
 
 class QazibOlish(Document):
@@ -79,7 +81,10 @@ class QazibOlish(Document):
 		se = frappe.new_doc("Stock Entry")
 		se.update(
 			{
-				"stock_entry_type": "Material Receipt",
+				# o'z turi (purpose - Material Receipt): ro'yxat va hisobotlarda «Qazib olish» deb ajraladi
+				"stock_entry_type": (
+					QAZIB_TURI if frappe.db.exists("Stock Entry Type", QAZIB_TURI) else "Material Receipt"
+				),
 				"purpose": "Material Receipt",
 				"company": self.company,
 				"posting_date": self.posting_date,
