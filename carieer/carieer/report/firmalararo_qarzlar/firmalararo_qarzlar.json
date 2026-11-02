@@ -11,6 +11,13 @@
   {
    "mandatory": 0,
    "wildcard_filter": 0,
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "Санадан"
+  },
+  {
+   "mandatory": 0,
+   "wildcard_filter": 0,
    "default": "Today",
    "fieldname": "to_date",
    "fieldtype": "Date",
@@ -20,7 +27,7 @@
  "idx": 0,
  "is_standard": "Yes",
  "letterhead": null,
- "modified": "2026-10-23 18:00:00.000000",
+ "modified": "2026-11-02 15:30:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Firmalararo Qarzlar",
