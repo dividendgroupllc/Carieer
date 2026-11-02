@@ -2,7 +2,7 @@
  "creation": "2026-10-23 18:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "modified": "2026-10-24 16:00:00.000000",
+ "modified": "2026-11-02 16:00:00.000000",
  "modified_by": "Administrator",
  "name": "Kassa Karer",
  "owner": "Administrator",
@@ -341,6 +341,36 @@
    "idx": 22
   },
   {
+   "child": 1,
+   "collapsible": 1,
+   "doctype": "Workspace Sidebar Item",
+   "indent": 0,
+   "keep_closed": 0,
+   "parentfield": "items",
+   "parenttype": "Workspace Sidebar",
+   "show_arrow": 0,
+   "idx": 23,
+   "label": "Расчёт ЗП",
+   "link_type": "Report",
+   "link_to": "Raschet ZP",
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "doctype": "Workspace Sidebar Item",
+   "indent": 0,
+   "keep_closed": 0,
+   "parentfield": "items",
+   "parenttype": "Workspace Sidebar",
+   "show_arrow": 0,
+   "idx": 24,
+   "label": "Зарплата",
+   "link_type": "Report",
+   "link_to": "Zarplata",
+   "type": "Link"
+  },
+  {
    "child": 0,
    "collapsible": 1,
    "doctype": "Workspace Sidebar Item",
@@ -353,7 +383,7 @@
    "link_type": "DocType",
    "type": "Section Break",
    "icon": "folder",
-   "idx": 23
+   "idx": 25
   },
   {
    "child": 1,
@@ -368,7 +398,7 @@
    "link_to": "Didox Hujjat",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 24
+   "idx": 26
   },
   {
    "child": 1,
@@ -383,7 +413,7 @@
    "link_to": "Didox Hisobot",
    "link_type": "Report",
    "type": "Link",
-   "idx": 25
+   "idx": 27
   },
   {
    "child": 0,
@@ -398,7 +428,7 @@
    "link_type": "DocType",
    "type": "Section Break",
    "icon": "folder",
-   "idx": 26
+   "idx": 28
   },
   {
    "child": 1,
@@ -413,7 +443,7 @@
    "link_to": "Kassa Kategoriya",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 27
+   "idx": 29
   },
   {
    "child": 1,
@@ -428,7 +458,7 @@
    "link_to": "Mode of Payment",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 28
+   "idx": 30
   },
   {
    "child": 1,
@@ -443,7 +473,7 @@
    "link_to": "Currency Exchange",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 29
+   "idx": 31
   },
   {
    "child": 1,
@@ -458,7 +488,7 @@
    "link_to": "Customer",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 30
+   "idx": 32
   },
   {
    "child": 1,
@@ -473,7 +503,7 @@
    "link_to": "Supplier",
    "link_type": "DocType",
    "type": "Link",
-   "idx": 31
+   "idx": 33
   }
  ],
  "module": "Carieer",

@@ -2,13 +2,13 @@
  "creation": "2026-10-23 18:00:00.000000",
  "docstatus": 0,
  "doctype": "Workspace",
- "modified": "2026-10-23 18:00:00.000000",
+ "modified": "2026-11-02 16:00:00.000000",
  "modified_by": "Administrator",
  "name": "Menejer Karer",
  "owner": "Administrator",
  "app": "carieer",
  "charts": [],
- "content": "[{\"id\": \"h0\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Jurnallar</b></span>\", \"col\": 12}}, {\"id\": \"s0_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Приход ОС\", \"col\": 3}}, {\"id\": \"sp0\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Hisobotlar</b></span>\", \"col\": 12}}, {\"id\": \"s1_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Баланс\", \"col\": 3}}, {\"id\": \"s1_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"P&L\", \"col\": 3}}, {\"id\": \"s1_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"P&L Разбитый\", \"col\": 3}}, {\"id\": \"s1_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Баланс бпр\", \"col\": 3}}, {\"id\": \"s1_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"ПР Срав.\", \"col\": 3}}, {\"id\": \"s1_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Chart of Accounts\", \"col\": 3}}, {\"id\": \"s1_6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Фирмалараро қарзлар\", \"col\": 3}}, {\"id\": \"sp1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h2\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Справочники</b></span>\", \"col\": 12}}, {\"id\": \"s2_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tovar guruhlari\", \"col\": 3}}, {\"id\": \"s2_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ta'minotchilar\", \"col\": 3}}, {\"id\": \"s2_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Xodimlar\", \"col\": 3}}, {\"id\": \"s2_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Zavod\", \"col\": 3}}, {\"id\": \"s2_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Karer sozlamalari\", \"col\": 3}}, {\"id\": \"s2_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firma\", \"col\": 3}}, {\"id\": \"sp2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}]",
+ "content": "[{\"id\": \"h0\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Jurnallar</b></span>\", \"col\": 12}}, {\"id\": \"s0_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Приход ОС\", \"col\": 3}}, {\"id\": \"zp_menejer_karer_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Посещение\", \"col\": 3}}, {\"id\": \"zp_menejer_karer_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ишчи ойлиги\", \"col\": 3}}, {\"id\": \"zp_menejer_karer_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Рабочие дни\", \"col\": 3}}, {\"id\": \"sp0\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Hisobotlar</b></span>\", \"col\": 12}}, {\"id\": \"s1_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Баланс\", \"col\": 3}}, {\"id\": \"s1_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"P&L\", \"col\": 3}}, {\"id\": \"s1_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"P&L Разбитый\", \"col\": 3}}, {\"id\": \"s1_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Баланс бпр\", \"col\": 3}}, {\"id\": \"s1_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"ПР Срав.\", \"col\": 3}}, {\"id\": \"s1_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Chart of Accounts\", \"col\": 3}}, {\"id\": \"s1_6\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Фирмалараро қарзлар\", \"col\": 3}}, {\"id\": \"zp_menejer_karer_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Расчёт ЗП\", \"col\": 3}}, {\"id\": \"zp_menejer_karer_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Зарплата\", \"col\": 3}}, {\"id\": \"sp1\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"h2\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Справочники</b></span>\", \"col\": 12}}, {\"id\": \"s2_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Tovar guruhlari\", \"col\": 3}}, {\"id\": \"s2_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Ta'minotchilar\", \"col\": 3}}, {\"id\": \"s2_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Xodimlar\", \"col\": 3}}, {\"id\": \"s2_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Zavod\", \"col\": 3}}, {\"id\": \"s2_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Karer sozlamalari\", \"col\": 3}}, {\"id\": \"s2_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Firma\", \"col\": 3}}, {\"id\": \"sp2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}]",
  "custom_blocks": [],
  "for_user": "",
  "hide_custom": 0,
@@ -124,6 +124,39 @@
    "link_to": "Company",
    "color": "Grey",
    "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Посещение",
+   "link_to": "Posesheniye",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Ишчи ойлиги",
+   "link_to": "Ishchi Oyligi",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "type": "DocType",
+   "label": "Рабочие дни",
+   "link_to": "Ish Kunlari",
+   "color": "Grey",
+   "doc_view": "List"
+  },
+  {
+   "type": "Report",
+   "label": "Расчёт ЗП",
+   "link_to": "Raschet ZP",
+   "color": "Grey"
+  },
+  {
+   "type": "Report",
+   "label": "Зарплата",
+   "link_to": "Zarplata",
+   "color": "Grey"
   }
  ],
  "title": "Menejer Karer",
