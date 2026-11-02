@@ -85,8 +85,8 @@ def get_data(filters, months, oylar):
 	for k in frappe.db.sql(
 		"""select party_name, date_format(sana, '%%Y-%%m') ym, sum(summa_sum) amount
 		from `tabKassa`
-		where company = %(company)s and docstatus = 1 and turi = 'Chiqim'
-			and ifnull(party_type, '') != 'Employee' and kategoriya like 'Зарплата%%'
+		where company = %(company)s and docstatus = 1 and turi = 'Расход'
+			and ifnull(party_type, '') != 'Сотрудник' and kategoriya like 'Зарплата%%'
 			and sana between %(from_date)s and %(to_date)s
 		group by party_name, ym""",
 		values,

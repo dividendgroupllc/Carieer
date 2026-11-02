@@ -97,14 +97,14 @@ class Nachislenie(Document):
 		self.status = {0: "Draft", 1: "Tasdiqlangan", 2: "Bekor qilingan"}[self.docstatus]
 
 	def validate_kategoriya(self):
-		"""Закуп -> xarajat (Chiqim) moddasi. Продажа услуга -> har qanday statya (jadvalda «Доставка», «Самосвал услуга»
+		"""Закуп -> xarajat (Расход) moddasi. Продажа услуга -> har qanday statya (jadvalda «Доставка», «Самосвал услуга»
 		kabi statyalar bilan sotiladi), tushum doim «Выручка от реализации услуг» ga yoziladi."""
 		if not self.kategoriya or self.turi == "Продажа услуга":
 			return
 		turi = frappe.db.get_value("Kassa Kategoriya", self.kategoriya, "turi")
-		if turi not in ("Ikkalasi", None, "", "Chiqim"):
+		if turi not in ("Оба", None, "", "Расход"):
 			frappe.throw(
-				_("«{0}» - {1} moddasi, «{2}» uchun xarajat (Chiqim) moddasini tanlang").format(
+				_("«{0}» - {1} moddasi, «{2}» uchun xarajat (Расход) moddasini tanlang").format(
 					self.kategoriya, turi, self.turi
 				)
 			)

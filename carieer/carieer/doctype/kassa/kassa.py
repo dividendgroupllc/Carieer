@@ -1,9 +1,10 @@
-# Kassa ("Касса карьер"): jadvaldagi «Тип расчёта»: Kirim = Приход, Chiqim = Расход, O'tkazma = Перевод, Konvertatsiya.
-#   Customer / Supplier / Employee   -> Payment Entry (kontragent qarzi kamayadi / ko'payadi)
-#   Xarajat / Daromad / Dividend /
-#   Kapital (Инвестиция, Сальдо ...) -> Journal Entry (kassa <-> modda hisobi, kategoriyadan o'zi topiladi)
-#   O'tkazma / Konvertatsiya         -> Payment Entry (Internal Transfer, jami summaga ta'sir qilmaydi)
-# «Тип контрагента» kategoriyadan o'zi qo'yiladi (Клиент -> Customer, Поставщик -> Supplier, xarajat moddasi -> Xarajat).
+# Kassa ("Касса карьер"): jadvaldagi «Тип расчёта»: Приход, Расход, Перемещение (schyotlar orasida), Конвертация.
+#   Клиент / Поставщик / Прочие лица / Сотрудник -> Payment Entry (Customer / Supplier / Employee qarzi)
+#   Статья расхода / Доход / Дивиденд /
+#   Капитал (Инвестиция, Сальдо ...)            -> Journal Entry (kassa <-> modda hisobi, kategoriyadan o'zi topiladi)
+#   Перемещение / Конвертация                   -> Payment Entry (Internal Transfer, jami summaga ta'sir qilmaydi)
+# «Тип контрагента» kategoriyadan o'zi qo'yiladi (Клиент, Поставщик, xarajat moddasi -> Статья расхода).
+# Kontragent ERPNext doctype'i (Customer / Supplier / Employee) yashirin «party_doctype» maydonida.
 # Har bir yozuvda «Kategoriya» bor: DDS va Cash Flow hisobotlari shu bo'yicha yig'iladi (jadvaldagi kabi).
 # Cancel -> bog'langan hujjat ham bekor qilinadi.
 
@@ -22,16 +23,21 @@ from carieer.utils import (
 	reconcile,
 )
 
-PARTY_TYPES = ("Customer", "Supplier", "Employee")
-HISOB_ROOT_TYPE = {"Xarajat": "Expense", "Daromad": "Income", "Dividend": "Equity", "Kapital": "Equity"}
-TRANSFER_TURI = ("O'tkazma", "Konvertatsiya")
+PRIXOD, RASXOD, PEREMESHENIE, KONVERTATSIYA = "Приход", "Расход", "Перемещение", "Конвертация"
+TRANSFER_TURI = (PEREMESHENIE, KONVERTATSIYA)
+XARAJAT, DAROMAD, DIVIDEND, KAPITAL = "Статья расхода", "Доход", "Дивиденд", "Капитал"
+# «Тип контрагента» -> ERPNext doctype
+PARTY_DOCTYPE = {"Клиент": "Customer", "Поставщик": "Supplier", "Прочие лица": "Supplier", "Сотрудник": "Employee"}
+PARTY_TYPES = tuple(PARTY_DOCTYPE)
+HISOB_ROOT_TYPE = {XARAJAT: "Expense", DAROMAD: "Income", DIVIDEND: "Equity", KAPITAL: "Equity"}
+STATUS = {0: "Черновик", 1: "Проведён", 2: "Отменён"}
 # kategoriya nomi o'zi kontragent turini bildiradi (jadvaldagi «Категория 1»: Клиент / Поставщик / Сотрудник ...)
 KATEGORIYA_PARTY = {
-	"клиент": "Customer",
-	"поставщик": "Supplier",
-	"прочие лица": "Supplier",
-	"сотрудник": "Employee",
-	"дивиденд": "Dividend",
+	"клиент": "Клиент",
+	"поставщик": "Поставщик",
+	"прочие лица": "Прочие лица",
+	"сотрудник": "Сотрудник",
+	"дивиденд": DIVIDEND,
 }
 KAPITAL_GURUH = "Капитал"  # Kassa Kategoriya.guruh_1 shu bo'lsa - kapital moddasi (Инвестиция, Сальдо, Фин займ)
 PARTY_NAME_FIELD = {"Customer": "customer_name", "Supplier": "supplier_name", "Employee": "employee_name"}
@@ -50,17 +56,17 @@ class Kassa(Document):
 		self.validate_kategoriya()
 		if flt(self.amount) <= 0:
 			frappe.throw(_("Summa 0 dan katta bo'lishi kerak"))
-		self.set_kurs_va_summa()
-		if self.turi in ("Chiqim", *TRANSFER_TURI):
+		self.set_summa()
+		if self.turi in (RASXOD, *TRANSFER_TURI):
 			# kassada pul yetmasa bloklanmaydi: kassa minusga tushadi va ogohlantiriladi (kassani o'zi tanlaydi)
 			check_kassa_balance(self.mode_of_payment, self.company, self.amount, self.sana)
-		self.status = {0: "Draft", 1: "Tasdiqlangan", 2: "Bekor qilingan"}[self.docstatus]
+		self.status = STATUS[self.docstatus]
 
 	def set_kassa_details(self):
 		info = get_kassa_info(self.mode_of_payment, self.company)
 		if not info.account:
 			frappe.throw(
-				_("{0} kassasida {1} firmasi uchun hisob yo'q (Mode of Payment -> Accounts)").format(
+				_("У счёта «{0}» нет бухгалтерского счёта для фирмы {1} (Mode of Payment → Accounts)").format(
 					self.mode_of_payment, self.company
 				)
 			)
@@ -70,7 +76,7 @@ class Kassa(Document):
 			to = get_kassa_info(self.mode_of_payment_to, self.company)
 			if not to.account:
 				frappe.throw(
-					_("{0} kassasida {1} firmasi uchun hisob yo'q").format(
+					_("У счёта «{0}» нет бухгалтерского счёта для фирмы {1}").format(
 						self.mode_of_payment_to or "-", self.company
 					)
 				)
@@ -84,18 +90,16 @@ class Kassa(Document):
 			self.qoldiq_to = 0
 
 	def set_party_type(self):
-		"""Kategoriyadan kontragent turi (jadvaldagidek: faqat «Категория 1» + «Контрагент» tanlanadi)."""
-		if self.turi in TRANSFER_TURI or self.party_type:
-			return
-		self.party_type = derive_party_type(self.kategoriya)
+		"""Kategoriyadan kontragent turi (jadvaldagidek: faqat «Категория 1» + «Контрагент» tanlanadi) va uning doctype'i."""
+		if self.turi not in TRANSFER_TURI and not self.party_type:
+			self.party_type = derive_party_type(self.kategoriya)
+		self.party_doctype = PARTY_DOCTYPE.get(self.party_type)
 
-	def set_kurs_va_summa(self):
-		"""«Курс» (kun kursi) va «Сумма со знаком в сум»: Kirim +, Chiqim -, O'tkazma / Konvertatsiya 0."""
-		if not flt(self.kurs):
-			self.kurs = usd_rate(self.company, self.sana) or 0
+	def set_summa(self):
+		"""«Сумма со знаком в сум»: Приход +, Расход -, Перемещение / Конвертация 0 (kurs - Currency Exchange'dan)."""
 		base = get_company_currency(self.company)
 		rate = 1 if self.kassa_valyutasi == base else self.rate_to_company(self.kassa_valyutasi)
-		sign = {"Kirim": 1, "Chiqim": -1}.get(self.turi, 0)
+		sign = {PRIXOD: 1, RASXOD: -1}.get(self.turi, 0)
 		self.summa_sum = flt(sign * flt(self.amount) * rate, 2)
 		self.taqsimot = (
 			frappe.db.get_value("Kassa Kategoriya", self.kategoriya, "taqsimot") if self.kategoriya else None
@@ -104,29 +108,29 @@ class Kassa(Document):
 	def validate_by_turi(self):
 		if self.turi in TRANSFER_TURI:
 			if self.kassa_hisobi == self.kassa_hisobi_to:
-				frappe.throw(_("Kassalar bir xil bo'lishi mumkin emas"))
-			self.party_type = self.party = self.hisob = self.cost_center = None
+				frappe.throw(_("Счёт «откуда» и «куда» не может быть одним и тем же"))
+			self.party_type = self.party_doctype = self.party = self.hisob = self.cost_center = None
 			self.party_name = _("{0} -> {1}").format(self.mode_of_payment, self.mode_of_payment_to)
 			return
 
 		if self.party_type in PARTY_TYPES:
 			if not self.party:
-				frappe.throw(_("Kontragentni tanlang"))
+				frappe.throw(_("Выберите контрагента"))
 			self.party_name = (
-				frappe.db.get_value(self.party_type, self.party, PARTY_NAME_FIELD[self.party_type])
+				frappe.db.get_value(self.party_doctype, self.party, PARTY_NAME_FIELD[self.party_doctype])
 				or self.party
 			)
 			self.hisob = self.cost_center = None
 			return
 
 		if self.party_type not in HISOB_ROOT_TYPE:
-			frappe.throw(_("«Категория 1» ni tanlang yoki kontragent turini ko'rsating"))
-		if self.party_type == "Dividend" and self.turi == "Kirim":
-			frappe.throw(_("Dividend faqat Chiqim bo'ladi"))
-		if self.party_type == "Daromad" and self.turi == "Chiqim":
-			frappe.throw(_("Daromad (boshqa tushum) faqat Kirim bo'ladi"))
+			frappe.throw(_("Выберите «Категория 1» или укажите тип контрагента"))
+		if self.party_type == DIVIDEND and self.turi == PRIXOD:
+			frappe.throw(_("Дивиденд может быть только расходом"))
+		if self.party_type == DAROMAD and self.turi == RASXOD:
+			frappe.throw(_("Доход (прочие поступления) может быть только приходом"))
 		root_type = HISOB_ROOT_TYPE[self.party_type]
-		if not self.hisob and self.party_type == "Dividend":
+		if not self.hisob and self.party_type == DIVIDEND:
 			self.hisob = frappe.db.get_value(
 				"Account", {"company": self.company, "account_name": "Dividends Paid", "is_group": 0}, "name"
 			)
@@ -139,27 +143,27 @@ class Kassa(Document):
 		if not self.hisob:
 			frappe.throw(
 				_(
-					"{0} uchun hisob topilmadi: kategoriyani tanlang (hisoblar rejasida shu nomli hisob bo'lsin) yoki "
-					"«Hisob (modda)» ni qo'lda tanlang"
+					"Для «{0}» не найден бухгалтерский счёт: выберите категорию (в плане счетов должен быть счёт с таким "
+					"названием) или укажите «Статья (бухгалтерский счёт)» вручную"
 				).format(self.kategoriya or self.party_type)
 			)
 		acc = frappe.get_cached_value(
 			"Account", self.hisob, ["company", "is_group", "root_type", "account_name"], as_dict=True
 		)
 		if not acc or acc.company != self.company:
-			frappe.throw(_("{0} hisobi {1} firmasiga tegishli emas").format(self.hisob, self.company))
+			frappe.throw(_("Счёт {0} не принадлежит фирме {1}").format(self.hisob, self.company))
 		if acc.is_group:
-			frappe.throw(_("{0} guruh hisob. Oxirgi darajadagi hisobni tanlang").format(self.hisob))
+			frappe.throw(_("{0} — групповой счёт. Выберите счёт нижнего уровня").format(self.hisob))
 		if acc.root_type != root_type:
 			frappe.throw(
 				_(
-					"«Hisob (modda)» noto'g'ri: {0} uchun {1} turidagi hisob kerak, {2} esa {3}. "
-					"Hisobni bo'sh qoldiring - kategoriyadan o'zi topiladi"
+					"Неверная «Статья (бухгалтерский счёт)»: для «{0}» нужен счёт типа {1}, а {2} — {3}. "
+					"Оставьте поле пустым — счёт определится по категории"
 				).format(self.party_type, root_type, self.hisob, acc.root_type)
 			)
 		self.party = None
 		self.party_name = acc.account_name
-		if self.party_type in ("Xarajat", "Daromad") and not self.cost_center:
+		if self.party_type in (XARAJAT, DAROMAD) and not self.cost_center:
 			self.cost_center = frappe.get_cached_value("Company", self.company, "cost_center")
 
 	def validate_kategoriya(self):
@@ -169,13 +173,13 @@ class Kassa(Document):
 		# «Доставка» ga Приход ham bor
 		kat = frappe.db.get_value("Kassa Kategoriya", self.kategoriya, ["turi", "guruh_1"], as_dict=True) or {}
 		# Xato: xarajat (ijara, yoqilg'i ...) mijoz nomiga yozilsa - mijoz bizga qarzdor bo'lib qoladi
-		if self.party_type == "Customer" and self.turi == "Chiqim" and kat.get("guruh_1"):
+		if self.party_doctype == "Customer" and self.turi == RASXOD and kat.get("guruh_1"):
 			frappe.throw(
 				_(
-					"«{0}» - xarajat moddasi. Mijozga chiqim qilinsa, pul xarajatga emas, mijozning qarziga yoziladi. "
-					"Kontragent turini <b>Xarajat</b> tanlang (xizmat ko'rsatgan bo'lsa - <b>Supplier</b>)."
+					"«{0}» — статья расхода. При расходе на клиента деньги попадут не в расходы, а в долг клиента. "
+					"Выберите тип контрагента <b>Статья расхода</b> (если оказана услуга — <b>Поставщик</b>)."
 				).format(self.kategoriya),
-				title=_("Noto'g'ri kontragent turi"),
+				title=_("Неверный тип контрагента"),
 			)
 
 	# ------------------------------------------------------------------ submit / cancel
@@ -186,7 +190,7 @@ class Kassa(Document):
 			doc = self.make_payment_entry()
 		else:
 			doc = self.make_journal_entry()
-		self.db_set({"linked_doctype": doc.doctype, "linked_entry": doc.name, "status": "Tasdiqlangan"})
+		self.db_set({"linked_doctype": doc.doctype, "linked_entry": doc.name, "status": STATUS[1]})
 
 	def on_cancel(self):
 		self.ignore_linked_doctypes = ("GL Entry", "Payment Ledger Entry", "Payment Entry", "Journal Entry")
@@ -195,16 +199,14 @@ class Kassa(Document):
 			if doc.docstatus == 1:
 				doc.flags.ignore_permissions = True
 				doc.cancel()
-		self.db_set("status", "Bekor qilingan")
+		self.db_set("status", STATUS[2])
 
 	# ------------------------------------------------------------------ hujjatlar
 	def rate_to_company(self, currency):
-		"""Valyuta -> firma valyutasi. USD uchun qatordagi «Курс» (qo'lda kiritilgan kun kursi) ustun, aks holda Currency Exchange."""
+		"""Valyuta -> firma valyutasi: kun kursi Currency Exchange'dan."""
 		base = get_company_currency(self.company)
 		if currency == base:
 			return 1.0
-		if currency == "USD" and flt(self.kurs) > 1:
-			return flt(self.kurs)
 		return get_rate(currency, base, self.sana)
 
 	def cross(self, from_currency, to_currency):
@@ -213,17 +215,17 @@ class Kassa(Document):
 	def make_payment_entry(self):
 		from erpnext.accounts.party import get_party_account
 
-		party_account = get_party_account(self.party_type, self.party, self.company)
+		party_account = get_party_account(self.party_doctype, self.party, self.company)
 		party_currency = frappe.get_cached_value("Account", party_account, "account_currency")
 		cash_currency = self.kassa_valyutasi
 		party_amount = flt(flt(self.amount) * self.cross(cash_currency, party_currency), 2)
 
 		pe = frappe.new_doc("Payment Entry")
-		pe.payment_type = "Receive" if self.turi == "Kirim" else "Pay"
+		pe.payment_type = "Receive" if self.turi == PRIXOD else "Pay"
 		pe.company = self.company
 		pe.posting_date = self.sana
 		pe.mode_of_payment = self.mode_of_payment
-		pe.party_type = self.party_type
+		pe.party_type = self.party_doctype
 		pe.party = self.party
 		pe.party_name = self.party_name
 		if pe.payment_type == "Receive":
@@ -255,7 +257,7 @@ class Kassa(Document):
 		if flt(pe.unallocated_amount) > 0.005:
 			# hisob-fakturaga tushmagan qismi Начисление (Journal Entry) yoki avansga bog'lanadi -
 			# aks holda ERPNext'ning Accounts Payable / Receivable hisobotida ikkalasi alohida osilib turadi
-			reconcile(self.company, self.party_type, self.party, party_account, voucher=pe.name)
+			reconcile(self.company, self.party_doctype, self.party, party_account, voucher=pe.name)
 		return pe
 
 	def make_transfer(self):
@@ -274,7 +276,7 @@ class Kassa(Document):
 		src_rate = self.rate_to_company(self.kassa_valyutasi)
 		tgt_rate = self.rate_to_company(self.kassa_valyutasi_to)
 		received = flt(flt(self.amount) * src_rate / tgt_rate, 2)
-		if self.turi == "Konvertatsiya" and flt(self.qabul_summa) > 0:
+		if self.turi == KONVERTATSIYA and flt(self.qabul_summa) > 0:
 			# haqiqiy olingan summa berilgan: farq kurs farqi bo'lib qolmasligi uchun tashqi valyuta tomoni kursi moslanadi
 			received = flt(self.qabul_summa)
 			if self.kassa_valyutasi_to == base:
@@ -287,10 +289,10 @@ class Kassa(Document):
 		return self.insert_submit(pe)
 
 	def make_journal_entry(self):
-		"""Xarajat, Daromad yoki Dividend: kassa <-> modda hisobi (firma valyutasida)."""
+		"""Статья расхода, Доход, Дивиденд yoki Капитал: kassa <-> modda hisobi (firma valyutasida)."""
 		rate = self.rate_to_company(self.kassa_valyutasi)
 		base = flt(flt(self.amount) * rate, 2)
-		dr, cr = ("debit", "credit") if self.turi == "Kirim" else ("credit", "debit")
+		dr, cr = ("debit", "credit") if self.turi == PRIXOD else ("credit", "debit")
 
 		je = frappe.new_doc("Journal Entry")
 		je.voucher_type = "Cash Entry"
@@ -333,8 +335,8 @@ class Kassa(Document):
 
 
 def derive_party_type(kategoriya: str | None) -> str | None:
-	"""Kategoriya -> «Тип контрагента»: Клиент -> Customer, Поставщик / Прочие лица -> Supplier, Сотрудник -> Employee,
-	xarajat moddasi -> Xarajat, kapital moddasi (Инвестиция, Сальдо) -> Kapital, boshqa tushum -> Daromad."""
+	"""Kategoriya -> «Тип контрагента»: Клиент, Поставщик, Прочие лица, Сотрудник, xarajat moddasi -> Статья расхода,
+	kapital moddasi (Инвестиция, Сальдо) -> Капитал, boshqa tushum -> Доход."""
 	if not kategoriya:
 		return None
 	party_type = KATEGORIYA_PARTY.get(kategoriya.lower())
@@ -342,21 +344,12 @@ def derive_party_type(kategoriya: str | None) -> str | None:
 		return party_type
 	kat = frappe.db.get_value("Kassa Kategoriya", kategoriya, ["guruh_1", "hisob_nomi"], as_dict=True) or {}
 	if kat.get("guruh_1") == KAPITAL_GURUH:
-		return "Kapital"
+		return KAPITAL
 	if kat.get("guruh_1"):
-		return "Xarajat"
+		return XARAJAT
 	if kat.get("hisob_nomi"):
-		return "Daromad"
+		return DAROMAD
 	return None
-
-
-def usd_rate(company: str, date) -> float:
-	"""Kun bo'yicha USD kursi (Currency Exchange), topilmasa 0 - xato chiqarmaydi (UZS yozuvlarda kurs ma'lumot uchun)."""
-	from erpnext.setup.utils import get_exchange_rate
-
-	if not frappe.db.exists("Currency", "USD") or get_company_currency(company) == "USD":
-		return 0
-	return flt(get_exchange_rate("USD", get_company_currency(company), date))
 
 
 def allocate_to_invoices(pe):
@@ -393,7 +386,7 @@ def allocate_to_invoices(pe):
 
 
 @frappe.whitelist()
-def kassa_holati(company: str, kassa: str, summa: float, turi: str = "Kirim") -> dict:
+def kassa_holati(company: str, kassa: str, summa: float, turi: str = PRIXOD) -> dict:
 	"""Forma uchun: kassada hozir qancha pul bor va shu yozuvdan keyin qancha bo'ladi (kassa valyutasida)."""
 	from carieer.utils import get_kassa_info
 
@@ -402,12 +395,12 @@ def kassa_holati(company: str, kassa: str, summa: float, turi: str = "Kirim") ->
 		return {}
 	balance = flt(info.balance, 2)
 	summa = flt(summa)
-	after = balance + summa if turi == "Kirim" else balance - summa
+	after = balance + summa if turi == PRIXOD else balance - summa
 	base = get_company_currency(company)
 	rate = 1 if info.currency == base else get_rate(info.currency, base)
 	jami = kassalar_jami(company)
-	# O'tkazma / Konvertatsiya barcha kassalar yig'indisini o'zgartirmaydi
-	delta = (summa * rate) * {"Kirim": 1, "Chiqim": -1}.get(turi, 0)
+	# Перемещение / Конвертация barcha kassalar yig'indisini o'zgartirmaydi
+	delta = (summa * rate) * {PRIXOD: 1, RASXOD: -1}.get(turi, 0)
 	return {
 		"balance": balance,
 		"after": flt(after, 2),

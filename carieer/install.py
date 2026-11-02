@@ -8,10 +8,10 @@ Avtomatik (install-app va har bir migrate'dan keyin) - after_migrate():
 
 Bir marta, qo'lda (firma yaratilgandan keyin):
   bench --site SITE execute carieer.install.setup_karer --kwargs "{'karer_company': 'Eko Karer'}"
-    -> omborlar, kassalar (Karer naqd UZS / USD, karta, bank - har biri o'z hisobida), Zavod yozuvi, tovarlar, xizmatlar,
+    -> omborlar, schyotlar (Наличные, Карта, Р/С ... - har biri o'z hisobida), Zavod yozuvi, tovarlar, xizmatlar,
        birliklar, xarajat kategoriyalari va hisoblar rejasidagi moddalar
   bench --site SITE execute carieer.install.setup_beton --kwargs "{'beton_company': 'Eko Beton'}"
-    -> Beton ombori va xomashyo ombori, «Beton ...» kassalari, Zavod «Beton» (sotuvda retsept bo'yicha ishlab chiqarish),
+    -> Beton ombori va xomashyo ombori, Beton schyotlari (Наличные, Р/С, Карта ...), Zavod «Beton» (sotuvda retsept bo'yicha ishlab chiqarish),
        7 ta beton markasi retsepti (BOM) va Karer <-> Beton firmalararo mijoz / ta'minotchi
 
 Xodim qo'shish (rol + faqat o'z firmasi):
@@ -599,16 +599,16 @@ DAROMAD_KATEGORIYALARI = [
 ]
 # Faqat pul oqimi uchun (hisob ochilmaydi, Kassa'da kontragent bilan ishlatiladi)
 DDS_KATEGORIYALARI = [
-	("Клиент", "Kirim"),
-	("Поставщик", "Chiqim"),
-	("Сотрудник", "Ikkalasi"),
-	("Прочие лица", "Ikkalasi"),
-	("Дивиденд", "Chiqim"),
-	("Перемещение", "Ikkalasi"),
-	("Конвертация", "Ikkalasi"),
-	("Наличные2", "Ikkalasi"),
-	("Наличные кассир", "Ikkalasi"),
-	("Карта кассир", "Ikkalasi"),
+	("Клиент", "Приход"),
+	("Поставщик", "Расход"),
+	("Сотрудник", "Оба"),
+	("Прочие лица", "Оба"),
+	("Дивиденд", "Расход"),
+	("Перемещение", "Оба"),
+	("Конвертация", "Оба"),
+	("Наличные2", "Оба"),
+	("Наличные кассир", "Оба"),
+	("Карта кассир", "Оба"),
 ]
 
 
@@ -627,7 +627,7 @@ def setup_karer(karer_company: str):
 	setup_company(karer_company)
 	make_zavod("Karer", karer_company, asosiy="Karer ombori")
 
-	# kassalar: «Karer naqd UZS», «Karer naqd USD», «Karer karta», «Karer bank»
+	# schyotlar (Excel «Касса карьер»): Наличные, Карта, Р/С ...
 	setup_kassalar()
 	# «Диспетчер» varag'idagi ro'yxatlar: tovarlar, schyotlar, kurs, kategoriyalar, kontragentlar
 	seed_dispetcher(karer_company)
@@ -640,7 +640,7 @@ def setup_karer(karer_company: str):
 def setup_beton(beton_company: str):
 	"""Beton firmasi uchun bir martalik sozlash (qayta ishga tushirsa ham xavfsiz - borlari o'zgarmaydi).
 	Tovarlar, kategoriyalar va kontragentlar ikkala firmaga umumiy («Диспетчер» bir xil), firmaga xosi:
-	omborlar, kassalar («Beton naqd UZS» ...), xarajat moddalari, moliyaviy yillar va retseptlar (BOM)."""
+	omborlar, schyotlar (Наличные, Р/С ...), xarajat moddalari, moliyaviy yillar va retseptlar (BOM)."""
 	frappe.only_for("System Manager")
 	if not frappe.db.exists("Company", beton_company):
 		frappe.throw(
@@ -654,7 +654,7 @@ def setup_beton(beton_company: str):
 	make_zavod(
 		"Beton", beton_company, asosiy="Beton ombori", xomashyo="Beton xomashyo", ishlab_chiqarish=1
 	)
-	# kassalar: «Beton naqd UZS», «Beton naqd USD», «Beton karta», «Beton bank»
+	# schyotlar (Excel «Касса»): Наличные, Карта, Р/С, - счёт, кассир
 	setup_kassalar()
 	seed_fiscal_years(beton_company)
 	retseptlar = make_retseptlar(beton_company)
@@ -740,10 +740,10 @@ def make_item(item_code, uom, group, is_stock, is_sales):
 def make_kategoriyalar():
 	rows = (
 		[
-			{"kategoriya": k, "turi": "Chiqim", "guruh_1": g1, "guruh_2": g2, "taqsimot": t}
+			{"kategoriya": k, "turi": "Расход", "guruh_1": g1, "guruh_2": g2, "taqsimot": t}
 			for k, g1, g2, t in XARAJAT_KATEGORIYALARI
 		]
-		+ [{"kategoriya": k, "turi": "Kirim", "hisob_nomi": h} for k, h in DAROMAD_KATEGORIYALARI]
+		+ [{"kategoriya": k, "turi": "Приход", "hisob_nomi": h} for k, h in DAROMAD_KATEGORIYALARI]
 		+ [{"kategoriya": k, "turi": t} for k, t in DDS_KATEGORIYALARI]
 	)
 	for row in rows:
@@ -778,50 +778,50 @@ def setup_company(company: str, bolim: str = "Karer"):
 	make_moddalar(company)
 
 
-# Zavod uchun kassalar to'plami: «Karer naqd UZS», «Karer karta» ...
-# (nom qo'shimchasi, hisob turi, valyuta: None = firma valyutasi). Birinchisi - asosiy kassa (Zavod.kassa).
-KASSA_TURLARI = [
-	("naqd UZS", "Cash", None),
-	("naqd USD", "Cash", "USD"),
-	("karta", "Bank", None),
-	("bank", "Bank", None),
-]
+# Har bir zavod (bo'lim) schyotlari - Excel «Касса» varag'idagi «Тип расчёта» / «Перевод» ustunlari bo'yicha
+# («Эко Карьер.xlsx» -> Касса карьер, «Эко Бетон.xlsx» -> Касса). Birinchisi - asosiy kassa (Zavod.kassa).
+# Schyot (Mode of Payment) ikkala firmaga umumiy, har firmada o'z hisobi bor: «Наличные - C», «Наличные - BZ».
+SCHYOTLAR = {
+	"Karer": ["Наличные", "Карта", "Р/С", "Наличные2", "Наличка-3", "- счёт", "Биржа счёт"],
+	"Beton": ["Наличные", "Карта", "Р/С", "- счёт", "Наличные кассир", "Карта кассир"],
+}
+KASH_SCHYOTLARI = ("Наличные", "Наличные2", "Наличка-3", "Наличные кассир")  # qolganlari - Bank turi
 
 
 def bolim_nomi(zavod: str) -> str:
-	"""Zavod nomi -> kassa nomidagi bo'lim: «karer zavod» -> «Karer», «Beton zavod» -> «Beton»."""
+	"""Zavod nomi -> bo'lim: «karer zavod» -> «Karer», «Beton zavod» -> «Beton»."""
 	low = (zavod or "").lower()
 	return next((bolim for bolim in BOLIMLAR if bolim.lower() in low), zavod)
 
 
 def setup_kassalar():
-	"""Har bir Zavod uchun kassalar (Mode of Payment) va ularning ALOHIDA hisoblari (to'g'ri valyutada).
-	Kassa bor bo'lsa-yu boshqa kassa bilan bitta hisobga ulangan yoki valyutasi noto'g'ri bo'lsa - o'z hisobi
-	ochiladi. Asosiy kassa (naqd UZS) eski hisobida qoladi (tarix saqlanadi). Qayta ishga tushirish xavfsiz.
+	"""Har bir Zavod uchun Excel'dagi schyotlar (Mode of Payment) va ularning shu firmadagi ALOHIDA hisobi
+	(«<schyot> - <firma qisqartmasi>»). Firmaning standart naqd / bank hisobi va Zavod.kassa ham shu schyotlarga
+	qo'yiladi. Qayta ishga tushirish xavfsiz.
 	  bench --site SITE execute carieer.install.setup_kassalar"""
 	frappe.only_for("System Manager")
 	out = {}
 	for z in frappe.get_all("Zavod", fields=["name", "company", "kassa"]):
-		prefix = bolim_nomi(z.name)
+		names = SCHYOTLAR.get(bolim_nomi(z.name)) or SCHYOTLAR["Karer"]
 		currency = frappe.get_cached_value("Company", z.company, "default_currency")
-		names = [f"{prefix} {suffix}" for suffix, _t, _c in KASSA_TURLARI]
-		# avval qo'shimcha kassalar (umumiy hisobdan ajratiladi), oxirida asosiysi
-		for (suffix, account_type, kassa_currency), name in reversed(list(zip(KASSA_TURLARI, names))):
-			ensure_kassa(name, z.company, account_type, kassa_currency or currency, primary=name == names[0])
-		if not z.kassa or not frappe.db.exists(
-			"Mode of Payment Account", {"parent": z.kassa, "company": z.company}
-		):
+		for name in names:
+			ensure_kassa(name, z.company, "Cash" if name in KASH_SCHYOTLARI else "Bank", currency)
+		if z.kassa not in names:
 			frappe.db.set_value("Zavod", z.name, "kassa", names[0])
-		out[z.name] = {
-			n: frappe.db.get_value("Mode of Payment Account", {"parent": n, "company": z.company}, "default_account")
-			for n in names
-		}
+		account = lambda n: frappe.db.get_value(  # noqa: E731
+			"Mode of Payment Account", {"parent": n, "company": z.company}, "default_account"
+		)
+		frappe.db.set_value(
+			"Company", z.company, {"default_cash_account": account("Наличные"), "default_bank_account": account("Р/С")}
+		)
+		out[z.name] = {n: account(n) for n in names}
 	frappe.db.commit()
 	return out
 
 
-def ensure_kassa(name: str, company: str, account_type: str, currency: str, primary: bool = False):
-	"""Kassa (Mode of Payment) + shu firmadagi o'z hisobi."""
+def ensure_kassa(name: str, company: str, account_type: str, currency: str):
+	"""Schyot (Mode of Payment) + shu firmadagi o'z hisobi «<schyot> - <qisqartma>». Boshqa firmalar hisoblari
+	saqlanadi (schyot umumiy, hisob firmaga xos)."""
 	mop = (
 		frappe.get_doc("Mode of Payment", name)
 		if frappe.db.exists("Mode of Payment", name)
@@ -829,28 +829,15 @@ def ensure_kassa(name: str, company: str, account_type: str, currency: str, prim
 	)
 	mop.type = account_type
 	mop.enabled = 1
-	# kassa faqat shu firmaniki: boshqa firma hisobi ulangan bo'lsa olib tashlanadi
-	mop.accounts = [a for a in mop.accounts if a.company == company]
 	row = next((a for a in mop.accounts if a.company == company), None)
 	account = row.default_account if row else None
-	shared = account and frappe.db.sql(
-		"""select a.parent from `tabMode of Payment Account` a join `tabMode of Payment` m on m.name = a.parent
-		where a.default_account = %s and a.company = %s and a.parent != %s and m.enabled = 1 limit 1""",
-		(account, company, name),
-	)
-	good = (
-		account
-		and frappe.get_cached_value("Account", account, "account_currency") == currency
-		and (primary or not shared)
-	)
-	if not good:
+	if not account or frappe.get_cached_value("Account", account, "account_currency") != currency:
 		account = make_kassa_account(company, name, account_type, currency)
 		if row:
 			row.default_account = account
 		else:
 			mop.append("accounts", {"company": company, "default_account": account})
 	mop.flags.ignore_permissions = True
-	mop.flags.skip_kassa_check = primary  # asosiy kassa: eski umumiy hisob boshqa (eski) kassalar bilan qolishi mumkin
 	mop.save()
 	return mop.name
 
@@ -935,19 +922,19 @@ def make_moddalar(company: str):
 	standard = {k for k, *_r in XARAJAT_KATEGORIYALARI} | {k for k, _h in DAROMAD_KATEGORIYALARI}
 	for k in frappe.get_all(
 		"Kassa Kategoriya",
-		filters={"turi": ["in", ["Kirim", "Chiqim", "Ikkalasi"]], "name": ["not in", list(standard)]},
+		filters={"turi": ["in", ["Приход", "Расход", "Оба"]], "name": ["not in", list(standard)]},
 		fields=["name", "turi", "guruh_1", "guruh_2", "hisob_nomi"],
 	):
 		if k.guruh_1 == KAPITAL_GURUH:
-			# Инвестиция, Сальдo, Фин займ: kapital moddasi (Equity), Kirim ham Chiqim ham bo'ladi
+			# Инвестиция, Сальдo, Фин займ: kapital moddasi (Equity), Приход ham Расход ham bo'ladi
 			ensure(
 				k.hisob_nomi or k.name, root("Equity", "Equity"), "Equity", report_type="Balance Sheet"
 			)
 			continue
-		if k.turi == "Ikkalasi" or not (k.guruh_1 or k.hisob_nomi):
+		if k.turi == "Оба" or not (k.guruh_1 or k.hisob_nomi):
 			continue  # faqat pul oqimi kategoriyasi (Клиент, Поставщик ...) - hisob kerak emas
 		account_name = k.hisob_nomi or k.name
-		if k.turi == "Kirim":
+		if k.turi == "Приход":
 			ensure(account_name, income_root, "Income")
 			continue
 		parent = expense_root
@@ -1107,7 +1094,6 @@ OBOROT = {
 	"не имеется": "Не имеется",
 }
 SHEET_UOM = {"куба": "Куб", "куб": "Куб", "тонна": "Тонна", "литр": "Литр", "шт": "Шт", "кг": "Кг"}
-KASH_SCHYOTLARI = ("Наличные", "Наличные2", "Наличка-3", "Наличные кассир")  # qolganlari - Bank turi
 
 
 def load_dispetcher() -> dict:
@@ -1119,7 +1105,7 @@ def load_dispetcher() -> dict:
 
 def seed_dispetcher(company: str | None = None):
 	"""Google Sheets «Эко Карьер» -> «Диспетчер» varag'idagi ro'yxatlar (carieer/data/dispetcher.json) bazaga:
-	tovarlar va xizmatlar, 9 ta schyot (kassa), USD kursi, kategoriyalar (Оборот bilan), 160 kontragent.
+	tovarlar va xizmatlar, schyotlar (kassalar), USD kursi, kategoriyalar (Оборот bilan), 160 kontragent.
 	Qayta ishga tushirish xavfsiz: bor yozuvlar o'chirilmaydi va takrorlanmaydi (faqat kategoriya «Распределение» yangilanadi).
 	  bench --site SITE execute carieer.install.seed_dispetcher"""
 	frappe.only_for("System Manager")
@@ -1193,18 +1179,8 @@ def seed_kurs(data: dict, company: str) -> dict:
 
 
 def seed_schyotlar(data: dict, company: str) -> dict:
-	"""Касса.C dagi 9 ta schyot - har biri o'z hisobli kassa (Mode of Payment)."""
-	currency = frappe.get_cached_value("Company", company, "default_currency")
-	created = []
-	for name in data["schyotlar"]:
-		if frappe.db.exists("Mode of Payment Account", {"parent": name, "company": company}):
-			continue
-		ensure_kassa(name, company, "Cash" if name in KASH_SCHYOTLARI else "Bank", currency)
-		created.append(name)
-	zavod = frappe.db.get_value("Zavod", {"company": company}, ["name", "kassa"], as_dict=True)
-	if zavod and (not zavod.kassa or zavod.kassa.startswith("Karer ")) and frappe.db.exists("Mode of Payment", "Наличные"):
-		frappe.db.set_value("Zavod", zavod.name, "kassa", "Наличные")  # asosiy kassa - jadvaldagi «Наличные»
-	return {"yangi": created}
+	"""Schyotlar - SCHYOTLAR ro'yxatidan (har bir zavod uchun Excel'dagi kabi)."""
+	return setup_kassalar()
 
 
 def seed_kategoriyalar(data: dict, company: str) -> dict:
@@ -1232,14 +1208,14 @@ def seed_kategoriyalar(data: dict, company: str) -> dict:
 					doc.save(ignore_permissions=True)
 					updated += 1
 				continue
-			row = {"doctype": "Kassa Kategoriya", "kategoriya": name, "taqsimot": taqsimot, "turi": "Ikkalasi"}
+			row = {"doctype": "Kassa Kategoriya", "kategoriya": name, "taqsimot": taqsimot, "turi": "Оба"}
 			if kapital:
 				row.update(guruh_1=KAPITAL_GURUH, hisob_nomi=kapital)
 			elif taqsimot in ("Прибыль", "Произв", "На ОС"):
 				h = hier.get(name.lower())
 				admin = taqsimot == "Прибыль"
 				row.update(
-					turi="Chiqim",
+					turi="Расход",
 					guruh_1=(h and h["yuqori"]) or (ADM if admin else PRO),
 					guruh_2=(h and h["kategoriya_2"]) or ("Прочие расходы" if admin else "Прочие производственные расходы"),
 				)

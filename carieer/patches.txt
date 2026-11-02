@@ -14,3 +14,4 @@ carieer.patches.beton_ishlab_chiqarish
 carieer.patches.qazib_olish_title
 carieer.patches.firmalararo_supplier_group
 carieer.patches.qazib_olish_stock_entry_type
+carieer.patches.kassa

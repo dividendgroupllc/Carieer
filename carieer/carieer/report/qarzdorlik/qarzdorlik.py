@@ -366,7 +366,7 @@ def get_details(entries, party_type):
 			{"docstatus": 1, "linked_entry": ["in", linked]},
 			["name", "linked_doctype", "linked_entry", "turi", "mode_of_payment", "kategoriya", "izoh"],
 		):
-			verb = _("Kassaga kirim") if k.turi == "Kirim" else _("Kassadan berildi")
+			verb = _("Kassaga kirim") if k.turi == "Приход" else _("Kassadan berildi")
 			parts = dict.fromkeys(filter(None, (f"{verb} ({k.mode_of_payment})", k.kategoriya, k.izoh)))
 			out[(k.linked_doctype, k.linked_entry)] = frappe._dict(
 				doctype="Kassa", name=k.name, text=" · ".join(parts)

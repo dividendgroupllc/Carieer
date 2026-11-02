@@ -150,7 +150,13 @@ function sotuv_tolov_dialog(frm) {
 				options: "Mode of Payment",
 				label: __("Kassa (Счёт)"),
 				reqd: 1,
-				get_query: () => ({ filters: { firma: frm.doc.company, enabled: 1 } }),
+				// schyot ikkala firmaga umumiy (Наличные, Р/С ...): shu firmada hisobi borlari
+				get_query: () => ({
+					filters: [
+						["Mode of Payment", "enabled", "=", 1],
+						["Mode of Payment Account", "company", "=", frm.doc.company],
+					],
+				}),
 				onchange() {
 					const kassa = d.get_value("mode_of_payment");
 					if (!kassa) return;

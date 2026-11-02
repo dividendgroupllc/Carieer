@@ -2,7 +2,7 @@
  "actions": [],
  "autoname": "naming_series:",
  "creation": "2026-10-05 18:00:00.000000",
- "description": "Kassa: kirim, chiqim, kassadan kassaga o'tkazma",
+ "description": "Касса: приход, расход, перемещение между счетами, конвертация",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -29,6 +29,7 @@
   "qabul_summa",
   "kontragent_section",
   "party_type",
+  "party_doctype",
   "party",
   "party_name",
   "cb_5",
@@ -37,7 +38,6 @@
   "cost_center",
   "summa_section",
   "amount",
-  "kurs",
   "summa_sum",
   "cb_6",
   "izoh",
@@ -59,7 +59,7 @@
    "fieldname": "naming_series",
    "fieldtype": "Select",
    "hidden": 1,
-   "label": "Seriya",
+   "label": "Серия",
    "options": "KAS-.YYYY.-",
    "reqd": 1
   },
@@ -67,7 +67,7 @@
    "fieldname": "company",
    "fieldtype": "Link",
    "in_standard_filter": 1,
-   "label": "Firma",
+   "label": "Фирма",
    "options": "Company",
    "reqd": 1
   },
@@ -85,13 +85,12 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Kirim = Приход, Chiqim = Расход, O'tkazma = Перевод, Konvertatsiya = Конвертация",
    "fieldname": "turi",
    "fieldtype": "Select",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Тип расчёта",
-   "options": "Kirim\nChiqim\nO'tkazma\nKonvertatsiya",
+   "options": "Приход\nРасход\nПеремещение\nКонвертация",
    "reqd": 1
   },
   {
@@ -99,19 +98,19 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "Draft",
+   "default": "Черновик",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_standard_filter": 1,
-   "label": "Holat",
+   "label": "Статус",
    "no_copy": 1,
-   "options": "Draft\nTasdiqlangan\nBekor qilingan",
+   "options": "Черновик\nПроведён\nОтменён",
    "read_only": 1
   },
   {
    "fieldname": "kassa_section",
    "fieldtype": "Section Break",
-   "label": "Kassa"
+   "label": "Счёт"
   },
   {
    "fieldname": "mode_of_payment",
@@ -119,14 +118,13 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Счёт (Тип завод)",
-   "link_filters": "[[\"Mode of Payment\", \"firma\", \"like\", \"eval:doc.company || '%'\"], [\"Mode of Payment\", \"enabled\", \"=\", 1]]",
    "options": "Mode of Payment",
    "reqd": 1
   },
   {
    "fieldname": "kassa_hisobi",
    "fieldtype": "Link",
-   "label": "Kassa hisobi",
+   "label": "Бухгалтерский счёт",
    "options": "Account",
    "read_only": 1
   },
@@ -145,29 +143,28 @@
   {
    "fieldname": "qoldiq",
    "fieldtype": "Currency",
-   "label": "Kassadagi qoldiq (saqlangan paytda)",
+   "label": "Остаток на счёте (при сохранении)",
    "no_copy": 1,
    "options": "kassa_valyutasi",
    "read_only": 1
   },
   {
-   "depends_on": "eval:['O\\'tkazma','Konvertatsiya'].includes(doc.turi)",
+   "depends_on": "eval:['Перемещение','Конвертация'].includes(doc.turi)",
    "fieldname": "otkazma_section",
    "fieldtype": "Section Break",
-   "label": "Qaysi kassaga"
+   "label": "Куда (перемещение)"
   },
   {
    "fieldname": "mode_of_payment_to",
    "fieldtype": "Link",
-   "label": "Kassa (qayerga)",
-   "link_filters": "[[\"Mode of Payment\", \"firma\", \"like\", \"eval:doc.company || '%'\"], [\"Mode of Payment\", \"enabled\", \"=\", 1]]",
-   "mandatory_depends_on": "eval:doc.turi==\"O'tkazma\"",
+   "label": "Счёт (куда)",
+   "mandatory_depends_on": "eval:['Перемещение','Конвертация'].includes(doc.turi)",
    "options": "Mode of Payment"
   },
   {
    "fieldname": "kassa_hisobi_to",
    "fieldtype": "Link",
-   "label": "Kassa hisobi (qayerga)",
+   "label": "Бухгалтерский счёт (куда)",
    "options": "Account",
    "read_only": 1
   },
@@ -178,14 +175,14 @@
   {
    "fieldname": "kassa_valyutasi_to",
    "fieldtype": "Link",
-   "label": "Valyuta (qayerga)",
+   "label": "Валюта (куда)",
    "options": "Currency",
    "read_only": 1
   },
   {
    "fieldname": "qoldiq_to",
    "fieldtype": "Currency",
-   "label": "Qoldiq (qayerga)",
+   "label": "Остаток (куда)",
    "no_copy": 1,
    "options": "kassa_valyutasi_to",
    "read_only": 1
@@ -193,33 +190,39 @@
   {
    "fieldname": "qabul_summa",
    "fieldtype": "Currency",
-   "label": "Qabul qilinadigan summa (Konvertatsiya)",
+   "label": "Получаемая сумма (конвертация)",
    "options": "kassa_valyutasi_to",
-   "depends_on": "eval:doc.turi=='Konvertatsiya'",
-   "description": "Bo'sh qoldirilsa kurs bo'yicha o'zi hisoblanadi"
+   "depends_on": "eval:doc.turi=='Конвертация'"
   },
   {
-   "depends_on": "eval:!['O\\'tkazma','Konvertatsiya'].includes(doc.turi)",
+   "depends_on": "eval:!['Перемещение','Конвертация'].includes(doc.turi)",
    "fieldname": "kontragent_section",
    "fieldtype": "Section Break",
-   "label": "Kim / nima uchun"
+   "label": "Кто / за что"
   },
   {
-   "description": "Kategoriyadan o'zi qo'yiladi (Клиент, Поставщик, xarajat moddasi ...); kerak bo'lsa o'zgartiring",
    "fieldname": "party_type",
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Тип контрагента",
-   "mandatory_depends_on": "eval:doc.turi!=\"O'tkazma\"",
-   "options": "\nCustomer\nSupplier\nEmployee\nXarajat\nDaromad\nDividend\nKapital"
+   "mandatory_depends_on": "eval:!['Перемещение','Конвертация'].includes(doc.turi)",
+   "options": "\nКлиент\nПоставщик\nПрочие лица\nСотрудник\nСтатья расхода\nДоход\nДивиденд\nКапитал"
   },
   {
-   "depends_on": "eval:['Customer','Supplier','Employee'].includes(doc.party_type)",
+   "fieldname": "party_doctype",
+   "fieldtype": "Link",
+   "options": "DocType",
+   "label": "Тип документа контрагента",
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:['Клиент','Поставщик','Прочие лица','Сотрудник'].includes(doc.party_type)",
    "fieldname": "party",
    "fieldtype": "Dynamic Link",
    "label": "Контрагент",
-   "mandatory_depends_on": "eval:doc.turi!=\"O'tkazma\" && ['Customer','Supplier','Employee'].includes(doc.party_type)",
-   "options": "party_type"
+   "mandatory_depends_on": "eval:!['Перемещение','Конвертация'].includes(doc.turi) && ['Клиент','Поставщик','Прочие лица','Сотрудник'].includes(doc.party_type)",
+   "options": "party_doctype"
   },
   {
    "fieldname": "party_name",
@@ -233,7 +236,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Pul oqimi (DDS / Cash Flow) shu kategoriya bo'yicha yig'iladi. Xarajat/Daromad'da hisob shundan o'zi topiladi",
    "fieldname": "kategoriya",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -242,26 +244,25 @@
    "options": "Kassa Kategoriya"
   },
   {
-   "depends_on": "eval:['Xarajat','Daromad','Dividend','Kapital'].includes(doc.party_type)",
-   "description": "Bo'sh qoldirilsa kategoriyadan o'zi topiladi",
+   "depends_on": "eval:['Статья расхода','Доход','Дивиденд','Капитал'].includes(doc.party_type)",
    "fieldname": "hisob",
    "fieldtype": "Link",
-   "label": "Hisob (modda)",
+   "label": "Статья (бухгалтерский счёт)",
    "link_filters": "[[\"Account\", \"company\", \"=\", \"eval:doc.company\"], [\"Account\", \"is_group\", \"=\", 0]]",
    "options": "Account"
   },
   {
-   "depends_on": "eval:['Xarajat','Daromad'].includes(doc.party_type)",
+   "depends_on": "eval:['Статья расхода','Доход'].includes(doc.party_type)",
    "fieldname": "cost_center",
    "fieldtype": "Link",
-   "label": "Xarajat markazi",
+   "label": "Центр затрат",
    "link_filters": "[[\"Cost Center\", \"company\", \"=\", \"eval:doc.company\"], [\"Cost Center\", \"is_group\", \"=\", 0]]",
    "options": "Cost Center"
   },
   {
    "fieldname": "summa_section",
    "fieldtype": "Section Break",
-   "label": "Summa"
+   "label": "Сумма"
   },
   {
    "fieldname": "amount",
@@ -272,20 +273,12 @@
    "reqd": 1
   },
   {
-   "fieldname": "kurs",
-   "fieldtype": "Float",
-   "label": "Курс",
-   "precision": "2",
-   "description": "Kun kursi (USD -> UZS). Bo'sh qoldirilsa Currency Exchange dan olinadi"
-  },
-  {
    "fieldname": "summa_sum",
    "fieldtype": "Currency",
    "label": "Сумма со знаком в сум",
    "options": "Company:company:default_currency",
    "read_only": 1,
-   "in_list_view": 1,
-   "description": "Kirim +, Chiqim -, O'tkazma va Konvertatsiya 0 (jadvaldagi M ustuni)"
+   "in_list_view": 1
   },
   {
    "fieldname": "cb_6",
@@ -312,12 +305,12 @@
    "collapsible": 1,
    "fieldname": "hujjat_section",
    "fieldtype": "Section Break",
-   "label": "Bog'langan hujjat"
+   "label": "Связанный документ"
   },
   {
    "fieldname": "linked_doctype",
    "fieldtype": "Select",
-   "label": "Hujjat turi",
+   "label": "Тип документа",
    "no_copy": 1,
    "options": "\nPayment Entry\nJournal Entry",
    "read_only": 1
@@ -329,7 +322,7 @@
   {
    "fieldname": "linked_entry",
    "fieldtype": "Dynamic Link",
-   "label": "Hujjat",
+   "label": "Документ",
    "no_copy": 1,
    "options": "linked_doctype",
    "read_only": 1
@@ -347,7 +340,7 @@
  "index_web_pages_for_search": 0,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-23 18:00:00.000000",
+ "modified": "2026-11-02 18:10:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Kassa",
@@ -429,11 +422,11 @@
  "states": [
   {
    "color": "Green",
-   "title": "Tasdiqlangan"
+   "title": "Проведён"
   },
   {
    "color": "Gray",
-   "title": "Bekor qilingan"
+   "title": "Отменён"
   }
  ],
  "title_field": "party_name",

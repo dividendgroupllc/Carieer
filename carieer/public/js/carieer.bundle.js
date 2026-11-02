@@ -84,9 +84,10 @@ $(document).on("form-refresh", (e, frm) => {
 	if (frm?.doc?.company && !frm.is_new()) carieer.sidebar_for_company(frm.doc.company);
 });
 
-// Ro'yxat: hujjatning firma maydoni - «company» (Mode of Payment'da - «firma»)
+// Ro'yxat: hujjatning firma maydoni - «company». Mode of Payment (schyot) ikkala firmaga umumiy bo'lgani uchun
+// uning «firma» maydoni bo'yicha filtrlanmaydi (umumiy schyotlarda u bo'sh).
 function firma_field(meta) {
-	return ["company", "firma"].find((fieldname) =>
+	return ["company"].find((fieldname) =>
 		meta?.fields?.some((df) => df.fieldname === fieldname && df.fieldtype === "Link" && df.options === "Company")
 	);
 }

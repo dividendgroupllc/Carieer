@@ -45,7 +45,7 @@
    "fieldname": "kassa",
    "fieldtype": "Link",
    "label": "Asosiy kassa (to'lov turi)",
-   "link_filters": "[[\"Mode of Payment\", \"firma\", \"like\", \"eval:doc.company || '%'\"], [\"Mode of Payment\", \"enabled\", \"=\", 1]]",
+   "link_filters": "[[\"Mode of Payment Account\", \"company\", \"=\", \"eval:doc.company\"], [\"Mode of Payment\", \"enabled\", \"=\", 1]]",
    "options": "Mode of Payment"
   },
   {
@@ -91,7 +91,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-23 18:00:00.000000",
+ "modified": "2026-11-02 17:30:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Zavod",

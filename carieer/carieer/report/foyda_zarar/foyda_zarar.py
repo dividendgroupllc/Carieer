@@ -139,7 +139,7 @@ def classify(accounts, by_name, values, months, company):
 	# jadvaldagi kabi: kategoriyasi bor statyalar qiymati nol bo'lsa ham qatorda turadi
 	expense_names = {a.account_name for a in accounts if a.root_type == "Expense" and not a.is_group}
 	for name, k in cat.items():
-		if k.turi == "Kirim" or name not in expense_names or not k.taqsimot:
+		if k.turi == "Приход" or name not in expense_names or not k.taqsimot:
 			continue
 		block = "proizv" if k.taqsimot == TAQSIM_PROIZV else "invest" if k.taqsimot == TAQSIM_OS else "admin"
 		if block != "invest":
