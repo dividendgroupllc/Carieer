@@ -108,6 +108,25 @@ function set_list_firma(listview) {
 		.then(() => listview.filter_area.add(listview.doctype, fieldname, "=", company));
 }
 
+// Menyu bandi o'z filtrlari bilan ochdi («Перемещ.» -> purpose=Material Transfer): Frappe ro'yxat filtrlarini
+// almashtiradi va firma filtri ham ketadi - qaytadan qo'yiladi
+const list_before_refresh = frappe.views.ListView.prototype.before_refresh;
+frappe.views.ListView.prototype.before_refresh = function (...args) {
+	if (frappe.route_options) this.carieer_firma = null;
+	// Menyu bandi bosildi (sidebar_url.js): ro'yxat faqat shu bandning o'z filtrlari bilan ochiladi. Aks holda Frappe
+	// oxirgi ishlatilgan filtrlarni qaytaradi va boshqa bandniki qolib ketadi: «Продажа карьер» (tip = Karer) dan
+	// keyin «Эко Бетон» -> «Продажа» bo'sh chiqadi, «Xizmatlar» dan keyin «Номенклатура» faqat xizmatlarni ko'rsatadi.
+	const path = carieer.sidebar_list_path;
+	if (path && decodeURIComponent(location.pathname).startsWith(path)) {
+		carieer.sidebar_list_path = null;
+		if (!frappe.route_options && this.filter_area) {
+			this.carieer_firma = null;
+			return this.filter_area.clear(false).then(() => list_before_refresh.apply(this, args));
+		}
+	}
+	return list_before_refresh.apply(this, args);
+};
+
 const list_refresh = frappe.views.ListView.prototype.refresh;
 frappe.views.ListView.prototype.refresh = function (...args) {
 	const out = list_refresh.apply(this, args);
