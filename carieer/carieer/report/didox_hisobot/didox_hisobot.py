@@ -4,7 +4,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import flt, getdate
+from frappe.utils import flt, getdate, today
 
 OCHIRILGAN = (5, 55)
 
@@ -18,6 +18,10 @@ GURUH = {
 
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
+	# Hisobot filtrlarsiz ochilishi mumkin (masalan, ish stolidagi havoladan): standart qiymatlar
+	filters.guruhlash = filters.guruhlash or "Kontragent"
+	filters.from_date = filters.from_date or today()
+	filters.to_date = filters.to_date or today()
 	rows = get_rows(filters)
 	if filters.guruhlash == "Hujjatlar":
 		return hujjat_columns(), rows
