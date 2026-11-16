@@ -75,8 +75,9 @@ carieer.didox.choose_key = async (inn) => {
 			],
 			primary_action_label: __("Tanlash"),
 			primary_action: (v) => {
-				d.hide();
+				// avval resolve: d.hide() onhide'ni chaqiradi, hal bo'lgan Promise'ga reject ta'sir qilmaydi
 				resolve(certs[Number(v.key)]);
+				d.hide();
 			},
 		});
 		d.onhide = () => reject(__("Bekor qilindi"));
