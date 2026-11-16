@@ -27,6 +27,16 @@ frappe.listview_settings["Didox Hujjat"] = {
 					carieer.didox.eri_login(company)
 				)
 			);
+			listview.page.add_inner_button(
+				__("Ishonchnoma"),
+				() => carieer.didox.ask_company(__("Ishonchnoma: qaysi firma nomidan"), carieer.didox.ishonchnoma),
+				__("Yangi hujjat")
+			);
+			listview.page.add_inner_button(
+				__("Shartnoma"),
+				() => carieer.didox.ask_company(__("Shartnoma: qaysi firma nomidan"), carieer.didox.shartnoma),
+				__("Yangi hujjat")
+			);
 		});
 	},
 };

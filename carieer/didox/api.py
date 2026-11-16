@@ -3,13 +3,13 @@
 # serverning IP'sini taniydi. Brauzer faqat E-IMZO bilan imzo qo'yadi (public/js/didox.js).
 
 import base64
-import json
 
 import frappe
 from frappe import _
 from frappe.utils import getdate
 
 from carieer.didox.client import DidoxClient, get_firma
+from carieer.didox.common import bekor_qilinadimi, imzo_uchun, kiruvchi_imzolanadimi
 from carieer.didox.factura import ESF, build_factura
 from carieer.didox.sync import refresh, upsert_from_detail
 
@@ -71,8 +71,7 @@ def imzo_malumoti(hujjat: str) -> dict:
 		frappe.throw(_("Faqat chiquvchi qoralama imzolanadi"))
 	client = DidoxClient(h.company)
 	data = client.document(h.didox_id, owner=1)
-	text = json.dumps(data["json"], ensure_ascii=False, separators=(",", ":"))
-	return {"data": base64.b64encode(text.encode()).decode(), "inn": client.firma.inn}
+	return {"data": imzo_uchun(data["json"]), "inn": client.firma.inn}
 
 
 @frappe.whitelist()
@@ -102,8 +101,154 @@ def imzolash(hujjat: str, signature: str) -> dict:
 	h = frappe.get_doc("Didox Hujjat", hujjat)
 	res = DidoxClient(h.company).sign(h.didox_id, signature)
 	refresh(h.name)
+	return ogohlantirish(res)
+
+
+def ogohlantirish(res) -> dict:
+	"""Soliq imzolashda ogohlantirish qaytargan bo'lsa (warningDetails), foydalanuvchiga ko'rsatiladi."""
 	warning = (res or {}).get("warningDetails") or {}
 	return {"warning": warning.get("message")}
+
+
+# ---------------------------------------------------------------- kiruvchi hujjat: qabul / rad etish
+def kiruvchi(hujjat: str):
+	check("Didox Hujjat", "write", hujjat)
+	h = frappe.get_doc("Didox Hujjat", hujjat)
+	if not kiruvchi_imzolanadimi(h):
+		frappe.throw(_("Bu hujjatni qabul qilish yoki rad etish mumkin emas (holati: {0})").format(h.holat))
+	return h
+
+
+@frappe.whitelist()
+def qabul_malumoti(hujjat: str) -> dict:
+	"""Kiruvchi hujjatni qabul qilish uchun imzolanadigan matn (Didox bergan base64)."""
+	h = kiruvchi(hujjat)
+	client = DidoxClient(h.company)
+	return {"data": client.document_base64(h.didox_id), "inn": client.firma.inn}
+
+
+@frappe.whitelist()
+def qabul_qilish(hujjat: str, signature: str) -> dict:
+	"""Bizning imzo (timestamp bilan) sotuvchi imzosiga qo'shilib, Didox'ga yuboriladi."""
+	h = kiruvchi(hujjat)
+	client = DidoxClient(h.company)
+	sotuvchi_imzosi = client.document(h.didox_id, owner=0).get("toSign")
+	if not sotuvchi_imzosi:
+		frappe.throw(_("Didox hujjatda sotuvchi imzosini bermadi, «Yangilash» qilib qayta urinib ko'ring"))
+	res = client.sign(h.didox_id, client.join_signatures(sotuvchi_imzosi, signature))
+	refresh(h.name)
+	return ogohlantirish(res)
+
+
+def rad_izohi(izoh: str | None) -> str:
+	izoh = (izoh or "").strip()
+	if not izoh:
+		frappe.throw(_("Rad etish sababini yozing: u kontragentga ko'rinadi"))
+	return izoh
+
+
+@frappe.whitelist()
+def rad_malumoti(hujjat: str, izoh: str) -> dict:
+	h = kiruvchi(hujjat)
+	client = DidoxClient(h.company)
+	data = client.tosign(h.didox_id, "reject", rad_izohi(izoh))
+	return {"data": imzo_uchun(data), "inn": client.firma.inn}
+
+
+@frappe.whitelist()
+def rad_etish(hujjat: str, izoh: str, signature: str):
+	# izoh imzolangan ma'lumotdagi bilan bir xil bo'lishi shart (Didox talabi)
+	h = kiruvchi(hujjat)
+	DidoxClient(h.company).reject(h.didox_id, signature, rad_izohi(izoh))
+	refresh(h.name)
+
+
+# ---------------------------------------------------------------- kiruvchi faktura -> Приход
+@frappe.whitelist()
+def prixod_malumoti(hujjat: str) -> dict:
+	from carieer.didox import prixod
+
+	check("Didox Hujjat", "read", hujjat)
+	check("Purchase Invoice", "create")
+	return prixod.malumot(hujjat)
+
+
+@frappe.whitelist()
+def prixod_yaratish(hujjat: str, tanlov: str | list, supplier: str | None = None, ombor: str | None = None) -> str:
+	from carieer.didox import prixod
+
+	check("Didox Hujjat", "write", hujjat)
+	check("Purchase Invoice", "create")
+	return prixod.yaratish(hujjat, frappe.parse_json(tanlov), supplier or None, ombor or None)
+
+
+# ---------------------------------------------------------------- TTN, ishonchnoma, shartnoma
+@frappe.whitelist()
+def ttn_malumoti(sotuv: str) -> dict:
+	from carieer.didox import hujjatlar
+
+	check("Sotuv", "read", sotuv)
+	check("Didox Hujjat", "create")
+	return hujjatlar.ttn_malumoti(sotuv)
+
+
+@frappe.whitelist()
+def ttn_yaratish(sotuv: str, qiymatlar: str | dict) -> str:
+	from carieer.didox import hujjatlar
+
+	check("Sotuv", "read", sotuv)
+	check("Didox Hujjat", "create")
+	return hujjatlar.ttn_yaratish(sotuv, frappe.parse_json(qiymatlar))
+
+
+@frappe.whitelist()
+def firma_standartlari(company: str) -> dict:
+	"""Ishonchnoma dialogi uchun: Didox Sozlamalari'da saqlangan bosh buxgalter."""
+	check("Didox Hujjat", "create")
+	firma = get_firma(company)
+	return {"buxgalter_pinfl": firma.buxgalter_pinfl, "buxgalter_fio": firma.buxgalter_fio}
+
+
+@frappe.whitelist()
+def ishonchnoma_yaratish(company: str, qiymatlar: str | dict) -> str:
+	from carieer.didox import hujjatlar
+
+	check("Didox Hujjat", "create")
+	return hujjatlar.ishonchnoma_yaratish(company, frappe.parse_json(qiymatlar))
+
+
+@frappe.whitelist()
+def shartnoma_yaratish(company: str, qiymatlar: str | dict) -> str:
+	from carieer.didox import hujjatlar
+
+	check("Didox Hujjat", "create")
+	check("Customer", "read", frappe.parse_json(qiymatlar).get("customer"))
+	return hujjatlar.shartnoma_yaratish(company, frappe.parse_json(qiymatlar))
+
+
+# ---------------------------------------------------------------- yuborilgan hujjatni bekor qilish
+def bekor_qilinadigan(hujjat: str):
+	check("Didox Hujjat", "write", hujjat)
+	h = frappe.get_doc("Didox Hujjat", hujjat)
+	if not bekor_qilinadimi(h):
+		frappe.throw(
+			_("Faqat kontragent hali imzolamagan yuborilgan hujjat bekor qilinadi (holati: {0})").format(h.holat)
+		)
+	return h
+
+
+@frappe.whitelist()
+def bekor_malumoti(hujjat: str) -> dict:
+	h = bekor_qilinadigan(hujjat)
+	client = DidoxClient(h.company)
+	return {"data": imzo_uchun(client.tosign(h.didox_id, "cancel")), "inn": client.firma.inn}
+
+
+@frappe.whitelist()
+def bekor_qilish(hujjat: str, signature: str):
+	h = bekor_qilinadigan(hujjat)
+	DidoxClient(h.company).cancel(h.didox_id, signature)
+	refresh(h.name)
 
 
 @frappe.whitelist()

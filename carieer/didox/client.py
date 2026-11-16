@@ -137,6 +137,30 @@ class DidoxClient:
 	def delete_draft(self, didox_id: str):
 		return self.post(f"/v1/documents/{didox_id}/delete/draft")
 
+	# ------------------------------------------------------------------ kiruvchi / bekor qilish
+	def document_base64(self, didox_id: str) -> str:
+		"""Kiruvchi hujjatni qabul qilishda imzolanadigan matn (base64)."""
+		return self.get(f"/v1/documents/{didox_id}/documentBase64")["data"]
+
+	def tosign(self, didox_id: str, action: str, comment: str | None = None):
+		"""Amal (reject, cancel ...) uchun imzolanadigan obyekt."""
+		body = {"action": action}
+		if comment:
+			body["comment"] = comment
+		return self.post(f"/v1/documents/{didox_id}/tosign", body)["data"]
+
+	def join_signatures(self, signature1: str, signature2: str) -> str:
+		"""Sotuvchi imzosiga bizning imzoni qo'shadi (kiruvchi hujjatni qabul qilish)."""
+		data = self.post("/v1/dsvs/signature/join", {"signature1": signature1, "signature2": signature2})
+		return data["pkcs7B64"]
+
+	def reject(self, didox_id: str, signature: str, comment: str) -> dict:
+		return self.post(f"/v1/documents/{didox_id}/reject", {"comment": comment, "signature": signature})
+
+	def cancel(self, didox_id: str, signature: str) -> dict:
+		"""Yuborilgan hujjatni bekor qilish (kontragent hali imzolamagan)."""
+		return self.post(f"/v1/documents/{didox_id}/delete", {"signature": signature})
+
 	def pdf(self, didox_id: str) -> bytes:
 		return self.get(f"/v1/documents/view/{didox_id}/pdf/{self.locale}", raw=True).content
 

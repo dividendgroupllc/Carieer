@@ -215,6 +215,9 @@ function sotuv_tolov_dialog(frm) {
 }
 
 function sotuv_didox_buttons(frm) {
+	if (frm.doc.docstatus === 1) {
+		frm.add_custom_button(__("TTN (yuk xati) yaratish"), () => carieer.didox.ttn(frm), __("Didox"));
+	}
 	const ochirilgan = ["O'chirilgan", "Qoralama o'chirilgan"].includes(frm.doc.didox_holati);
 	if (frm.doc.didox_hujjat && !ochirilgan) {
 		frm.add_custom_button(

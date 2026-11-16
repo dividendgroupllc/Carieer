@@ -64,6 +64,11 @@ doc_events = {
 	"Vehicle": {
 		"on_update": "carieer.api.sync_vehicle_gps",
 	},
+	# Didox kiruvchi fakturadan yaratilgan Приход bekor qilinsa / o'chirilsa - bog'lanish uziladi
+	"Purchase Invoice": {
+		"on_cancel": "carieer.didox.prixod.boglanishni_uz",
+		"on_trash": "carieer.didox.prixod.boglanishni_uz",
+	},
 }
 
 # Didox: firmalarning kiruvchi / chiquvchi elektron hujjatlari tarixi «Didox Hujjat» jurnaliga tortiladi.

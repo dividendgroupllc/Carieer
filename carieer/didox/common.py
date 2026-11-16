@@ -1,5 +1,11 @@
 # Didox ma'lumotnomalari: hujjat turlari va holat kodlari (API hujjatidagi «Статусы документов»).
 
+import base64
+import json
+
+import frappe
+from frappe import _
+
 HUJJAT_TURLARI = {
 	"002": "Hisob-faktura",
 	"008": "Hisob-faktura (farm)",
@@ -43,3 +49,30 @@ def holat(kod) -> str:
 	except (TypeError, ValueError):
 		return "Noma'lum"
 	return HOLATLAR.get(kod, "Boshqa")
+
+
+# Kiruvchi hujjat bizning imzomizni kutayotgan holatlar (2 - «Ожидает вашей подписи»)
+KIRUVCHI_KUTMOQDA = (1, 2)
+# TTN va yangi ishonchnomada qabul qilish boshqa amallar bilan (responsibleAccept, agentAccept ...)
+MAXSUS_TURLAR = ("041", "062")
+
+
+def kiruvchi_imzolanadimi(doc) -> bool:
+	"""Kiruvchi hujjatni qabul qilish yoki rad etish mumkinmi."""
+	return (
+		doc.yonalish == "Kiruvchi"
+		and doc.status_kod in KIRUVCHI_KUTMOQDA
+		and doc.hujjat_kodi not in MAXSUS_TURLAR
+	)
+
+
+def bekor_qilinadimi(doc) -> bool:
+	"""Yuborilgan hujjatni kontragent imzolamaguncha bekor qilish mumkin."""
+	return doc.yonalish == "Chiquvchi" and doc.status_kod == 1
+
+
+def imzo_uchun(data) -> str:
+	"""Didox bergan obyekt -> E-IMZO imzolaydigan base64 (ixcham JSON, chiquvchi faktura bilan bir xil)."""
+	if not isinstance(data, dict):
+		frappe.throw(_("Didox imzolash uchun kutilmagan ma'lumot qaytardi"))
+	return base64.b64encode(json.dumps(data, ensure_ascii=False, separators=(",", ":")).encode()).decode()

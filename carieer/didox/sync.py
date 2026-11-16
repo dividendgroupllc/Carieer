@@ -99,16 +99,60 @@ def upsert_from_list(company: str, row: dict, owner: int):
 	return save(doc)
 
 
+def tomon(js: dict, owner: int) -> dict:
+	"""Kontragent: chiquvchida - qarshi tomon (xaridor / yuk oluvchi / sotuvchi), kiruvchida - jo'natuvchi."""
+	if js.get("consignor") or js.get("consignee"):  # TTN
+		t = js.get("consignee" if owner == 1 else "consignor") or {}
+		return {"inn": t.get("tinorpinfl"), "nomi": t.get("name")}
+	if js.get("empowermentdoc"):  # ishonchnoma: biz xaridor bo'lib beramiz, kontragent - sotuvchi
+		t = js.get("seller" if owner == 1 else "buyer") or {}
+		return {"inn": t.get("tinorpinfl"), "nomi": t.get("name")}
+	if js.get("clients") is not None and js.get("owner"):  # shartnoma
+		t = (js.get("clients") or [{}])[0] if owner == 1 else js.get("owner") or {}
+		return {"inn": t.get("tin"), "nomi": t.get("name")}
+	field, party = ("buyertin", "buyer") if owner == 1 else ("sellertin", "seller")
+	return {"inn": js.get(field), "nomi": (js.get(party) or {}).get("name")}
+
+
+def mahsulotlar(js: dict) -> list:
+	products = list((js.get("productlist") or {}).get("products") or js.get("products") or [])
+	for group in (js.get("roadway") or {}).get("productgroups") or []:  # TTN
+		products += (group.get("productinfo") or {}).get("products") or []
+	return products
+
+
+def hujjat_malumoti(js: dict, owner: int) -> frappe._dict:
+	"""Har xil hujjat turi JSON'idan (kichik harfli kalitlar): raqam, sana, shartnoma, kontragent, summa."""
+	if js.get("facturadoc"):
+		raqam, sana = js["facturadoc"].get("facturano"), js["facturadoc"].get("facturadate")
+	elif js.get("actdoc"):
+		raqam, sana = js["actdoc"].get("actno"), js["actdoc"].get("actdate")
+	elif js.get("waybilldoc"):
+		raqam, sana = js["waybilldoc"].get("waybillno"), js["waybilldoc"].get("waybilldate")
+	elif js.get("empowermentdoc"):
+		raqam, sana = js["empowermentdoc"].get("no"), js["empowermentdoc"].get("dateofissue")
+	else:  # shartnoma: o'zi contractdoc
+		raqam, sana = (js.get("contractdoc") or {}).get("contractno"), (js.get("contractdoc") or {}).get("contractdate")
+	contract = js.get("contractdoc") or {}
+	products = mahsulotlar(js)
+	t = tomon(js, owner)
+	return frappe._dict(
+		raqam=raqam,
+		sana=sana or None,
+		shartnoma_raqami=contract.get("contractno") or contract.get("no"),
+		shartnoma_sanasi=contract.get("contractdate") or contract.get("date") or None,
+		kontragent_inn=t["inn"],
+		kontragent_nomi=t["nomi"],
+		summa=sum(float(p.get("deliverysum") or 0) for p in products),
+		qqs=sum(float(p.get("vatsum") or 0) for p in products),
+	)
+
+
 def upsert_from_detail(company: str, didox_id: str, data: dict, owner: int):
 	"""GET /v1/documents/{id} javobi (bitta hujjat to'liq)."""
 	meta = data.get("document") or {}
 	js = data.get("json") or {}
-	inn_field, party_field = ("buyertin", "buyer") if owner == 1 else ("sellertin", "seller")
-	products = (js.get("productlist") or {}).get("products") or []
-	summa = sum(float(p.get("deliverysum") or 0) for p in products)
-	qqs = sum(float(p.get("vatsum") or 0) for p in products)
-	raqam_doc = js.get("facturadoc") or js.get("actdoc") or {}
-	contract = js.get("contractdoc") or {}
+	m = hujjat_malumoti(js, owner)
 
 	doc = get_or_new(didox_id.upper())
 	doc.update(
@@ -117,15 +161,15 @@ def upsert_from_detail(company: str, didox_id: str, data: dict, owner: int):
 			"yonalish": YONALISH[owner],
 			"hujjat_kodi": meta.get("doctype"),
 			"hujjat_turi": hujjat_turi(meta.get("doctype")),
-			"raqam": raqam_doc.get("facturano") or raqam_doc.get("actno") or meta.get("name"),
-			"sana": raqam_doc.get("facturadate") or raqam_doc.get("actdate"),
-			"shartnoma_raqami": contract.get("contractno"),
-			"shartnoma_sanasi": contract.get("contractdate") or None,
-			"kontragent_inn": js.get(inn_field),
-			"kontragent_nomi": (js.get(party_field) or {}).get("name"),
-			"summa": summa,
-			"qqs_summa": qqs,
-			"jami": summa + qqs,
+			"raqam": m.raqam or meta.get("name"),
+			"sana": m.sana,
+			"shartnoma_raqami": m.shartnoma_raqami,
+			"shartnoma_sanasi": m.shartnoma_sanasi,
+			"kontragent_inn": m.kontragent_inn,
+			"kontragent_nomi": m.kontragent_nomi,
+			"summa": m.summa,
+			"qqs_summa": m.qqs,
+			"jami": m.summa + m.qqs,
 			"status_kod": meta.get("doc_status", meta.get("status")),
 			"holat": holat(meta.get("doc_status", meta.get("status"))),
 			"holat_izoh": meta.get("status_comment"),

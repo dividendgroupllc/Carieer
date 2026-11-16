@@ -11,7 +11,16 @@
   "qqs_tolovchi",
   "qqs_stavka",
   "narx_qqs_bilan",
-  "oxirgi_sinxron"
+  "oxirgi_sinxron",
+  "hujjatlar_section",
+  "yuklash_viloyat",
+  "yuklash_tuman",
+  "yuklash_manzil",
+  "cb_2",
+  "yuklash_masul_pinfl",
+  "yuklash_masul_fio",
+  "buxgalter_pinfl",
+  "buxgalter_fio"
  ],
  "fields": [
   {
@@ -68,11 +77,56 @@
    "label": "Oxirgi sinxron",
    "read_only": 1,
    "in_list_view": 1
+  },
+  {
+   "fieldname": "hujjatlar_section",
+   "fieldtype": "Section Break",
+   "label": "TTN va ishonchnoma uchun",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "yuklash_viloyat",
+   "fieldtype": "Int",
+   "label": "Yuklash viloyati (Didox kodi)"
+  },
+  {
+   "fieldname": "yuklash_tuman",
+   "fieldtype": "Int",
+   "label": "Yuklash tumani (Didox kodi)"
+  },
+  {
+   "fieldname": "yuklash_manzil",
+   "fieldtype": "Data",
+   "label": "Yuklash manzili"
+  },
+  {
+   "fieldname": "cb_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "yuklash_masul_pinfl",
+   "fieldtype": "Data",
+   "label": "Yuklovchi mas'ul PINFL"
+  },
+  {
+   "fieldname": "yuklash_masul_fio",
+   "fieldtype": "Data",
+   "label": "Yuklovchi mas'ul FISh"
+  },
+  {
+   "fieldname": "buxgalter_pinfl",
+   "fieldtype": "Data",
+   "label": "Bosh buxgalter PINFL"
+  },
+  {
+   "fieldname": "buxgalter_fio",
+   "fieldtype": "Data",
+   "label": "Bosh buxgalter FISh"
   }
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-23 19:00:00.000000",
+ "modified": "2026-11-16 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "Carieer",
  "name": "Didox Firma",
