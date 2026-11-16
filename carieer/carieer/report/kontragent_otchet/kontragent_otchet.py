@@ -50,26 +50,26 @@ def execute(filters=None):
 
 def get_columns():
 	cols = [
-		{"label": _("Тип"), "fieldname": "turi", "fieldtype": "Data", "width": 120},
+		{"label": _("Тип"), "fieldname": "turi", "fieldtype": "Data", "width": 175},
 		{"label": "", "fieldname": "party_type", "fieldtype": "Data", "hidden": 1},
 		{
 			"label": _("Контрагент"),
 			"fieldname": "party",
 			"fieldtype": "Dynamic Link",
 			"options": "party_type",
-			"width": 190,
+			"width": 220,
 		},
-		{"label": _("Сана"), "fieldname": "sana", "fieldtype": "Date", "width": 105},
+		{"label": _("Сана"), "fieldname": "sana", "fieldtype": "Date", "width": 120},
 		{"label": "", "fieldname": "voucher_type", "fieldtype": "Data", "hidden": 1},
 		{
 			"label": _("Ҳужжат"),
 			"fieldname": "voucher_no",
 			"fieldtype": "Dynamic Link",
 			"options": "voucher_type",
-			"width": 150,
+			"width": 175,
 		},
 		{"label": _("Маҳсулот"), "fieldname": "mahsulot", "fieldtype": "Data", "width": 280},
-		{"label": _("Акт сверка"), "fieldname": "akt_sverka", "fieldtype": "Data", "width": 95},
+		{"label": _("Акт сверка"), "fieldname": "akt_sverka", "fieldtype": "Data", "width": 120},
 	]
 	for b, b_label in BOSQICH:
 		for v, v_label in VALYUTA:
@@ -80,7 +80,7 @@ def get_columns():
 						"fieldname": f"{b}_{side}_{v}",
 						"fieldtype": "Currency",
 						"options": f"cur_{v}",
-						"width": 130,
+						"width": 165,
 					}
 				)
 	cols += [
@@ -89,14 +89,14 @@ def get_columns():
 			"fieldname": "saldo_sum",
 			"fieldtype": "Currency",
 			"options": "cur_sum",
-			"width": 135,
+			"width": 165,
 		},
 		{
 			"label": _("Сальдо $ (Д-К)"),
 			"fieldname": "saldo_usd",
 			"fieldtype": "Currency",
 			"options": "cur_usd",
-			"width": 120,
+			"width": 150,
 		},
 		{"label": "", "fieldname": "cur_sum", "fieldtype": "Data", "hidden": 1},
 		{"label": "", "fieldname": "cur_usd", "fieldtype": "Data", "hidden": 1},

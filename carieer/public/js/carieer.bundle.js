@@ -148,6 +148,23 @@ frappe.views.QueryReport.prototype.setup_filters = function (...args) {
 	return out;
 };
 
+// Ustunlari kam hisobot (Cash Flow, ДДС - 3-4 ustun) ekranning yarmida qolmasin: ustunlar ekran eniga yetguncha
+// bir xil nisbatda kengayadi (ko'pi bilan 2 barobar). Ustuni ko'p hisobot (Оборотка, 12 oylik P&L) o'zgarmaydi -
+// yon tomonga suriladi. Asl kenglik eslab qolinadi: qayta chizilganda kattalashib ketmaydi.
+const report_render_datatable = frappe.views.QueryReport.prototype.render_datatable;
+frappe.views.QueryReport.prototype.render_datatable = function (...args) {
+	if (this.report_doc?.module === "Carieer") {
+		const cols = (this.columns || []).filter((col) => !col.hidden);
+		const asl = (col) => (col.carieer_width ??= col.width || 120);
+		const jami = cols.reduce((sum, col) => sum + asl(col), 0);
+		// qator raqami ustuni va vertikal scroll uchun joy
+		const eni = (this.page?.main || this.$report).width() - 70;
+		const k = jami ? Math.min(2, Math.max(1, eni / jami)) : 1;
+		cols.forEach((col) => (col.width = Math.floor(asl(col) * k)));
+	}
+	return report_render_datatable.apply(this, args);
+};
+
 const report_load = frappe.views.QueryReport.prototype.load;
 frappe.views.QueryReport.prototype.load = function (...args) {
 	// shu hisobotga boshqa bo'limdan qaytildi (hisobot qayta yuklanmaydi) - firma almashadi
